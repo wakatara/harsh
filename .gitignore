@@ -2,6 +2,8 @@
 
 # Executable if built in app root
 harsh
+log
+habits
 
 ### Go ###
 # Binaries for programs and plugins
