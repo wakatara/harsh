@@ -104,13 +104,16 @@ func askHabit(habit string) {
 
 func writeHabitLog(habit string, result string) {
 	date := (time.Now()).Format("2006-01-02")
-	f, err := os.OpenFile("/User/daryl/.config/harsh/log", os.O_RDONLY|os.O_CREATE, 0644)
-	// f, err := os.Create("/User/daryl/.config/harsh/log")
+	f, err := os.OpenFile("log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Printf("File open/creation failed %v :", err)
+		log.Fatal(err)
 	}
-	defer f.Close()
-	n3, err := f.WriteString(date + " :" + habit + " : " + result + "\n")
-	fmt.Printf("wrote %d bytes\n", n3)
+	if _, err := f.Write([]byte(date + " : " + habit + " : " + result + "\n")); err != nil {
+		f.Close() // ignore error; Write error takes precedence
+		log.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		log.Fatal(err)
+	}
 	// date, _ := time.Parse(layoutISO, rightNow) // for when parsing passed dates
 }
