@@ -17,6 +17,21 @@ const (
 	layoutISO = "2020-02-20"
 )
 
+type Habit struct {
+	Name  string
+	Every int
+}
+
+var Habits []Habit
+
+type Entry struct {
+	EntryDate time.Time
+	HabitName string
+	Outcome   string
+}
+
+var Entries []Entry
+
 func main() {
 	app := &cli.App{
 		Flags: []cli.Flag{
@@ -35,9 +50,7 @@ func main() {
 					habits := loadHabitsConfig()
 
 					for _, habit := range habits {
-						for habitName, _ := range habit {
-							askHabit(habitName)
-						}
+						askHabit(habit.Name)
 					}
 
 					return nil
@@ -48,6 +61,8 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "Shows you a nice graph of your habits",
 				Action: func(c *cli.Context) error {
+					// habitsLog := readHabitsLog()
+
 					return nil
 				},
 			},
@@ -63,9 +78,10 @@ func main() {
 	}
 }
 
-func loadHabitsConfig() []map[string]int {
+func loadHabitsConfig() []Habit {
 
-	file, _ := os.Open("/Users/daryl/.config/harsh/habits")
+	// file, _ := os.Open("/Users/daryl/.config/harsh/habits")
+	file, _ := os.Open("./habits")
 	defer file.Close()
 	decoder := yaml.NewDecoder(file)
 	configuration := []map[string]int{}
@@ -73,8 +89,20 @@ func loadHabitsConfig() []map[string]int {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	return configuration
+	for i, _ := range configuration {
+		for n, e := range configuration[i] {
+			h := Habit{}
+			h.Name = n
+			h.Every = e
+			Habits = append(Habits, h)
+		}
+	}
+	return Habits
 }
+
+// func readHabitsLog() []Entry {
+// 	return 1
+// }
 
 func askHabit(habit string) {
 	validate := func(input string) error {
@@ -96,8 +124,9 @@ func askHabit(habit string) {
 		fmt.Printf("Prompt failed %v\n", err)
 		return
 	}
-
-	writeHabitLog(habit, result)
+	if result != "" {
+		writeHabitLog(habit, result)
+	}
 	// Put in writing of the line to log file here.
 
 }
