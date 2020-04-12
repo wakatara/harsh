@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/manifoldco/promptui"
@@ -106,7 +107,7 @@ func loadHabitsConfig() []Habit {
 
 func askHabit(habit string) {
 	validate := func(input string) error {
-		err := !(input == "y" || input == "n" || input == "s" || input == "")
+		err := !(strings.ContainsAny(input, "yns") || input == "")
 		if err != false {
 			return errors.New("Must be [y/n/s/⏎]")
 		}
