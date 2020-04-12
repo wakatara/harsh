@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"log"
@@ -26,7 +27,7 @@ type Habit struct {
 var Habits []Habit
 
 type Entry struct {
-	EntryDate time.Time
+	EntryDate string
 	HabitName string
 	Outcome   string
 }
@@ -49,7 +50,7 @@ func main() {
 				Usage:   "Asks you about your undone habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
-
+					// pad := funk.MaxInt(len(habits.Name) + 5
 					for _, habit := range habits {
 						askHabit(habit.Name)
 					}
@@ -63,6 +64,41 @@ func main() {
 				Usage:   "Shows you a nice graph of your habits",
 				Action: func(c *cli.Context) error {
 					// habitsLog := readHabitsLog()
+					file, err := os.Open("log")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					scanner := bufio.NewScanner(file)
+
+					for scanner.Scan() {
+						// logline := scanner.Text()
+						if scanner.Text() != "" {
+							result := strings.Split(scanner.Text(), " : ")
+							e := Entry{EntryDate: result[0], HabitName: result[1], Outcome: result[2]}
+							Entries = append(Entries, e)
+						}
+					}
+
+					if err := scanner.Err(); err != nil {
+						log.Fatal(err)
+					}
+
+					consistencyGraph := map[string][]string{}
+					for _, entry := range Entries {
+						consistencyGraph[entry.HabitName] = append(consistencyGraph[entry.HabitName], graphBuilder(entry.Outcome))
+					}
+
+					for habit, graph := range consistencyGraph {
+						fmt.Printf("%25v", habit+"  ")
+						fmt.Printf(strings.Join(graph, "") + "\n")
+						// padded := fmt.Sprintf("%25v", habit)
+						// fmt.Println(strings.Join(graph, ""), len(padded))
+					}
+
+					// EntriesMap := funk.ToMap(Entries, "HabitName")
+					// fmt.Println(EntriesMap)
 
 					return nil
 				},
@@ -77,6 +113,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func graphBuilder(outcome string) string {
+	var graphDay string
+	switch outcome {
+	case "y":
+		graphDay = "━"
+	case "s":
+		graphDay = "•"
+	case "n":
+		graphDay = " "
+	default:
+		graphDay = "?"
+	}
+	return graphDay
 }
 
 func loadHabitsConfig() []Habit {
@@ -115,7 +166,7 @@ func askHabit(habit string) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:    habit + " [y/n/s/⏎]",
+		Label:    fmt.Sprintf("%30v" + habit + " [y/n/s/⏎]"),
 		Validate: validate,
 	}
 
