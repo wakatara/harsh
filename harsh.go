@@ -50,7 +50,6 @@ func main() {
 				Usage:   "Asks you about your undone habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
-					// pad := funk.MaxInt(len(habits.Name) + 5
 					for _, habit := range habits {
 						askHabit(habit.Name)
 					}
@@ -63,7 +62,6 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "Shows you a nice graph of your habits",
 				Action: func(c *cli.Context) error {
-					// habitsLog := readHabitsLog()
 					file, err := os.Open("log")
 					if err != nil {
 						log.Fatal(err)
@@ -73,7 +71,6 @@ func main() {
 					scanner := bufio.NewScanner(file)
 
 					for scanner.Scan() {
-						// logline := scanner.Text()
 						if scanner.Text() != "" {
 							result := strings.Split(scanner.Text(), " : ")
 							e := Entry{EntryDate: result[0], HabitName: result[1], Outcome: result[2]}
@@ -93,12 +90,7 @@ func main() {
 					for habit, graph := range consistencyGraph {
 						fmt.Printf("%25v", habit+"  ")
 						fmt.Printf(strings.Join(graph, "") + "\n")
-						// padded := fmt.Sprintf("%25v", habit)
-						// fmt.Println(strings.Join(graph, ""), len(padded))
 					}
-
-					// EntriesMap := funk.ToMap(Entries, "HabitName")
-					// fmt.Println(EntriesMap)
 
 					return nil
 				},
@@ -179,7 +171,6 @@ func askHabit(habit string) {
 	if result != "" {
 		writeHabitLog(habit, result)
 	}
-	// Put in writing of the line to log file here.
 
 }
 
