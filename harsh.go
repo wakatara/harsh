@@ -7,12 +7,13 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v2"
+	// "gopkg.in/yaml.v2"
 )
 
 const (
@@ -62,34 +63,17 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "Shows you a nice graph of your habits",
 				Action: func(c *cli.Context) error {
-					file, err := os.Open("log")
-					if err != nil {
-						log.Fatal(err)
-					}
-					defer file.Close()
-
-					scanner := bufio.NewScanner(file)
-
-					for scanner.Scan() {
-						if scanner.Text() != "" {
-							result := strings.Split(scanner.Text(), " : ")
-							e := Entry{EntryDate: result[0], HabitName: result[1], Outcome: result[2]}
-							Entries = append(Entries, e)
-						}
-					}
-
-					if err := scanner.Err(); err != nil {
-						log.Fatal(err)
-					}
+					habits := loadHabitsConfig()
+					entries := loadLog()
 
 					consistencyGraph := map[string][]string{}
-					for _, entry := range Entries {
+					for _, entry := range entries {
 						consistencyGraph[entry.HabitName] = append(consistencyGraph[entry.HabitName], graphBuilder(entry.Outcome))
 					}
 
-					for habit, graph := range consistencyGraph {
-						fmt.Printf("%25v", habit+"  ")
-						fmt.Printf(strings.Join(graph, "") + "\n")
+					for _, habit := range habits {
+						fmt.Printf("%25v", habit.Name+"  ")
+						fmt.Printf(strings.Join(consistencyGraph[habit.Name], "") + "\n")
 					}
 
 					return nil
@@ -125,28 +109,48 @@ func graphBuilder(outcome string) string {
 func loadHabitsConfig() []Habit {
 
 	// file, _ := os.Open("/Users/daryl/.config/harsh/habits")
-	file, _ := os.Open("./habits")
-	defer file.Close()
-	decoder := yaml.NewDecoder(file)
-	configuration := []map[string]int{}
-	err := decoder.Decode(&configuration)
+	file, err := os.Open("habits")
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Fatal(err)
 	}
-	for i, _ := range configuration {
-		for n, e := range configuration[i] {
-			h := Habit{}
-			h.Name = n
-			h.Every = e
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			result := strings.Split(scanner.Text(), ": ")
+			r1, _ := strconv.Atoi(result[1])
+			h := Habit{Name: result[0], Every: r1}
 			Habits = append(Habits, h)
 		}
 	}
 	return Habits
 }
 
-// func readHabitsLog() []Entry {
-// 	return 1
-// }
+func loadLog() []Entry {
+	file, err := os.Open("log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			result := strings.Split(scanner.Text(), " : ")
+			e := Entry{EntryDate: result[0], HabitName: result[1], Outcome: result[2]}
+			Entries = append(Entries, e)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return Entries
+}
 
 func askHabit(habit string) {
 	validate := func(input string) error {
@@ -158,7 +162,7 @@ func askHabit(habit string) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:    fmt.Sprintf("%30v" + habit + " [y/n/s/⏎]"),
+		Label:    habit + " [y/n/s/⏎]",
 		Validate: validate,
 	}
 
