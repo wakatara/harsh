@@ -13,7 +13,6 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
-	// "gopkg.in/yaml.v2"
 )
 
 const (
