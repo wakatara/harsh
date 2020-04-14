@@ -65,11 +65,6 @@ func main() {
 					habits := loadHabitsConfig()
 					entries := loadLog()
 
-					// date sort entries
-					sort.Slice(entries, func(i, j int) bool {
-						return entries[i].EntryDate.Before(entries[j].EntryDate)
-					})
-
 					consistencyGraph := map[string][]string{}
 					for _, entry := range entries {
 						consistencyGraph[entry.HabitName] = append(consistencyGraph[entry.HabitName], graphBuilder(entry))
@@ -177,6 +172,11 @@ func loadLog() []Entry {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+
+	// date sort entries
+	sort.Slice(Entries, func(i, j int) bool {
+		return Entries[i].EntryDate.Before(Entries[j].EntryDate)
+	})
 
 	return Entries
 }
