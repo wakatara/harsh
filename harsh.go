@@ -27,7 +27,7 @@ type Habit struct {
 var Habits []Habit
 
 type Entry struct {
-	EntryDate string
+	EntryDate time.Time
 	HabitName string
 	Outcome   string
 }
@@ -39,7 +39,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "version, v",
-				Value: "0.1",
+				Value: "0.2",
 				Usage: "Version of the Harsh app",
 			},
 		},
@@ -47,7 +47,7 @@ func main() {
 			{
 				Name:    "ask",
 				Aliases: []string{"a"},
-				Usage:   "Asks you about your undone habits",
+				Usage:   "Asks about and logs your undone habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					for _, habit := range habits {
@@ -60,14 +60,19 @@ func main() {
 			{
 				Name:    "log",
 				Aliases: []string{"l"},
-				Usage:   "Shows you a nice graph of your habits",
+				Usage:   "Shows a consistency graph of your habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					entries := loadLog()
 
+					// date sort entries
+					sort.Slice(entries, func(i, j int) bool {
+						return entries[i].EntryDate.Before(entries[j].EntryDate)
+					})
+
 					consistencyGraph := map[string][]string{}
 					for _, entry := range entries {
-						consistencyGraph[entry.HabitName] = append(consistencyGraph[entry.HabitName], graphBuilder(entry.Outcome))
+						consistencyGraph[entry.HabitName] = append(consistencyGraph[entry.HabitName], graphBuilder(entry))
 					}
 
 					for _, habit := range habits {
@@ -90,19 +95,43 @@ func main() {
 	}
 }
 
-func graphBuilder(outcome string) string {
+func graphBuilder(entry Entry) string {
 	var graphDay string
-	switch outcome {
-	case "y":
+
+	if entry.Outcome == "y" {
 		graphDay = "━"
-	case "s":
+	} else if entry.Outcome == "s" {
 		graphDay = "•"
-	case "n":
+		// } else if satisfied(entry.Habit, entry.EntryDate) {
+		// 	graphDay = "─"
+	} else if entry.Outcome == "n" {
 		graphDay = " "
-	default:
+	} else {
 		graphDay = "?"
 	}
+
 	return graphDay
+
+	// if let Some(entry) = self.get_entry(&date, &habit.name) {
+	// 	if entry.value == "y" {
+	// 		DayStatus::Done
+	// 	} else if entry.value == "s" {
+	// 		DayStatus::Skipped
+	// 	} else if self.habit_satisfied(habit, &date) {
+	// 		DayStatus::Satisfied
+	// 	} else if self.habit_skipified(habit, &date) {
+	// 		DayStatus::Skipified
+	// 	} else {
+	// 		DayStatus::NotDone
+	// 	}
+	// } else {
+	// 	if self.habit_warning(habit, &date) {
+	// 		DayStatus::Warning
+	// 	} else {
+	// 	DayStatus::Unknown
+	// 	}
+	// }
+
 }
 
 func loadHabitsConfig() []Habit {
@@ -139,7 +168,8 @@ func loadLog() []Entry {
 	for scanner.Scan() {
 		if scanner.Text() != "" {
 			result := strings.Split(scanner.Text(), " : ")
-			e := Entry{EntryDate: result[0], HabitName: result[1], Outcome: result[2]}
+			result0, _ := time.Parse(layoutISO, result[0])
+			e := Entry{EntryDate: result0, HabitName: result[1], Outcome: result[2]}
 			Entries = append(Entries, e)
 		}
 	}
@@ -191,4 +221,20 @@ func writeHabitLog(habit string, result string) {
 		log.Fatal(err)
 	}
 	// date, _ := time.Parse(layoutISO, rightNow) // for when parsing passed dates
+}
+
+func satisfied(habit Habit, entryDate time.Time) bool {
+	if habit.Every < 1 {
+		return false
+	}
+
+	// from := entryDate.AddDate(0, 0, -habit.Every)
+	// end := entryDate
+	// for d := from; d.After(end) == false; d = d.AddDate(0, 0, 1) {
+	// 	if entry_outcome(date) == "y" {
+	// 		return true
+	// 	}
+	// }
+	return false
+
 }
