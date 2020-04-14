@@ -2,17 +2,17 @@
 
 ## Contributing to Harsh
 
-You're here to help? Awesome! Please feel welcoem and read the folllowing sections to get a feel for the lay of the land and to know how to ask questions and work on something.
+You're here to help? Awesome! Please feel welcoem and read the following sections to get a feel for the lay of the land, know how to ask questions, and how to work on something.
 
-All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please make sure you are welcome and friendly. Be kind. Be respectful. (BKBR)
+All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please make sure you are welcome and friendly. Be kind. Be respectful. (BKBR). Be nice. It's a tough world out there.
 
-I'm pretty much happy for any contribution though since the idea is to keep the applicaiton minimalist new feature requests will be deliberated before addiiton. Code improvements, bug fixes, tests, documentation improvements and any sort of unambiguous improvement is most welcome. Please [submit a PR](#pull-requests)
+I'm pretty much happy for any contribution though since the idea is to keep the applicaiton minimalist new feature requests will be deliberated before addiiton. Code improvements, bug fixes, tests, documentation, translations, and any sort of unambiguous improvement is most welcome. Please [submit a PR](#pull-requests)
 
 ## Get in touch
 
     Report bugs, suggest features in the Issues on Github and view source on GitHub.
     I'm most easily pinged on twitter via [@awws](https://twitter.com/awws)
-    For email, please look at the [About page on my blog](https://daryl.wakatara.com/about)
+    For email, please look at the [About page on Daryl's blog](https://daryl.wakatara.com/about)
 
 ## Using the issue tracker
 
@@ -23,7 +23,7 @@ requests](#pull-requests).
 ### Bug reports
 
 A bug is a _demonstrable problem_ that is caused by the code in the repository.
-Good bug reports are extremely helpful - thank you!
+Good bug reports are extremely helpful.
 
 Guidelines for bug reports:
 
@@ -31,7 +31,7 @@ Guidelines for bug reports:
    reported.
 
 2. **Check if the issue has been fixed** &mdash; try to reproduce it using the
-   latest `master` or `next` branch in the repository.
+   latest `master` branch in the repository.
 
 3. **Isolate the problem** &mdash; ideally create a reduced test case.
 
@@ -62,8 +62,8 @@ Example:
 ### Feature requests
 
 Feature requests are welcome. But take a moment to find out whether your idea
-fits with the scope and aims of the project. It's up to *you* to make a strong
-case to convince the project's developers of the merits of this feature. Please
+fits with the scope and aims of Harsh. It's up to *you* to make a strong
+case to convince the project's developer(s) of the merits of this feature. Please
 provide as much detail and context as possible.
 
 ### Pull requests
