@@ -2,7 +2,7 @@
 
 Harsh is a minimalist habit tracking command line tool for tracking and examining your habits. 
 
-It is inspired by (read: a ~~rip off~~ port of) blinary's habitctl and is designed to have simple, contained (eg. one year) habit tracking files that are human readable and comprehensible and easily edited in a text editor. It is much simpler, more understandable, and more portable than either commercial application and I found it much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in habitctl that were not incorporated into habitctl such as skips and warns and a few other goodies.
+It is inspired by (read: a ~~rip off~~ port of) blinary's habitctl and is designed to have simple, contained (eg. one year) habit tracking files that are human readable and comprehensible and easily edited in a text editor. It is much simpler, more understandable, and more portable than either commercial application and I found it much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in harsh that were not incorporated into harsh such as skips and warns and a few other goodies.
 
 It is quick and gets out of your way. I personally have it residing in a tmux tab that I refer to and track against most days as a tick off list.
 
@@ -19,17 +19,17 @@ TODO: Write installation instructions here
 
 ## Usage
 
-**habitctl** is a minimalist command line tool you can use to track and examine your habits. It was born when I grew frustrated with tracking my habits in plain text files using hand-drawn ASCII tables. habitctl tries to get the job done and then get out of your way.
+**habitctl** is a minimalist command line tool you can use to track and examine your habits. It was born when I grew frustrated with tracking my habits in plain text files using hand-drawn ASCII tables. harsh tries to get the job done and then get out of your way.
 
 ## Installation
 
-habitctl is written in the Rust programming language, so you'll need a working, up-to-date [Rust installation](https://www.rust-lang.org). You'll probably want to run these commands:
+harsh is written in the Rust programming language, so you'll need a working, up-to-date [Rust installation](https://www.rust-lang.org). You'll probably want to run these commands:
 
     $ curl -f https://sh.rustup.rs > rust.sh
     $ sh rust.sh
     $ source ~/.cargo/env
 
-Then, compiling habitctl is as easy as this:
+Then, compiling harsh is as easy as this:
 
     $ git clone https://github.com/blinry/habitctl
     $ cd habitctl
@@ -48,7 +48,7 @@ When you run `habitctl` for the first time, it will set up the required files:
     Created /home/seb/.habitctl/log. This file will contain your habit log.
     
     You don't have any habits set up!
-    Run `habitctl edith` to modify the habit list using your default $EDITOR.
+    Run `harsh edith` to modify the habit list using your default $EDITOR.
     Then, run `habitctl`! Happy tracking!
 
 Run `h edith` and change the content of the habits file, for example like this:
@@ -92,12 +92,12 @@ Then, simply run `h` regularly, specify whether or not you did the habit (or nee
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
-                Used habitctl    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    [y/n/s/⏎] y
+                Used harsh    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    [y/n/s/⏎] y
     2018-09-16+02:00:
                     Meditated        ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━ [y/n/s/⏎] y
         Cleaned the apartment ──────                 ━──────           ━──────    •······ [y/n/s/⏎] n
                Had a headache            ━  ━     ━━                  ━━   ━   ━━         [y/n/s/⏎] n
-                Used habitctl   ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━[y/n/s/⏎] y
+                Used harsh   ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━[y/n/s/⏎] y
 
 
 (Some weeks later)
@@ -107,7 +107,7 @@ Then, simply run `h` regularly, specify whether or not you did the habit (or nee
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━━
         Cleaned the apartment ━──────                 ━──────           ━──────    •······        
                Had a headache             ━  ━     ━━                  ━━   ━   ━━         
-                Used habitctl    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━
+                Used harsh    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━
 
                                              ... some habits omitted ...
 
@@ -115,13 +115,13 @@ Then, simply run `h` regularly, specify whether or not you did the habit (or nee
 
 The score specifies how many of the due habits you did that day and removes any you may have skipped from the calculation. The sparkline at the top give a graphical representation of the score. The thick lines in the graph say that you did the habit, the thin lines say that that it was okay that you didn't to it. A thick dot implies you had to skip or were unable to exercise a habit for whatever good reason, and a thin dot indicates the period for which a skip would normally be in effect (in the example above, we are suggesting you could not clean your apartment because you were on a business trip when you'd normally clean it and can thus excuse yourself.).
 
-Also, on the day, if a habit chain is in danger of breaking because it's the last day you can do it before the consistency graph would have a gap in it, habitctl will give you a warning by turning the " " symbol you'd see on the day into an "!".
+Also, on the day, if a habit chain is in danger of breaking because it's the last day you can do it before the consistency graph would have a gap in it, harsh will give you a warning by turning the " " symbol you'd see on the day into an "!".
 
 Enter `h help` if you're lost:
 
     $ h help
     USAGE:
-        habitctl [SUBCOMMAND]
+        harsh [SUBCOMMAND]
     
     FLAGS:
         -h, --help       Prints help information
