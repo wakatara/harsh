@@ -1,11 +1,10 @@
 # Harsh Taskmaster
 
-
 ## Usage
 
 Harsh is a minimalist habit tracking command line tool for tracking and examining your habits. 
 
-It is inspired by (read: a ~~rip off~~ port of) blinary's habitctl and is designed to have simple, contained (eg. one year) habit tracking files that are human readable and comprehensible and easily edited in a text editor. It is much simpler, more understandable, and more portable than either commercial application and I found it much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in harsh that were not incorporated into harsh such as skips and warns and a few other goodies.
+It's inspired by and a GoLang riff on blinary's habitctl in Rust. and is designed to have simple, contained (eg. one year) habit tracking files that are human readable and comprehensible and easily edited in a text editor. It is much simpler, more understandable, and more portable than either commercial application and I found it much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in harsh that were not incorporated into harsh such as skips and warns and a few other goodies.
 
 It is quick and gets out of your way. I personally have it residing in a tmux tab that I refer to and track against most days as a tick off list.
 
@@ -39,27 +38,27 @@ Additionally, I like to set up an alias called `h` to this in the /usr/local/bin
 
 ## Usage
 
-When you run `habitctl` for the first time, it will set up the required files:
+When you run ` harsh` for the first time, it will set up the required files:
 
     $ h
-    Welcome to habitctl!
+    Welcome to  harsh!
     
-    Created /home/seb/.habitctl/habits. This file will list your currently tracked habits.
-    Created /home/seb/.habitctl/log. This file will contain your habit log.
+    Created /home/seb/. harsh/habits. This file will list your currently tracked habits.
+    Created /home/seb/. harsh/log. This file will contain your habit log.
     
     You don't have any habits set up!
     Run `harsh edith` to modify the habit list using your default $EDITOR.
-    Then, run `habitctl`! Happy tracking!
+    Then, run ` harsh`! Happy tracking!
 
 Run `h edith` and change the content of the habits file, for example like this:
 
     # The numbers specifies how often you want to do a habit:
     # 1 means daily, 7 means weekly, 0 means you're just tracking the habit. Some examples:
 
-    1 Meditated
-    7 Cleaned the apartment
-    0 Had a headache
-    1 Used habitctl
+    Meditated :1 
+    Cleaned the apartment: 7
+    Had headache: 0
+    Used harsh: 1
 
 Here are some more ideas of what to track:
 
@@ -140,11 +139,9 @@ Enter `h help` if you're lost:
         log      Print habit log
         todo     Print unresolved tasks for today
 
-## License: GPLv2+
+## License: MIT License
 
-*habitctl* is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
-
-
+*harsh* is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
 
 
 TODO: Write usage instructions here
