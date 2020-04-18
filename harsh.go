@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	layoutISO = "2020-02-20"
+	layoutISO = "2006-01-02"
 )
 
 type Habit struct {
@@ -99,8 +99,9 @@ func buildGraph(habit *Habit, entries *[]Entry, from time.Time, to time.Time) st
 	var consistency []string
 
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
+		// find the matching entry for the habit and day
 		for _, entry := range *entries {
-			if entry.HabitName == habit.Name && entry.EntryDate == d {
+			if entry.HabitName == habit.Name && entry.EntryDate.YearDay() == d.YearDay() {
 				dayOutcome = entry.Outcome
 			}
 		}
