@@ -65,14 +65,17 @@ func main() {
 					habits := loadHabitsConfig()
 					entries := loadLog()
 
-					consistencyGraph := map[string][]string{}
-					for _, entry := range entries {
-						consistencyGraph[entry.HabitName] = append(consistencyGraph[entry.HabitName], graphBuilder(entry))
+					to := time.Now()
+					from := to.AddDate(0, 0, -100)
+					graph := map[string][]string{}
+
+					for _, habit := range habits {
+						graph[habit.Name] = append(graph[habit.Name], buildGraph(&habit, &entries, from, to))
 					}
 
 					for _, habit := range habits {
 						fmt.Printf("%25v", habit.Name+"  ")
-						fmt.Printf(strings.Join(consistencyGraph[habit.Name], "") + "\n")
+						fmt.Printf(strings.Join(graph[habit.Name], "") + "\n")
 					}
 
 					return nil
@@ -90,44 +93,46 @@ func main() {
 	}
 }
 
-func graphBuilder(entry Entry) string {
+func buildGraph(habit *Habit, entries *[]Entry, from time.Time, to time.Time) string {
 	var graphDay string
+	var dayOutcome string
+	var consistency []string
 
-	if entry.Outcome == "y" {
-		graphDay = "━"
-	} else if entry.Outcome == "s" {
-		graphDay = "•"
-		// } else if satisfied(entry.Habit, entry.EntryDate) {
-		// 	graphDay = "─"
-	} else if entry.Outcome == "n" {
-		graphDay = " "
-	} else {
-		graphDay = "?"
+	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
+		for _, entry := range *entries {
+			if entry.HabitName == habit.Name && entry.EntryDate == d {
+				dayOutcome = entry.Outcome
+			}
+		}
+
+		if dayOutcome == "y" {
+			graphDay = "━"
+		} else if dayOutcome == "s" {
+			graphDay = "•"
+			// } else if satisfied(entry.Habit, entry.EntryDate) {
+			// 	graphDay = "─"
+		} else if dayOutcome == "n" {
+			graphDay = " "
+		} else if dayOutcome == "" {
+			graphDay = "?"
+		}
+
+		consistency = append(consistency, graphDay)
 	}
 
-	return graphDay
-
-	// if let Some(entry) = self.get_entry(&date, &habit.name) {
-	// 	if entry.value == "y" {
-	// 		DayStatus::Done
-	// 	} else if entry.value == "s" {
-	// 		DayStatus::Skipped
-	// 	} else if self.habit_satisfied(habit, &date) {
-	// 		DayStatus::Satisfied
-	// 	} else if self.habit_skipified(habit, &date) {
-	// 		DayStatus::Skipified
-	// 	} else {
-	// 		DayStatus::NotDone
-	// 	}
-	// } else {
-	// 	if self.habit_warning(habit, &date) {
-	// 		DayStatus::Warning
-	// 	} else {
-	// 	DayStatus::Unknown
-	// 	}
-	// }
-
+	return strings.Join(consistency, "")
 }
+
+// func getEntry(habit *Habit, date time.Time) string {
+// 	for _, entry := range Entries {
+// 		if entry.HabitName == habit.Name && entry.EntryDate == date {
+// 			return entry.Outcome
+// 		}
+// 	}
+// 	return "nil"
+// }
+
+// Loading of files section
 
 func loadHabitsConfig() []Habit {
 
@@ -172,11 +177,6 @@ func loadLog() []Entry {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-
-	// date sort entries
-	sort.Slice(Entries, func(i, j int) bool {
-		return Entries[i].EntryDate.Before(Entries[j].EntryDate)
-	})
 
 	return Entries
 }
