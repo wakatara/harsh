@@ -4,15 +4,15 @@
 
 Harsh is a minimalist habit tracking command line tool for tracking and examining your habits. 
 
-It's inspired by and a GoLang riff on blinary's habitctl in Rust. and is designed to have simple, contained (eg. one year) habit tracking files that are human readable and comprehensible and easily edited in a text editor. It is much simpler, more understandable, and more portable than either commercial application and I found it much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in harsh that were not incorporated into harsh such as skips and warns and a few other goodies.
+It's inspired by and a GoLang riff on blinary's habitctl. It's designed to have simple, contained (eg. one year) habit tracking files that are human grokable and easily edited in a text editor. It's much simpler, more understandable, and more portable than commercial application and much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in habitctl that were not merged such as skips and warns and a few other goodies.
 
-It is quick and gets out of your way. I personally have it residing in a tmux tab that I refer to and track against most days as a tick off list.
+Succintly: it's quick and gets out of your way. 
+
+I personally have it in a `tmux` tab that track against as I tick items off.
 
 ## Installation
 
-harsh is coded in [GoLang](https://golang.org).
-
-gopackager makes the application available on most major linux versions and on mac osx with brew.
+harsh is coded in [GoLang](https://golang.org). It is avaiable on Linux, OSX, and Windows.
 
 On OSX
 
@@ -26,15 +26,13 @@ On linux
 apt install harsh
 ```
 
-If you want to compile it yourself, you can also compile it via 
+If you want to compile it yourself, you can: 
 
 ```
 go get 
 ```
 
-This is preference by I symlink the command h to it so that I only ever have to type `h log` or `h` to get the question prompts. Weirdly it makes if vastly an easier habit to record things once you do that. 
-
-Additionally, I like to set up an alias called `h` to this in the /usr/local/bin directory which most people have in their `$PATH`
+I symlink `/usr/local/bin` to the executable so commands shorten to `h log` or similar. Makes it vastly easier to track for some reason.
 
 ## Usage
 
