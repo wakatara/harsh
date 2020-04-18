@@ -1,41 +1,41 @@
 # Harsh Taskmaster
 
+
+## Usage
+
 Harsh is a minimalist habit tracking command line tool for tracking and examining your habits. 
 
 It is inspired by (read: a ~~rip off~~ port of) blinary's habitctl and is designed to have simple, contained (eg. one year) habit tracking files that are human readable and comprehensible and easily edited in a text editor. It is much simpler, more understandable, and more portable than either commercial application and I found it much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in harsh that were not incorporated into harsh such as skips and warns and a few other goodies.
 
 It is quick and gets out of your way. I personally have it residing in a tmux tab that I refer to and track against most days as a tick off list.
 
-
-
-
-
-
-
-
 ## Installation
 
-TODO: Write installation instructions here
+harsh is coded in [GoLang](https://golang.org).
 
-## Usage
+gopackager makes the application available on most major linux versions and on mac osx with brew.
 
-**habitctl** is a minimalist command line tool you can use to track and examine your habits. It was born when I grew frustrated with tracking my habits in plain text files using hand-drawn ASCII tables. harsh tries to get the job done and then get out of your way.
+On OSX
 
-## Installation
+```
+brew install harsh
+```
 
-harsh is written in the Rust programming language, so you'll need a working, up-to-date [Rust installation](https://www.rust-lang.org). You'll probably want to run these commands:
+On linux
 
-    $ curl -f https://sh.rustup.rs > rust.sh
-    $ sh rust.sh
-    $ source ~/.cargo/env
+```
+apt install harsh
+```
 
-Then, compiling harsh is as easy as this:
+If you want to compile it yourself, you can also compile it via 
 
-    $ git clone https://github.com/blinry/habitctl
-    $ cd habitctl
-    $ cargo build --release
+```
+go get 
+```
 
-This will create the binary `target/release/habitctl`, which you can add to your `$PATH`. Additionally, I like to set up an alias called `h`.
+This is preference by I symlink the command h to it so that I only ever have to type `h log` or `h` to get the question prompts. Weirdly it makes if vastly an easier habit to record things once you do that. 
+
+Additionally, I like to set up an alias called `h` to this in the /usr/local/bin directory which most people have in their `$PATH`
 
 ## Usage
 
@@ -87,21 +87,25 @@ Here are some more ideas of what to track:
 
 Then, simply run `h` regularly, specify whether or not you did the habit (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
 
+The consistency graph shows your last 100 days (though bi plan to make a flag at some point.)
+
+```
     $ h
-    2018-09-15+02:00:
+    2018-09-15:
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
-                Used harsh    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    [y/n/s/⏎] y
+                Used harsh    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
     2018-09-16+02:00:
                     Meditated        ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━ [y/n/s/⏎] y
         Cleaned the apartment ──────                 ━──────           ━──────    •······ [y/n/s/⏎] n
                Had a headache            ━  ━     ━━                  ━━   ━   ━━         [y/n/s/⏎] n
                 Used harsh   ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━[y/n/s/⏎] y
-
+```
 
 (Some weeks later)
 
+```
     $ h log
                               ▄▃▃▄▄▃▄▆▆▆▅▆▆▇▆▄▃▄▆▃▆▃▆▂▅▄▃▄▅▆▅▃▃▃▆▂▄▅▄▅▅▅▆▄▄▆▇▆▅▅▄▃▅▆▄▆▃▃▂▅▆
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━━
@@ -112,6 +116,7 @@ Then, simply run `h` regularly, specify whether or not you did the habit (or nee
                                              ... some habits omitted ...
 
     Yesterday's score: 73.3%
+```
 
 The score specifies how many of the due habits you did that day and removes any you may have skipped from the calculation. The sparkline at the top give a graphical representation of the score. The thick lines in the graph say that you did the habit, the thin lines say that that it was okay that you didn't to it. A thick dot implies you had to skip or were unable to exercise a habit for whatever good reason, and a thin dot indicates the period for which a skip would normally be in effect (in the example above, we are suggesting you could not clean your apartment because you were on a business trip when you'd normally clean it and can thus excuse yourself.).
 
