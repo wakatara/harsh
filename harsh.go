@@ -111,8 +111,6 @@ func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) [
 		score := score(d, habits, entries)
 		if score == 100 {
 			i = 8
-		} else if score == 0 {
-			i = 0
 		} else {
 			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
 		}
