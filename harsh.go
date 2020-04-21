@@ -73,7 +73,7 @@ func main() {
 						graph[habit.name] = append(graph[habit.name], buildGraph(&habit, *entries, from, to))
 						fmt.Printf("%25v", habit.name+"  ")
 						fmt.Printf(strings.Join(graph[habit.name], ""))
-						fmt.Printf("|" + "\n")
+						fmt.Printf("│" + "\n")
 					}
 
 					scoring := fmt.Sprintf("%.1f", score(habits, *entries))
