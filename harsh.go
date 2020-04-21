@@ -74,8 +74,10 @@ func main() {
 						fmt.Printf("%25v", habit.name+"  ")
 						fmt.Printf(strings.Join(graph[habit.name], ""))
 						fmt.Printf("|" + "\n")
-
 					}
+
+					scoring := fmt.Sprintf("%.1f", score(habits, *entries))
+					fmt.Printf("Yesterday's Score: " + scoring + "%%\n")
 
 					return nil
 				},
@@ -91,6 +93,8 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+// Consistency graph, sparkline and scoring functions
 
 func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) string {
 	var graphDay string
@@ -172,7 +176,38 @@ func warning(d time.Time, habit *Habit, entries Entries) bool {
 	return true
 }
 
-// Loading of files section
+func score(habits []Habit, entries Entries) float64 {
+	d := time.Now().AddDate(0, 0, -1)
+
+	scored := 0.0
+	skipped := 0.0
+	scorableHabits := 0.0
+
+	for _, habit := range habits {
+		if habit.every > 0 {
+			scorableHabits++
+		}
+		if outcome, ok := entries[DailyHabit{day: d.Format(layoutISO), habit: habit.name}]; ok {
+			switch {
+			case outcome == "y":
+				scored++
+			case outcome == "s":
+				skipped++
+			// look at cases of n being entered but
+			// within bounds of the habit every x days
+			case satisfied(d, &habit, entries):
+				scored++
+			case skipified(d, &habit, entries):
+				skipped++
+			}
+		}
+	}
+
+	score := (scored/scorableHabits - skipped) * 100
+	return score
+}
+
+// Loading of habit and log files
 
 func loadHabitsConfig() []Habit {
 
@@ -219,6 +254,8 @@ func loadLog() *Entries {
 
 	return &entries
 }
+
+// Ask function prompts
 
 func askHabit(habit string) {
 	validate := func(input string) error {
