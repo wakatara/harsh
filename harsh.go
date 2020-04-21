@@ -67,16 +67,21 @@ func main() {
 
 					to := time.Now()
 					from := to.AddDate(0, 0, -100)
-					graph := map[string][]string{}
+					consistency := map[string][]string{}
+
+					sparkline := buildSpark(habits, *entries, from, to)
+					fmt.Printf("%25v", "")
+					fmt.Printf(strings.Join(sparkline, ""))
+					fmt.Printf("\n")
 
 					for _, habit := range habits {
-						graph[habit.name] = append(graph[habit.name], buildGraph(&habit, *entries, from, to))
+						consistency[habit.name] = append(consistency[habit.name], buildGraph(&habit, *entries, from, to))
 						fmt.Printf("%25v", habit.name+"  ")
-						fmt.Printf(strings.Join(graph[habit.name], ""))
+						fmt.Printf(strings.Join(consistency[habit.name], ""))
 						fmt.Printf("│" + "\n")
 					}
 
-					scoring := fmt.Sprintf("%.1f", score(habits, *entries))
+					scoring := fmt.Sprintf("%.1f", score(time.Now().AddDate(0, 0, -1), habits, *entries))
 					fmt.Printf("Yesterday's Score: " + scoring + "%%\n")
 
 					return nil
@@ -94,7 +99,28 @@ func main() {
 	}
 }
 
-// Consistency graph, sparkline and scoring functions
+// Consistency graph, sparkline, and scoring functions
+
+func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) []string {
+
+	sparkline := []string{}
+	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
+	i := 0
+
+	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
+		score := score(d, habits, entries)
+		if score == 100 {
+			i = 8
+		} else if score == 0 {
+			i = 0
+		} else {
+			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
+		}
+		sparkline = append(sparkline, sparks[i])
+	}
+
+	return sparkline
+}
 
 func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) string {
 	var graphDay string
@@ -176,9 +202,7 @@ func warning(d time.Time, habit *Habit, entries Entries) bool {
 	return true
 }
 
-func score(habits []Habit, entries Entries) float64 {
-	d := time.Now().AddDate(0, 0, -1)
-
+func score(d time.Time, habits []Habit, entries Entries) float64 {
 	scored := 0.0
 	skipped := 0.0
 	scorableHabits := 0.0
@@ -186,24 +210,24 @@ func score(habits []Habit, entries Entries) float64 {
 	for _, habit := range habits {
 		if habit.every > 0 {
 			scorableHabits++
-		}
-		if outcome, ok := entries[DailyHabit{day: d.Format(layoutISO), habit: habit.name}]; ok {
-			switch {
-			case outcome == "y":
-				scored++
-			case outcome == "s":
-				skipped++
-			// look at cases of n being entered but
-			// within bounds of the habit every x days
-			case satisfied(d, &habit, entries):
-				scored++
-			case skipified(d, &habit, entries):
-				skipped++
+			if outcome, ok := entries[DailyHabit{day: d.Format(layoutISO), habit: habit.name}]; ok {
+
+				switch {
+				case outcome == "y":
+					scored++
+				case outcome == "s":
+					skipped++
+				// look at cases of n being entered but
+				// within bounds of the habit every x days
+				case satisfied(d, &habit, entries):
+					scored++
+				case skipified(d, &habit, entries):
+					skipped++
+				}
 			}
 		}
 	}
-
-	score := (scored/scorableHabits - skipped) * 100
+	score := (scored / (scorableHabits - skipped)) * 100
 	return score
 }
 
