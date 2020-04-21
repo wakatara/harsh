@@ -117,7 +117,12 @@ The consistency graph shows your last 100 days (though bi plan to make a flag at
 
 The score specifies how many of the due habits you did that day and removes any you may have skipped from the calculation. The sparkline at the top give a graphical representation of the score. The thick lines in the graph say that you did the habit, the thin lines say that that it was okay that you didn't to it. A thick dot implies you had to skip or were unable to exercise a habit for whatever good reason, and a thin dot indicates the period for which a skip would normally be in effect (in the example above, we are suggesting you could not clean your apartment because you were on a business trip when you'd normally clean it and can thus excuse yourself.).
 
-Also, on the day, if a habit chain is in danger of breaking because it's the last day you can do it before the consistency graph would have a gap in it, harsh will give you a warning by turning the " " symbol you'd see on the day into an "!".
+### Warnings
+
+harsh also has a warnings feature to help flag to you when you're in danger of breaking your consistency graph. Harsh will give you a warning by turning the " " in your upcoming habits into a "!" symbol. 
+
+For habits you're trying to observe of less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of 1 + days/7 rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
+
 
 Enter `h help` if you're lost:
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -101,6 +102,8 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 				graphDay = "━"
 			case outcome == "s":
 				graphDay = "•"
+			// look at cases of n being entered but
+			// within bounds of the habit every x days
 			case satisfied(d, habit, entries):
 				graphDay = "─"
 			case skipified(d, habit, entries):
@@ -109,7 +112,11 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 				graphDay = " "
 			}
 		} else {
-			graphDay = " "
+			if warning(d, habit, entries) {
+				graphDay = "!"
+			} else {
+				graphDay = " "
+			}
 		}
 		consistency = append(consistency, graphDay)
 	}
@@ -144,6 +151,25 @@ func skipified(d time.Time, habit *Habit, entries Entries) bool {
 		}
 	}
 	return false
+}
+
+func warning(d time.Time, habit *Habit, entries Entries) bool {
+	if habit.every < 1 {
+		return false
+	}
+
+	warningDays := int(math.Floor(float64(habit.every/7))) + 1
+	to := d
+	from := d.AddDate(0, 0, -habit.every+warningDays)
+	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
+		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "y" {
+			return false
+		}
+		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "s" {
+			return false
+		}
+	}
+	return true
 }
 
 // Loading of files section
@@ -235,19 +261,3 @@ func writeHabitLog(habit string, result string) {
 	}
 	// date, _ := time.Parse(layoutISO, rightNow) // for when parsing passed dates
 }
-
-// func satisfied(habit Habit, entryDate time.Time) bool {
-// 	if habit.Every < 1 {
-// 		return false
-// 	}
-
-// 	// from := entryDate.AddDate(0, 0, -habit.Every)
-// 	// end := entryDate
-// 	// for d := from; d.After(end) == false; d = d.AddDate(0, 0, 1) {
-// 	// 	if entry_outcome(date) == "y" {
-// 	// 		return true
-// 	// 	}
-// 	// }
-// 	return false
-
-// }
