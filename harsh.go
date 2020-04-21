@@ -39,7 +39,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "version, v",
-				Value: "0.2",
+				Value: "0.4",
 				Usage: "Version of the Harsh app",
 			},
 		},
@@ -47,7 +47,7 @@ func main() {
 			{
 				Name:    "ask",
 				Aliases: []string{"a"},
-				Usage:   "Asks about and logs your undone habits",
+				Usage:   "Asks and logs your undone habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					for _, habit := range habits {
@@ -60,7 +60,7 @@ func main() {
 			{
 				Name:    "log",
 				Aliases: []string{"l"},
-				Usage:   "Shows a consistency graph of your habits",
+				Usage:   "Shows graphs of habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					entries := loadLog()
