@@ -20,19 +20,18 @@ const (
 )
 
 type Habit struct {
-	Name  string
-	Every int
+	name  string
+	every int
 }
 
 var Habits []Habit
 
-type Entry struct {
-	EntryDate time.Time
-	HabitName string
-	Outcome   string
+type DailyHabit struct {
+	day   string
+	habit string
 }
 
-var Entries []Entry
+type Entries map[DailyHabit]string
 
 func main() {
 	app := &cli.App{
@@ -51,7 +50,7 @@ func main() {
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					for _, habit := range habits {
-						askHabit(habit.Name)
+						askHabit(habit.name)
 					}
 
 					return nil
@@ -70,12 +69,11 @@ func main() {
 					graph := map[string][]string{}
 
 					for _, habit := range habits {
-						graph[habit.Name] = append(graph[habit.Name], buildGraph(&habit, &entries, from, to))
-					}
+						graph[habit.name] = append(graph[habit.name], buildGraph(&habit, *entries, from, to))
+						fmt.Printf("%25v", habit.name+"  ")
+						fmt.Printf(strings.Join(graph[habit.name], ""))
+						fmt.Printf("|" + "\n")
 
-					for _, habit := range habits {
-						fmt.Printf("%25v", habit.Name+"  ")
-						fmt.Printf(strings.Join(graph[habit.Name], "") + "\n")
 					}
 
 					return nil
@@ -93,45 +91,60 @@ func main() {
 	}
 }
 
-func buildGraph(habit *Habit, entries *[]Entry, from time.Time, to time.Time) string {
+func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) string {
 	var graphDay string
-	var dayOutcome string
 	var consistency []string
-
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
-		// find the matching entry for the habit and day
-		for _, entry := range *entries {
-			if entry.HabitName == habit.Name && entry.EntryDate.YearDay() == d.YearDay() {
-				dayOutcome = entry.Outcome
+		if outcome, ok := entries[DailyHabit{day: d.Format(layoutISO), habit: habit.name}]; ok {
+			switch {
+			case outcome == "y":
+				graphDay = "━"
+			case outcome == "s":
+				graphDay = "•"
+			case satisfied(d, habit, entries):
+				graphDay = "─"
+			case skipified(d, habit, entries):
+				graphDay = "·"
+			case outcome == "n":
+				graphDay = " "
 			}
-		}
-
-		if dayOutcome == "y" {
-			graphDay = "━"
-		} else if dayOutcome == "s" {
-			graphDay = "•"
-			// } else if satisfied(entry.Habit, entry.EntryDate) {
-			// 	graphDay = "─"
-		} else if dayOutcome == "n" {
+		} else {
 			graphDay = " "
-		} else if dayOutcome == "" {
-			graphDay = "?"
 		}
-
 		consistency = append(consistency, graphDay)
 	}
-
 	return strings.Join(consistency, "")
 }
 
-// func getEntry(habit *Habit, date time.Time) string {
-// 	for _, entry := range Entries {
-// 		if entry.HabitName == habit.Name && entry.EntryDate == date {
-// 			return entry.Outcome
-// 		}
-// 	}
-// 	return "nil"
-// }
+func satisfied(d time.Time, habit *Habit, entries Entries) bool {
+	if habit.every <= 1 {
+		return false
+	}
+
+	from := d
+	to := d.AddDate(0, 0, -habit.every)
+	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
+		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "y" {
+			return true
+		}
+	}
+	return false
+}
+
+func skipified(d time.Time, habit *Habit, entries Entries) bool {
+	if habit.every <= 1 {
+		return false
+	}
+
+	from := d
+	to := d.AddDate(0, 0, -habit.every)
+	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
+		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "s" {
+			return true
+		}
+	}
+	return false
+}
 
 // Loading of files section
 
@@ -150,14 +163,14 @@ func loadHabitsConfig() []Habit {
 		if scanner.Text() != "" {
 			result := strings.Split(scanner.Text(), ": ")
 			r1, _ := strconv.Atoi(result[1])
-			h := Habit{Name: result[0], Every: r1}
+			h := Habit{name: result[0], every: r1}
 			Habits = append(Habits, h)
 		}
 	}
 	return Habits
 }
 
-func loadLog() []Entry {
+func loadLog() *Entries {
 	file, err := os.Open("log")
 	if err != nil {
 		log.Fatal(err)
@@ -166,12 +179,11 @@ func loadLog() []Entry {
 
 	scanner := bufio.NewScanner(file)
 
+	entries := Entries{}
 	for scanner.Scan() {
 		if scanner.Text() != "" {
 			result := strings.Split(scanner.Text(), " : ")
-			result0, _ := time.Parse(layoutISO, result[0])
-			e := Entry{EntryDate: result0, HabitName: result[1], Outcome: result[2]}
-			Entries = append(Entries, e)
+			entries[DailyHabit{day: result[0], habit: result[1]}] = result[2]
 		}
 	}
 
@@ -179,7 +191,7 @@ func loadLog() []Entry {
 		log.Fatal(err)
 	}
 
-	return Entries
+	return &entries
 }
 
 func askHabit(habit string) {
@@ -224,18 +236,18 @@ func writeHabitLog(habit string, result string) {
 	// date, _ := time.Parse(layoutISO, rightNow) // for when parsing passed dates
 }
 
-func satisfied(habit Habit, entryDate time.Time) bool {
-	if habit.Every < 1 {
-		return false
-	}
+// func satisfied(habit Habit, entryDate time.Time) bool {
+// 	if habit.Every < 1 {
+// 		return false
+// 	}
 
-	// from := entryDate.AddDate(0, 0, -habit.Every)
-	// end := entryDate
-	// for d := from; d.After(end) == false; d = d.AddDate(0, 0, 1) {
-	// 	if entry_outcome(date) == "y" {
-	// 		return true
-	// 	}
-	// }
-	return false
+// 	// from := entryDate.AddDate(0, 0, -habit.Every)
+// 	// end := entryDate
+// 	// for d := from; d.After(end) == false; d = d.AddDate(0, 0, 1) {
+// 	// 	if entry_outcome(date) == "y" {
+// 	// 		return true
+// 	// 	}
+// 	// }
+// 	return false
 
-}
+// }
