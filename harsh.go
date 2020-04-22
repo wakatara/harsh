@@ -39,7 +39,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "version, v",
-				Value: "0.4",
+				Value: "0.5",
 				Usage: "Version of the Harsh app",
 			},
 		},
