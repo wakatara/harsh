@@ -328,17 +328,23 @@ func askHabit(habit string) {
 func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
 	// returns a map of date => habitName
 	tasksUndone := map[string][]string{}
+	dayHabits := []Habit{}
 	habits := loadHabitsConfig()
+	for _, habit := range habits {
+		if habit.every > 0 {
+			dayHabits = append(dayHabits, habit)
+		}
+	}
 
 	from := to.AddDate(0, 0, -daysBack)
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		dayHabits := habits
+		dh := dayHabits
 		for _, habit := range habits {
 			if _, ok := entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}]; ok {
 				// finds and removes found keys from copy of habits array so returned in order
-				for i, v := range dayHabits {
-					if v.name == habit.name {
-						dayHabits = append(dayHabits[:i], dayHabits[i+1:]...)
+				for i, h := range dh {
+					if h.name == habit.name {
+						dh = append(dh[:i], dh[i+1:]...)
 						break
 					}
 				}
