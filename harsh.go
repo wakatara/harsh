@@ -58,6 +58,26 @@ func main() {
 				},
 			},
 			{
+				Name:    "todo",
+				Aliases: []string{"a"},
+				Usage:   "Shows undone habits for today.",
+				Action: func(c *cli.Context) error {
+					// habits := loadHabitsConfig()
+					entries := loadLog()
+					to := time.Now()
+					undone := getTodos(to, 0, *entries)
+
+					for date, habits := range undone {
+						fmt.Println(date + ":")
+						for _, habit := range habits {
+							fmt.Println("     " + habit)
+						}
+					}
+
+					return nil
+				},
+			},
+			{
 				Name:    "log",
 				Aliases: []string{"l"},
 				Usage:   "Shows graphs of habits",
@@ -303,6 +323,32 @@ func askHabit(habit string) {
 		writeHabitLog(habit, result)
 	}
 
+}
+
+func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
+	// returns a map of date => habitName
+	tasksUndone := map[string][]string{}
+	habits := loadHabitsConfig()
+
+	from := to.AddDate(0, 0, -daysBack)
+	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
+		dayHabits := habits
+		for _, habit := range habits {
+			if _, ok := entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}]; ok {
+				// finds and removes found keys from copy of habits array so returned in order
+				for i, v := range dayHabits {
+					if v.name == habit.name {
+						dayHabits = append(dayHabits[:i], dayHabits[i+1:]...)
+						break
+					}
+				}
+			}
+		}
+		for _, dayHabit := range dayHabits {
+			tasksUndone[dt.Format(layoutISO)] = append(tasksUndone[dt.Format(layoutISO)], dayHabit.name)
+		}
+	}
+	return tasksUndone
 }
 
 func writeHabitLog(habit string, result string) {
