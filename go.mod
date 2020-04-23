@@ -3,6 +3,6 @@ module harsh
 go 1.14
 
 require (
-	github.com/manifoldco/promptui v0.7.0
+	github.com/gookit/color v1.2.4
 	github.com/urfave/cli/v2 v2.2.0
 )
