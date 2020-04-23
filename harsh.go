@@ -67,7 +67,9 @@ func main() {
 					for date, habits := range undone {
 						fmt.Println(date + ":")
 						for _, habit := range habits {
-							fmt.Println("     " + habit)
+							if habit.every > 0 {
+								fmt.Println("     " + habit.name)
+							}
 						}
 					}
 
@@ -298,53 +300,51 @@ func loadLog() *Entries {
 
 func askHabits() {
 	entries := loadLog()
-	habits := loadHabitsConfig()
+	// habits := loadHabitsConfig()
 	to := time.Now().AddDate(0, 0, -1)
 	from := to.AddDate(0, 0, -61)
 
-	// dayHabits := getTodos(to, 8, *entries)
+	// Goes back 8 days in case of unresolved entries
+	// then iterates through unresolved todos
+	dayHabits := getTodos(to, 8, *entries)
 
-	// for day, habits := range dayHabits {
+	for day, habits := range dayHabits {
 
-	// }
-	for _, habit := range habits {
-		for {
-			fmt.Printf("%25v", habit.name+"  ")
-			fmt.Printf(buildGraph(&habit, *entries, from, to))
-			fmt.Printf(" [y/n/s/⏎] ")
-			reader := bufio.NewReader(os.Stdin)
-			habitResult, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
+		fmt.Println(day + ":")
+		for _, habit := range habits {
+			for {
+				fmt.Printf("%25v", habit.name+"  ")
+				fmt.Printf(buildGraph(&habit, *entries, from, to))
+				fmt.Printf(" [y/n/s/⏎] ")
+				reader := bufio.NewReader(os.Stdin)
+				habitResult, err := reader.ReadString('\n')
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
+				habitResult = strings.TrimSuffix(habitResult, "\n")
+				if strings.ContainsAny(habitResult, "yns") {
+					writeHabitLog(habit.name, habitResult)
+					break
+				}
+				if habitResult == "" {
+					break
+				}
+				color.FgRed.Printf("%87v", "Sorry! You must choose from")
+				color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 			}
-			habitResult = strings.TrimSuffix(habitResult, "\n")
-			if strings.ContainsAny(habitResult, "yns") {
-				writeHabitLog(habit.name, habitResult)
-				break
-			}
-			if habitResult == "" {
-				break
-			}
-			color.FgRed.Printf("%87v", "Sorry! You must choose from")
-			color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 		}
+
 	}
 }
 
-func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
+func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	// returns a map of date => habitName
-	tasksUndone := map[string][]string{}
-	dayHabits := []Habit{}
+	tasksUndone := map[string][]Habit{}
 	habits := loadHabitsConfig()
-	for _, habit := range habits {
-		if habit.every > 0 {
-			dayHabits = append(dayHabits, habit)
-		}
-	}
 
 	from := to.AddDate(0, 0, -daysBack)
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		dh := dayHabits
+		dh := habits
 		for _, habit := range habits {
 			if _, ok := entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}]; ok {
 				// finds and removes found keys from copy of habits array so returned in order
@@ -356,8 +356,8 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
 				}
 			}
 		}
-		for _, dayHabit := range dayHabits {
-			tasksUndone[dt.Format(ISO)] = append(tasksUndone[dt.Format(ISO)], dayHabit.name)
+		for _, dhHabit := range dh {
+			tasksUndone[dt.Format(ISO)] = append(tasksUndone[dt.Format(ISO)], dhHabit)
 		}
 	}
 	return tasksUndone
