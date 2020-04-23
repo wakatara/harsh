@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -12,12 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 )
 
 const (
-	layoutISO = "2006-01-02"
+	ISO = "2006-01-02"
 )
 
 type Habit struct {
@@ -49,10 +47,8 @@ func main() {
 				Aliases: []string{"a"},
 				Usage:   "Asks and logs your undone habits",
 				Action: func(c *cli.Context) error {
-					habits := loadHabitsConfig()
-					for _, habit := range habits {
-						askHabit(habit.name)
-					}
+
+					askHabits()
 
 					return nil
 				},
@@ -144,7 +140,7 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 	var graphDay string
 	var consistency []string
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
-		if outcome, ok := entries[DailyHabit{day: d.Format(layoutISO), habit: habit.name}]; ok {
+		if outcome, ok := entries[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
 			switch {
 			case outcome == "y":
 				graphDay = "━"
@@ -179,7 +175,7 @@ func satisfied(d time.Time, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDate(0, 0, -habit.every)
 	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
-		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "y" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "y" {
 			return true
 		}
 	}
@@ -194,7 +190,7 @@ func skipified(d time.Time, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDate(0, 0, -habit.every)
 	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
-		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "s" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "s" {
 			return true
 		}
 	}
@@ -210,10 +206,10 @@ func warning(d time.Time, habit *Habit, entries Entries) bool {
 	to := d
 	from := d.AddDate(0, 0, -habit.every+warningDays)
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "y" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "y" {
 			return false
 		}
-		if entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}] == "s" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "s" {
 			return false
 		}
 	}
@@ -228,7 +224,7 @@ func score(d time.Time, habits []Habit, entries Entries) float64 {
 	for _, habit := range habits {
 		if habit.every > 0 {
 			scorableHabits++
-			if outcome, ok := entries[DailyHabit{day: d.Format(layoutISO), habit: habit.name}]; ok {
+			if outcome, ok := entries[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
 
 				switch {
 				case outcome == "y":
@@ -299,30 +295,39 @@ func loadLog() *Entries {
 
 // Ask function prompts
 
-func askHabit(habit string) {
-	validate := func(input string) error {
-		err := !(strings.ContainsAny(input, "yns") || input == "")
-		if err != false {
-			return errors.New("Must be [y/n/s/⏎]")
+func askHabits() {
+	habits := loadHabitsConfig()
+	entries := loadLog()
+	to := time.Now().AddDate(0, 0, -1)
+	from := to.AddDate(0, 0, -61)
+
+	// dayHabits := getTodos(to, 8, *entries)
+
+	// for day, habits := range dayHabits {
+
+	// }
+	for _, habit := range habits {
+		for {
+			fmt.Printf("%25v", habit.name+"  ")
+			fmt.Printf(buildGraph(&habit, *entries, from, to))
+			fmt.Printf(" [y/n/s/⏎] ")
+			reader := bufio.NewReader(os.Stdin)
+			habitResult, err := reader.ReadString('\n')
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			habitResult = strings.TrimSuffix(habitResult, "\n")
+			if strings.ContainsAny(habitResult, "yns") {
+				writeHabitLog(habit.name, habitResult)
+				break
+			}
+			if habitResult == "" {
+				break
+			}
+			fmt.Printf("%25v", "Must be")
+			fmt.Printf(" [y/n/s/⏎] " + "\n")
 		}
-		return nil
 	}
-
-	prompt := promptui.Prompt{
-		Label:    habit + " [y/n/s/⏎]",
-		Validate: validate,
-	}
-
-	result, err := prompt.Run()
-
-	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return
-	}
-	if result != "" {
-		writeHabitLog(habit, result)
-	}
-
 }
 
 func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
@@ -340,7 +345,7 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		dh := dayHabits
 		for _, habit := range habits {
-			if _, ok := entries[DailyHabit{day: dt.Format(layoutISO), habit: habit.name}]; ok {
+			if _, ok := entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}]; ok {
 				// finds and removes found keys from copy of habits array so returned in order
 				for i, h := range dh {
 					if h.name == habit.name {
@@ -351,7 +356,7 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]string {
 			}
 		}
 		for _, dayHabit := range dayHabits {
-			tasksUndone[dt.Format(layoutISO)] = append(tasksUndone[dt.Format(layoutISO)], dayHabit.name)
+			tasksUndone[dt.Format(ISO)] = append(tasksUndone[dt.Format(ISO)], dayHabit.name)
 		}
 	}
 	return tasksUndone
@@ -370,5 +375,5 @@ func writeHabitLog(habit string, result string) {
 	if err := f.Close(); err != nil {
 		log.Fatal(err)
 	}
-	// date, _ := time.Parse(layoutISO, rightNow) // for when parsing passed dates
+	// date, _ := time.Parse(ISO, rightNow) // for when parsing passed dates
 }
