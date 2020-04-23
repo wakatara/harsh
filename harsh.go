@@ -56,7 +56,7 @@ func main() {
 			},
 			{
 				Name:    "todo",
-				Aliases: []string{"a"},
+				Aliases: []string{"t"},
 				Usage:   "Shows undone habits for today.",
 				Action: func(c *cli.Context) error {
 					// habits := loadHabitsConfig()
