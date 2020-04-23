@@ -312,6 +312,8 @@ func askHabits() {
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		if dayhabit, ok := dayHabits[dt.Format(ISO)]; ok {
 			fmt.Println(dt.Format(ISO) + ":")
+			// Go through habit file order habits,
+			// Check if in returned todos for day and prompt
 			for _, habit := range habits {
 				for _, dh := range dayhabit {
 					if habit.name == dh.name {
@@ -319,19 +321,23 @@ func askHabits() {
 							fmt.Printf("%25v", habit.name+"  ")
 							fmt.Printf(buildGraph(&habit, *entries, from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
+
 							reader := bufio.NewReader(os.Stdin)
 							habitResult, err := reader.ReadString('\n')
 							if err != nil {
 								fmt.Fprintln(os.Stderr, err)
 							}
+
 							habitResult = strings.TrimSuffix(habitResult, "\n")
 							if strings.ContainsAny(habitResult, "yns") {
-								writeHabitLog(habit.name, habitResult)
+								writeHabitLog(dt, habit.name, habitResult)
 								break
 							}
+
 							if habitResult == "" {
 								break
 							}
+
 							color.FgRed.Printf("%87v", "Sorry! You must choose from")
 							color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 						}
@@ -369,18 +375,16 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	return tasksUndone
 }
 
-func writeHabitLog(habit string, result string) {
-	date := (time.Now()).Format("2006-01-02")
+func writeHabitLog(d time.Time, habit string, result string) {
 	f, err := os.OpenFile("log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := f.Write([]byte(date + " : " + habit + " : " + result + "\n")); err != nil {
+	if _, err := f.Write([]byte(d.Format(ISO) + " : " + habit + " : " + result + "\n")); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		log.Fatal(err)
 	}
 	if err := f.Close(); err != nil {
 		log.Fatal(err)
 	}
-	// date, _ := time.Parse(ISO, rightNow) // for when parsing passed dates
 }
