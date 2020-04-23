@@ -299,6 +299,7 @@ func loadLog() *Entries {
 // Ask function prompts
 
 func askHabits() {
+	habits := loadHabitsConfig()
 	entries := loadLog()
 	// habits := loadHabitsConfig()
 	to := time.Now()
@@ -308,32 +309,37 @@ func askHabits() {
 	// then iterates through unresolved todos
 	dayHabits := getTodos(to, 8, *entries)
 
-	for day, habits := range dayHabits {
+	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
+		if dayhabit, ok := dayHabits[dt.Format(ISO)]; ok {
+			fmt.Println(dt.Format(ISO) + ":")
+			for _, habit := range habits {
+				for _, dh := range dayhabit {
+					if habit.name == dh.name {
+						for {
+							fmt.Printf("%25v", habit.name+"  ")
+							fmt.Printf(buildGraph(&habit, *entries, from, to))
+							fmt.Printf(" [y/n/s/⏎] ")
+							reader := bufio.NewReader(os.Stdin)
+							habitResult, err := reader.ReadString('\n')
+							if err != nil {
+								fmt.Fprintln(os.Stderr, err)
+							}
+							habitResult = strings.TrimSuffix(habitResult, "\n")
+							if strings.ContainsAny(habitResult, "yns") {
+								writeHabitLog(habit.name, habitResult)
+								break
+							}
+							if habitResult == "" {
+								break
+							}
+							color.FgRed.Printf("%87v", "Sorry! You must choose from")
+							color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
+						}
+					}
+				}
 
-		fmt.Println(day + ":")
-		for _, habit := range habits {
-			for {
-				fmt.Printf("%25v", habit.name+"  ")
-				fmt.Printf(buildGraph(&habit, *entries, from, to))
-				fmt.Printf(" [y/n/s/⏎] ")
-				reader := bufio.NewReader(os.Stdin)
-				habitResult, err := reader.ReadString('\n')
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
-				}
-				habitResult = strings.TrimSuffix(habitResult, "\n")
-				if strings.ContainsAny(habitResult, "yns") {
-					writeHabitLog(habit.name, habitResult)
-					break
-				}
-				if habitResult == "" {
-					break
-				}
-				color.FgRed.Printf("%87v", "Sorry! You must choose from")
-				color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 			}
 		}
-
 	}
 }
 
