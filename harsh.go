@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 )
 
@@ -296,8 +297,8 @@ func loadLog() *Entries {
 // Ask function prompts
 
 func askHabits() {
-	habits := loadHabitsConfig()
 	entries := loadLog()
+	habits := loadHabitsConfig()
 	to := time.Now().AddDate(0, 0, -1)
 	from := to.AddDate(0, 0, -61)
 
@@ -324,8 +325,8 @@ func askHabits() {
 			if habitResult == "" {
 				break
 			}
-			fmt.Printf("%25v", "Must be")
-			fmt.Printf(" [y/n/s/⏎] " + "\n")
+			color.FgRed.Printf("%87v", "Sorry! You must choose from")
+			color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 		}
 	}
 }
