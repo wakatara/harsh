@@ -301,8 +301,8 @@ func loadLog() *Entries {
 func askHabits() {
 	entries := loadLog()
 	// habits := loadHabitsConfig()
-	to := time.Now().AddDate(0, 0, -1)
-	from := to.AddDate(0, 0, -61)
+	to := time.Now()
+	from := to.AddDate(0, 0, -60)
 
 	// Goes back 8 days in case of unresolved entries
 	// then iterates through unresolved todos
@@ -341,23 +341,23 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	// returns a map of date => habitName
 	tasksUndone := map[string][]Habit{}
 	habits := loadHabitsConfig()
+	dayHabits := map[Habit]bool{}
 
 	from := to.AddDate(0, 0, -daysBack)
+
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		dh := habits
+		for _, habit := range habits {
+			dayHabits[habit] = true
+		}
+
 		for _, habit := range habits {
 			if _, ok := entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}]; ok {
-				// finds and removes found keys from copy of habits array so returned in order
-				for i, h := range dh {
-					if h.name == habit.name {
-						dh = append(dh[:i], dh[i+1:]...)
-						break
-					}
-				}
+				delete(dayHabits, habit)
 			}
 		}
-		for _, dhHabit := range dh {
-			tasksUndone[dt.Format(ISO)] = append(tasksUndone[dt.Format(ISO)], dhHabit)
+
+		for habit, _ := range dayHabits {
+			tasksUndone[dt.Format(ISO)] = append(tasksUndone[dt.Format(ISO)], habit)
 		}
 	}
 	return tasksUndone
