@@ -119,7 +119,6 @@ func main() {
 }
 
 // Consistency graph, sparkline, and scoring functions
-
 func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) []string {
 
 	sparkline := []string{}
@@ -250,7 +249,6 @@ func score(d time.Time, habits []Habit, entries Entries) float64 {
 }
 
 // Loading of habit and log files
-
 func loadHabitsConfig() []Habit {
 
 	// file, _ := os.Open("/Users/daryl/.config/harsh/habits")
@@ -298,11 +296,9 @@ func loadLog() *Entries {
 }
 
 // Ask function prompts
-
 func askHabits() {
 	habits := loadHabitsConfig()
 	entries := loadLog()
-	// habits := loadHabitsConfig()
 	to := time.Now()
 	from := to.AddDate(0, 0, -60)
 
@@ -313,7 +309,7 @@ func askHabits() {
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		if dayhabit, ok := dayHabits[dt.Format(ISO)]; ok {
 			fmt.Println(dt.Format(ISO) + ":")
-			// Go through habit file order habits,
+			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
 			for _, habit := range habits {
 				for _, dh := range dayhabit {
@@ -351,7 +347,6 @@ func askHabits() {
 }
 
 func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
-	// returns a map of date => habitName
 	tasksUndone := map[string][]Habit{}
 	habits := loadHabitsConfig()
 	dayHabits := map[Habit]bool{}
@@ -359,6 +354,8 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	from := to.AddDate(0, 0, -daysBack)
 
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
+		// build map of habit array to make deletions
+		// cleaner+more efficient than linear search array deletes
 		for _, habit := range habits {
 			dayHabits[habit] = true
 		}
