@@ -57,12 +57,13 @@ Open habits in your text editor of choice, such as nano, vim, VS Code, Sublime, 
 You'll see an example file like this:
 ```
     # The numbers specifies how often you want to do a habit:
-    # 1 means daily, 7 means weekly, 0 means you're just tracking the habit. Some examples:
+    # 1 means daily, 7 means weekly, 0 means you're just tracking the habit. 
+    # Some examples:
 
     Meditated :1
     Cleaned : 7
-    Had headache: 0
     Used harsh: 1
+    Ate in restaurant: 0
 ```
 
 The trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail long-term. 
@@ -85,13 +86,13 @@ Here are some more ideas of what to track:
 - 2 coffees only
 - thanked someone
 
-Then, simply run `h` regularly, specify whether or not you did the habit (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
+Then, simply run `h` regularly, specify whether or not you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
 
 The consistency graph shows your last 100 days (though bi plan to make a flag at some point.)
 
 ```
     $ h
-    2018-09-15:
+    2020-01-05:
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
@@ -115,16 +116,30 @@ The consistency graph shows your last 100 days (though bi plan to make a flag at
 
                                              ... some habits omitted ...
 
-    Yesterday's score: 73.3%
+    Yesterday's score: 88.3%
 ```
 
-The score specifies how many of the due habits you did that day and removes any you may have skipped from the calculation. The sparkline at the top give a graphical representation of the score. The thick lines in the graph say that you did the habit, the thin lines say that that it was okay that you didn't to it. A thick dot implies you had to skip or were unable to exercise a habit for whatever good reason, and a thin dot indicates the period for which a skip would normally be in effect (in the example above, we are suggesting you could not clean your apartment because you were on a business trip when you'd normally clean it and can thus excuse yourself.).
+The sparkline at the top give a graphical representation of each day's score. The thick lines in the graph say when you did a habit, the thin lines say that you were within your threshold for doing it every x days. A thick dot implies you had to skip or were unable to exercise a habit for whatever reason, and a thin dot indicates the period for which a skip would normally be in effect (eg you could not clean your apartment because you were on a business trip).
+
+The score specifies how many of the due habits you did that day of total possible and removes any you may have skipped from the calculation. 
+
+### Done
+
+A done habit gives you a nice bright `━` on the consistency graph line. It's done.
+
+Additionally, the app checks in future days if you are still within the "everyx days" period of performing the habit by drawing a dimmer `─` after the done marker to let you know you've satisfied the requirement for that habit.
+
+### Skips
+
+Sometimes, it's impossible to exercise a habit cause life happens. If cleaning the house is a habit you want to exercise, but you happen to be away on a business trip, that is an impossibility. And sometimes, you decide to skip and push the habit to the next period (or a simple day or so). Skips being selected (s in the prompt) allows this to happen. A skip is denoted by a bright `•`.
+
+Much like satisfied habits where you've performed them once in the period, "skipified" habits let you know you're still withing the grace period of the skip with a lighter dot `·`. 
 
 ### Warnings
 
-harsh also has a warnings feature to help flag to you when you're in danger of breaking your consistency graph. Harsh will give you a warning by turning the " " in your upcoming habits into a "!" symbol. 
+harsh also has a warnings feature to help flag to you when you're in danger of breaking your consistency graph. Harsh will give you a warning by showing a "!" symbol in your upcoming habits.
 
-For habits you're trying to observe of less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of 1 + days/7 rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
+For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
 
 
 Enter `h help` if you're lost:
