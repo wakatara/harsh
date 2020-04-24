@@ -69,31 +69,20 @@ The trick is figuring out what habits you want to track building or breaking. To
 
 If you're getting started, try 5-10 to start missing short term and long term and see how you go. Tracking your habits is strangely a habit you *also* need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones.
 
-
-
-
 Here are some more ideas of what to track:
 
-- got up at a certain time
-- used a spaced repetition software like Anki
-- took a multivitamin
-- cleared my email inbox
-- answered to all texts
-- visited and read all Slack workspaces
+- Went to bed on time
+- Got X hours of sleep
+- Inbox zeroed
 - practiced a language
-- self reflection/used a diary
-- autogenic training
-- published something on my blog/homepage
+- journalled
+- blogged
+- studied
+- socialized
+- tracked finances
 - worked on a project
-- did the dishes
-- tidied the apartment
-- closed all browser tabs
-- tracked caloric intake
-- happy
-- flow
-- relaxed
-- coffee intake
-- left my comfort zone
+- cleaned house
+- 2 coffees only
 - thanked someone
 
 Then, simply run `h` regularly, specify whether or not you did the habit (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
@@ -150,8 +139,6 @@ Enter `h help` if you're lost:
     
     SUBCOMMANDS:
         ask      Ask for status of all habits for a day
-        edit     Edit habit log file
-        edith    Edit list of current habits
         help     Prints this message or the help of the given subcommand(s)
         log      Print habit log
         todo     Print unresolved tasks for today
@@ -161,13 +148,9 @@ Enter `h help` if you're lost:
 *harsh* is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
 
 
-TODO: Write usage instructions here
-
-## Development
-
-TODO: Write development instructions here
-
 ## Contributing
+
+Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 
 1. Fork it (<https://github.com/wakatara/harsh/fork>)
 2. Create your feature branch (`git checkout -b my-new-feature`)
@@ -177,4 +160,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [Daryl Manning](https://github.com/wakatara) - creator and maintainer
+- [Daryl Manning](https://github.com/wakatara) - creator, maintainer, and evil supervillain
