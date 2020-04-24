@@ -96,8 +96,7 @@ func main() {
 					for _, habit := range habits {
 						consistency[habit.name] = append(consistency[habit.name], buildGraph(&habit, *entries, from, to))
 						fmt.Printf("%25v", habit.name+"  ")
-						fmt.Printf(strings.Join(consistency[habit.name], ""))
-						fmt.Printf("│" + "\n")
+						fmt.Printf(strings.Join(consistency[habit.name], "\n"))
 					}
 
 					scoring := fmt.Sprintf("%.1f", score(time.Now().AddDate(0, 0, -1), habits, *entries))
