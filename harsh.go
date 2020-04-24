@@ -159,7 +159,7 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 				graphDay = " "
 			}
 		} else {
-			// warning sigils max out at starting 2 weeks
+			// warning sigils max out at 2 weeks (~90 day in formula)
 			if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
 				graphDay = "!"
 			} else {
