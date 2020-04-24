@@ -2,17 +2,15 @@
 
 ## Usage
 
-Harsh is a minimalist habit tracking command line tool for tracking and examining your habits. 
+harsh is habit tracking for geeks. A minimalist, command line tool for tracking and examining your habits.
 
-It's inspired by and a GoLang riff on blinary's habitctl. It's designed to have simple, contained (eg. one year) habit tracking files that are human grokable and easily edited in a text editor. It's much simpler, more understandable, and more portable than commercial application and much easier to manage than emacs native org-mode habit tracking. It incorporates a few features I wrote in habitctl that were not merged such as skips and warns and a few other goodies.
+Designed for simplicity, visibility, and longevity, it uses self-contained tracking files that are human-grokable and editable in your text editor of choice. It's much simpler, more understandable, and portable than commercial or mobile applications, and less complex than emacs habit tracking. While quantitative individual movement tracking is exhaustive, the important habits get lost in the deluge so this provides deliberated, explicit habits to track. It's a riff on blinary's habitctl (rop-off). It's written in GoLang and incorporates features that were never merged into habitctl such as skips, warns, bug fixes, and some other goodies. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. If you're interested int he whys, there a [launch blog post here on my motivations writing it](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
-Succintly: it's quick and gets out of your way. 
-
-I personally have it in a `tmux` tab that track against as I tick items off.
+Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
 
 ## Installation
 
-harsh is coded in [GoLang](https://golang.org). It is avaiable on Linux, OSX, and Windows.
+harsh is coded in [GoLang](https://golang.org). It's available on Linux, OSX, and Windows via Go's [goreleaser](https://github.com/goreleaser/goreleaser), as a specific goal was increasing take up and adoption of the CLI-based approach.
 
 On OSX
 
@@ -26,37 +24,53 @@ On linux
 apt install harsh
 ```
 
-If you want to compile it yourself, you can: 
+If you want to compile it yourself, you can grab the source code from this repo and
 
 ```
-go get 
+go install harsh
 ```
 
-I symlink `/usr/local/bin` to the executable so commands shorten to `h log` or similar. Makes it vastly easier to track for some reason.
+I alias (or you can symlink) the `/usr/local/bin/harsh` executable to `h` and shorten commands to `h log`or similar. For me, strangely increases my use. YMMV.
 
 ## Usage
 
 When you run ` harsh` for the first time, it will set up the required files:
 
+```
     $ h
-    Welcome to  harsh!
+    Welcome to harsh!
     
-    Created /home/seb/. harsh/habits. This file will list your currently tracked habits.
-    Created /home/seb/. harsh/log. This file will contain your habit log.
+    Created /Users/daryl/.config/harsh/habits  This file lists your tracked habits.
+    Created /Users/daryl/.config/harsh/log     This file contains your habit log.
     
     You don't have any habits set up!
-    Run `harsh edith` to modify the habit list using your default $EDITOR.
-    Then, run ` harsh`! Happy tracking!
+    Open the habits file and modify the habit list using a text editor.
+    Then run `harsh ask` to start tracking
+    'harsh todo` will show you what you have ledt today.
+    `harsh log` will show you a consistency graph over your efforts
+    (trust me, it gets way cooler looking over time)
+    Happy tracking! I genuinely hope this helps you get better.
+```
 
-Run `h edith` and change the content of the habits file, for example like this:
+Open habits in your text editor of choice, such as nano, vim, VS Code, Sublime, or emacs. 
 
+You'll see an example file like this:
+```
     # The numbers specifies how often you want to do a habit:
     # 1 means daily, 7 means weekly, 0 means you're just tracking the habit. Some examples:
 
-    Meditated :1 
-    Cleaned the apartment: 7
+    Meditated :1
+    Cleaned : 7
     Had headache: 0
     Used harsh: 1
+```
+
+The trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail long-term. 
+
+If you're getting started, try 5-10 to start missing short term and long term and see how you go. Tracking your habits is strangely a habit you *also* need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones.
+
+
+
 
 Here are some more ideas of what to track:
 
