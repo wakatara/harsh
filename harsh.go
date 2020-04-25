@@ -31,6 +31,7 @@ type DailyHabit struct {
 	habit string
 }
 
+// maps {ISO date + habit}: outcome
 type Entries map[DailyHabit]string
 
 func main() {
