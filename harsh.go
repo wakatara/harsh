@@ -19,10 +19,27 @@ const (
 	ISO = "2006-01-02"
 )
 
+// Habit is where I started my review.  General  comment on naming right: Habit
+// vs. DailyHabit; whats relation?  Is daily habit a tracking of Habit?
+// Structs are not objects. I find the naming a bit confusing.  I then
+// immediate tried to find where and how these are used.
 type Habit struct {
 	name  string
 	every int
 }
+
+type Outcome string
+
+const (
+	// Success marks a completed habit based on your goals
+	Success Outcome = "y"
+
+	// Skipped means you didn't do it.  you may have had a good reason.  either way: it wasn't done
+	Skipped Outcome = "s"
+
+	// Warning is another outcome - this was hidden magic.
+	Warning = "w"
+)
 
 var Habits []Habit
 
@@ -31,8 +48,8 @@ type DailyHabit struct {
 	habit string
 }
 
-// maps {ISO date + habit}: outcome
-type Entries map[DailyHabit]string
+// Entries is overall data model of habits over time.  It maps {ISO date + habit}: outcome
+type Entries map[DailyHabit]Outcome
 
 func main() {
 	app := &cli.App{
@@ -127,11 +144,12 @@ func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) [
 	i := 0
 
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
-		score := score(d, habits, entries)
-		if score == 100 {
+		// You are shadowing the function score wich is confusing and can result in problems
+		entryScore := score(d, habits, entries)
+		if entryScore == 100 {
 			i = 8
 		} else {
-			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
+			i = int(math.Ceil(entryScore / float64(100/(len(sparks)-1))))
 		}
 		sparkline = append(sparkline, sparks[i])
 	}
@@ -145,9 +163,9 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
 		if outcome, ok := entries[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
 			switch {
-			case outcome == "y":
+			case outcome == Success:
 				graphDay = "━"
-			case outcome == "s":
+			case outcome == Skipped:
 				graphDay = "•"
 			// look at cases of n being entered but
 			// within bounds of the habit every x days
@@ -171,21 +189,34 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 	return strings.Join(consistency, "")
 }
 
+// satisfied does not satisfy me.  why does it have a reference type?
+// This needs the following: a Timestamp to check, a Period to check it for, and a key
+// (habit name).  It askes over the last "period" (every), did we hit our goal?  This
+// looks back in time, but that is an implementation detail.
+// we are asking the question 'did we satisfy Habit as of Day?' (OOP).
+// or is Habit a Satisfier?  Habit.Satisfied(d, entry)
+//
+// we can also change this up: by changing the type to Outcome: can we change the question
+// to this?  entries.Outcome(d, habit)
 func satisfied(d time.Time, habit *Habit, entries Entries) bool {
 	if habit.every <= 1 {
 		return false
 	}
 
 	from := d
+	// needs a period with an implied day unit
 	to := d.AddDate(0, 0, -habit.every)
 	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "y" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == Success {
 			return true
 		}
 	}
 	return false
 }
 
+// skipified same same.
+// This needs the following: a Timestamp to check, a Period to check it for, and a key
+// (habit name)
 func skipified(d time.Time, habit *Habit, entries Entries) bool {
 	if habit.every <= 1 {
 		return false
@@ -194,13 +225,15 @@ func skipified(d time.Time, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDate(0, 0, -habit.every)
 	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "s" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == Skipped {
 			return true
 		}
 	}
 	return false
 }
 
+// Warning is a hidden Outcome; because in most of the other calls it seems to be hidden
+// or treated as a second class or derived output.
 func warning(d time.Time, habit *Habit, entries Entries) bool {
 	if habit.every < 1 {
 		return false
@@ -209,44 +242,71 @@ func warning(d time.Time, habit *Habit, entries Entries) bool {
 	warningDays := int(math.Floor(float64(habit.every/7))) + 1
 	to := d
 	from := d.AddDate(0, 0, -habit.every+warningDays)
+
+	// This is confusing for me.  I'm not really sure what we are trying to accomplish for this.
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "y" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == Success {
 			return false
 		}
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "s" {
+		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == Skipped {
 			return false
 		}
 	}
 	return true
 }
 
+// Score (first pass review)is a first step to figure out the interface.  that
+// it is taking in Habit is a problem
+// (second pass) Now i've gone through the satisfied and skipified functions: i'd pull them
+// into their own Outcome method.  I think habit.Outcome(d, entries) and we can ditch the 'repeated'
+// cases of 1, 0 or 0, 1
+func (e Entries) Score(d time.Time, habit Habit) (success int, skipped int) {
+	if outcome, ok := e[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
+		switch {
+		case outcome == Success:
+			return 1, 0
+		case outcome == Skipped:
+			return 0, 1
+		// look at cases of n being entered but
+		// within bounds of the habit every x days
+		case satisfied(d, &habit, e):
+			return 1, 0
+		case skipified(d, &habit, e):
+			return 0, 1
+		}
+	}
+	return 0, 0
+}
+
+// score is a helper: but its also a major behavour of a habit.
+// What we are doing is scoring a collection of habits on a specific day
+// This, in combination with the variable inside the first If: `scorableHabits`
+// makes me feel that Habit.Score(day, entry), or entries.Score(habit, day) should exist.
+//
+// What we do was is our Scorer.  At this point i think its the entries.
+// (second pass review) Now this becomes either a 'main' level function (like it is now)
+// that takes in interfaces.  The typing for habits is my sticking points on design here
 func score(d time.Time, habits []Habit, entries Entries) float64 {
+
 	scored := 0.0
 	skipped := 0.0
 	scorableHabits := 0.0
 
 	for _, habit := range habits {
 		if habit.every > 0 {
+			// don't have better names, so going with the convention you set: y, s
+			// Also: habit makes no sense for a `Scorer`
+			y, s := entries.Score(d, habit)
 			scorableHabits++
-			if outcome, ok := entries[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
-
-				switch {
-				case outcome == "y":
-					scored++
-				case outcome == "s":
-					skipped++
-				// look at cases of n being entered but
-				// within bounds of the habit every x days
-				case satisfied(d, &habit, entries):
-					scored++
-				case skipified(d, &habit, entries):
-					skipped++
-				}
-			}
+			skipped += s
+			scored += y
 		}
 	}
-	score := (scored / (scorableHabits - skipped)) * 100
-	return score
+	// missed this
+	if scorableHabits == skipped {
+		return -1.0
+	}
+	return (scored / (scorableHabits - skipped)) * 100
 }
 
 // Loading of habit and log files
