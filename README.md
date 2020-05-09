@@ -6,26 +6,29 @@ harsh is habit tracking for geeks. A minimalist, command line tool for tracking 
 
 Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
 
-There are only 3 commands: ask, log, and todo.
+There're 3 commands: ask, log, and todo.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge so this provides deliberated, explicit habits to track. 
 
-It's a riff and homage on blinary's habitctl. It's written in GoLang and adds features such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhausting number of habit trackers, this was what worked for me. If you're interested in why I wrote it, there's [launch blog post on my motivations](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
+It's written in GoLang and adds features such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhausting number of habit trackers, this was what worked for me. If you're interested in why I wrote it, there's [launch blog post on my motivations](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
 My biggest hope that it helps you accomplish what you're trying to do in your life.
 
 
 ## Installation
 
-harsh is coded in [GoLang](https://golang.org). It's available on Linux, OSX, and Windows via Go's [goreleaser](https://github.com/goreleaser/goreleaser), as a specific goal was increasing take up and adoption of a CLI, text-based approach to habit tracking.
+harsh is available on Linux, OSX, and Windows (note: currently untested on Windows), as a specific goal was increasing take up and adoption of a portable, command line, text-based approach.
 
 On OSX
 
 ```
-brew install harsh
+brew install wakatara/harsh/formula
 ```
 
-On linux
+which will also alert you to future updates when you `brew update`.
+
+
+On Linux
 
 ```
 apt install harsh
@@ -37,7 +40,7 @@ If you want to compile it yourself, you can grab the source code from this repo 
 go install harsh
 ```
 
-Personally, I alias `/usr/local/bin/harsh` to `h` and shorten commands to `h log`or similar. For me, it strangely increases my use of the app. YMMV.
+Personally, I alias the `harsh` executable to `h` and shorten commands to `h log` etc. Strangely, it increases my use of the app and makes tracking easier. YMMV.
 
 ## Usage
 
@@ -59,21 +62,25 @@ When you run `harsh` for the first time, it will set up the required files:
     Happy tracking! I genuinely hope this helps you get better.
 ```
 
+On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under 
+
+
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
 
 You'll see an example file like this:
 ```
-    # The numbers specifies how often you want to do a habit:
-    # 1 means daily, 7 means weekly, 0 means you're just tracking the habit. 
-    # Some examples:
+    # The numbers specifies how frequently you want to do a habit:
+    # 1 means daily, 7 means weekly, 0 means you're just tracking the habit.
+    # 0 frequency tracking habits will not flag warnings or count towards scoring. 
+    # Examples:
 
-    Meditated :1
-    Cleaned : 7
+    Gym: 3
+    Cleaned: 7
     Used harsh: 1
-    Ate in restaurant: 0
+    Called Mom: 7
 ```
 
-The trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail long-term.
+The trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
 
 If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is *strangely* also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones.
 
@@ -154,18 +161,21 @@ For habits of every less than 7 days period, you get a warning sigil on the day 
 Enter `h help` if you're lost:
 
     $ h help
-    USAGE:
-        harsh [SUBCOMMAND]
-    
-    FLAGS:
-        -h, --help       Prints help information
-        -V, --version    Prints version information
-    
-    SUBCOMMANDS:
-        ask      Ask for status of all habits for a day
-        help     Prints this message or the help of the given subcommand(s)
-        log      Print habit log
-        todo     Print unresolved tasks for today
+        NAME:
+        harsh - A minimalist habit tracking CLI for geeks
+
+        USAGE:
+        harsh [global options] command [command options] [arguments...]
+
+        COMMANDS:
+        ask, a   Asks about and logs your undone habits
+        log, l   Shows graphs of habits log
+        todo, t  Shows undone habits for today.
+        help, h  Shows a list of commands or help for one command
+
+        GLOBAL OPTIONS:
+        --version value  Version of the Harsh app
+        --help, -h       show help
 
 ## License: MIT License
 
@@ -190,4 +200,4 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 
 * [Bjorn A](https://github.com/gaqzi) - for initial Go code review and improvements pre-release
 * [James RC](https://github.com/yarbelk) - for initial Go code review and improvements pre-release
-* [Blinary](https://github.com/blinry) - for writing habitctl which this shamelessly rips off.
+* [Blinary](https://github.com/blinry) - for writing habitctl which this is an homage to and riff off of.
