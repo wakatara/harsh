@@ -5,6 +5,9 @@ harsh
 log
 habits
 
+# Goreleaser yaml
+.goreleaser.yml
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe
