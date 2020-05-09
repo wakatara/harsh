@@ -47,7 +47,7 @@ func main() {
 			{
 				Name:    "ask",
 				Aliases: []string{"a"},
-				Usage:   "Asks and logs your undone habits",
+				Usage:   "Asks about and logs your undone habits",
 				Action: func(c *cli.Context) error {
 
 					askHabits()
@@ -60,16 +60,18 @@ func main() {
 				Aliases: []string{"t"},
 				Usage:   "Shows undone habits for today.",
 				Action: func(c *cli.Context) error {
-					// habits := loadHabitsConfig()
+					habits := loadHabitsConfig()
 					entries := loadLog()
 					to := time.Now()
 					undone := getTodos(to, 0, *entries)
 
-					for date, habits := range undone {
+					for date, todos := range undone {
 						fmt.Println(date + ":")
 						for _, habit := range habits {
-							if habit.every > 0 {
-								fmt.Println("     " + habit.name)
+							for _, todo := range todos {
+								if habit.name == todo.name && todo.every > 0 {
+									fmt.Println("     " + todo.name)
+								}
 							}
 						}
 					}
@@ -80,7 +82,7 @@ func main() {
 			{
 				Name:    "log",
 				Aliases: []string{"l"},
-				Usage:   "Shows graphs of habits",
+				Usage:   "Shows graphs of habits log",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					entries := loadLog()
