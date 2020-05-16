@@ -236,7 +236,7 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 				graphDay = "━"
 			case outcome == "s":
 				graphDay = "•"
-			// look at cases of n being entered but
+			// look at cases of "n" being entered but
 			// within bounds of the habit every x days
 			case satisfied(d, habit, entries):
 				graphDay = "─"
@@ -246,7 +246,7 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 				graphDay = " "
 			}
 		} else {
-			// warning sigils max out at 2 weeks (~90 day in formula)
+			// warning sigils max out at 2 weeks (~90 day habit in formula)
 			if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
 				graphDay = "!"
 			} else {
