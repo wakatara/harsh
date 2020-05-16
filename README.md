@@ -50,15 +50,15 @@ When you run `harsh` for the first time, it will set up the required files:
     $ h
     Welcome to harsh!
     
-    Created /Users/daryl/.config/harsh/habits  This file lists your tracked habits.
-    Created /Users/daryl/.config/harsh/log     This file contains your habit log.
+    Created /Users/daryl/.config/harsh/habits  This file lists your habits.
+    Created /Users/daryl/.config/harsh/log     This file is your habit log.
     
-    You don't have any habits set up!
-    Open the habits file and modify the habit list using a text editor.
+    What? No habits yet?
+    Open the habits file and edit the habit list using a text editor.
     Then run `harsh ask` to start tracking
-    'harsh todo` will show you what you have left to do today.
-    `harsh log` will show you a nice consistency graph of your efforts
-    (trust me, it gets way cooler looking over time)
+    'harsh todo` will show you undone habits for today.
+    `harsh log` will show you a consistency graph of your efforts
+    (trust me, it looks way cooler looking over time)
     Happy tracking! I genuinely hope this helps you get better.
 ```
 

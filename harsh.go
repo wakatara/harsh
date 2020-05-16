@@ -16,30 +16,37 @@ import (
 )
 
 const (
-	ISO = "2006-01-02"
+	// DateFormat is an ISO8601 date
+	DateFormat = "2006-01-02"
 )
 
+type Day int
+
 type Habit struct {
-	name  string
-	every int
+	Name      string
+	Frequency Day
 }
 
 var Habits []Habit
 
+// Outcome is explicitly recorded outcome of habit
+// on a day and restricted to y,s, or n
+type Outcome string
+
 type DailyHabit struct {
-	day   string
-	habit string
+	Day   string
+	Habit string
 }
 
-// maps {ISO date + habit}: outcome
-type Entries map[DailyHabit]string
+// Entries maps {ISO date + habit}: Outcome and log format
+type Entries map[DailyHabit]Outcome
 
 func main() {
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "version, v",
-				Value: "0.5.5",
+				Value: "0.7.0",
 				Usage: "Version of the Harsh app",
 			},
 		},
@@ -47,7 +54,7 @@ func main() {
 			{
 				Name:    "ask",
 				Aliases: []string{"a"},
-				Usage:   "Asks about and logs your undone habits",
+				Usage:   "Asks and records your undone habits",
 				Action: func(c *cli.Context) error {
 
 					askHabits()
@@ -69,8 +76,8 @@ func main() {
 						fmt.Println(date + ":")
 						for _, habit := range habits {
 							for _, todo := range todos {
-								if habit.name == todo.name && todo.every > 0 {
-									fmt.Println("     " + todo.name)
+								if habit.Name == todo.Name && todo.Frequency > 0 {
+									fmt.Println("     " + todo.Name)
 								}
 							}
 						}
@@ -82,7 +89,7 @@ func main() {
 			{
 				Name:    "log",
 				Aliases: []string{"l"},
-				Usage:   "Shows graphs of habits log",
+				Usage:   "Shows graph of habits",
 				Action: func(c *cli.Context) error {
 					habits := loadHabitsConfig()
 					entries := loadLog()
@@ -97,9 +104,9 @@ func main() {
 					fmt.Printf("\n")
 
 					for _, habit := range habits {
-						consistency[habit.name] = append(consistency[habit.name], buildGraph(&habit, *entries, from, to))
-						fmt.Printf("%25v", habit.name+"  ")
-						fmt.Printf(strings.Join(consistency[habit.name], ""))
+						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, from, to))
+						fmt.Printf("%25v", habit.Name+"  ")
+						fmt.Printf(strings.Join(consistency[habit.Name], ""))
 						fmt.Printf("\n")
 					}
 
@@ -121,183 +128,6 @@ func main() {
 	}
 }
 
-// Consistency graph, sparkline, and scoring functions
-func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) []string {
-
-	sparkline := []string{}
-	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
-	i := 0
-
-	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
-		score := score(d, habits, entries)
-		if score == 100 {
-			i = 8
-		} else {
-			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
-		}
-		sparkline = append(sparkline, sparks[i])
-	}
-
-	return sparkline
-}
-
-func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) string {
-	var graphDay string
-	var consistency []string
-	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
-		if outcome, ok := entries[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
-			switch {
-			case outcome == "y":
-				graphDay = "━"
-			case outcome == "s":
-				graphDay = "•"
-			// look at cases of n being entered but
-			// within bounds of the habit every x days
-			case satisfied(d, habit, entries):
-				graphDay = "─"
-			case skipified(d, habit, entries):
-				graphDay = "·"
-			case outcome == "n":
-				graphDay = " "
-			}
-		} else {
-			// warning sigils max out at 2 weeks (~90 day in formula)
-			if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
-				graphDay = "!"
-			} else {
-				graphDay = " "
-			}
-		}
-		consistency = append(consistency, graphDay)
-	}
-	return strings.Join(consistency, "")
-}
-
-func satisfied(d time.Time, habit *Habit, entries Entries) bool {
-	if habit.every <= 1 {
-		return false
-	}
-
-	from := d
-	to := d.AddDate(0, 0, -habit.every)
-	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "y" {
-			return true
-		}
-	}
-	return false
-}
-
-func skipified(d time.Time, habit *Habit, entries Entries) bool {
-	if habit.every <= 1 {
-		return false
-	}
-
-	from := d
-	to := d.AddDate(0, 0, -habit.every)
-	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "s" {
-			return true
-		}
-	}
-	return false
-}
-
-func warning(d time.Time, habit *Habit, entries Entries) bool {
-	if habit.every < 1 {
-		return false
-	}
-
-	warningDays := int(math.Floor(float64(habit.every/7))) + 1
-	to := d
-	from := d.AddDate(0, 0, -habit.every+warningDays)
-	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "y" {
-			return false
-		}
-		if entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}] == "s" {
-			return false
-		}
-	}
-	return true
-}
-
-func score(d time.Time, habits []Habit, entries Entries) float64 {
-	scored := 0.0
-	skipped := 0.0
-	scorableHabits := 0.0
-
-	for _, habit := range habits {
-		if habit.every > 0 {
-			scorableHabits++
-			if outcome, ok := entries[DailyHabit{day: d.Format(ISO), habit: habit.name}]; ok {
-
-				switch {
-				case outcome == "y":
-					scored++
-				case outcome == "s":
-					skipped++
-				// look at cases of n being entered but
-				// within bounds of the habit every x days
-				case satisfied(d, &habit, entries):
-					scored++
-				case skipified(d, &habit, entries):
-					skipped++
-				}
-			}
-		}
-	}
-	score := (scored / (scorableHabits - skipped)) * 100
-	return score
-}
-
-// Loading of habit and log files
-func loadHabitsConfig() []Habit {
-
-	// file, _ := os.Open("/Users/daryl/.config/harsh/habits")
-	file, err := os.Open("habits")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		if scanner.Text() != "" {
-			result := strings.Split(scanner.Text(), ": ")
-			r1, _ := strconv.Atoi(result[1])
-			h := Habit{name: result[0], every: r1}
-			Habits = append(Habits, h)
-		}
-	}
-	return Habits
-}
-
-func loadLog() *Entries {
-	file, err := os.Open("log")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	entries := Entries{}
-	for scanner.Scan() {
-		if scanner.Text() != "" {
-			result := strings.Split(scanner.Text(), " : ")
-			entries[DailyHabit{day: result[0], habit: result[1]}] = result[2]
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	return &entries
-}
-
 // Ask function prompts
 func askHabits() {
 	habits := loadHabitsConfig()
@@ -310,15 +140,15 @@ func askHabits() {
 	dayHabits := getTodos(to, 8, *entries)
 
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		if dayhabit, ok := dayHabits[dt.Format(ISO)]; ok {
-			fmt.Println(dt.Format(ISO) + ":")
+		if dayhabit, ok := dayHabits[dt.Format(DateFormat)]; ok {
+			fmt.Println(dt.Format(DateFormat) + ":")
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
 			for _, habit := range habits {
 				for _, dh := range dayhabit {
-					if habit.name == dh.name {
+					if habit.Name == dh.Name {
 						for {
-							fmt.Printf("%25v", habit.name+"  ")
+							fmt.Printf("%25v", habit.Name+"  ")
 							fmt.Printf(buildGraph(&habit, *entries, from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
@@ -330,7 +160,7 @@ func askHabits() {
 
 							habitResult = strings.TrimSuffix(habitResult, "\n")
 							if strings.ContainsAny(habitResult, "yns") {
-								writeHabitLog(dt, habit.name, habitResult)
+								writeHabitLog(dt, habit.Name, habitResult)
 								break
 							}
 
@@ -364,24 +194,207 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 		}
 
 		for _, habit := range habits {
-			if _, ok := entries[DailyHabit{day: dt.Format(ISO), habit: habit.name}]; ok {
+			if _, ok := entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}]; ok {
 				delete(dayHabits, habit)
 			}
 		}
 
 		for habit, _ := range dayHabits {
-			tasksUndone[dt.Format(ISO)] = append(tasksUndone[dt.Format(ISO)], habit)
+			tasksUndone[dt.Format(DateFormat)] = append(tasksUndone[dt.Format(DateFormat)], habit)
 		}
 	}
 	return tasksUndone
 }
 
+// Consistency graph, sparkline, and scoring functions
+func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) []string {
+
+	sparkline := []string{}
+	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
+	i := 0
+
+	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
+		score := score(d, habits, entries)
+		if score == 100 {
+			i = 8
+		} else {
+			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
+		}
+		sparkline = append(sparkline, sparks[i])
+	}
+
+	return sparkline
+}
+
+func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) string {
+	var graphDay string
+	var consistency []string
+	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
+		if outcome, ok := entries[DailyHabit{Day: d.Format(DateFormat), Habit: habit.Name}]; ok {
+			switch {
+			case outcome == "y":
+				graphDay = "━"
+			case outcome == "s":
+				graphDay = "•"
+			// look at cases of n being entered but
+			// within bounds of the habit every x days
+			case satisfied(d, habit, entries):
+				graphDay = "─"
+			case skipified(d, habit, entries):
+				graphDay = "·"
+			case outcome == "n":
+				graphDay = " "
+			}
+		} else {
+			// warning sigils max out at 2 weeks (~90 day in formula)
+			if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
+				graphDay = "!"
+			} else {
+				graphDay = " "
+			}
+		}
+		consistency = append(consistency, graphDay)
+	}
+	return strings.Join(consistency, "")
+}
+
+func satisfied(d time.Time, habit *Habit, entries Entries) bool {
+	if habit.Frequency <= 1 {
+		return false
+	}
+
+	from := d
+	to := d.AddDate(0, 0, -int(habit.Frequency))
+	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
+		if entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}] == "y" {
+			return true
+		}
+	}
+	return false
+}
+
+func skipified(d time.Time, habit *Habit, entries Entries) bool {
+	if habit.Frequency <= 1 {
+		return false
+	}
+
+	from := d
+	to := d.AddDate(0, 0, -int(habit.Frequency))
+	for dt := from; dt.Before(to) == false; dt = dt.AddDate(0, 0, -1) {
+		if entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}] == "s" {
+			return true
+		}
+	}
+	return false
+}
+
+func warning(d time.Time, habit *Habit, entries Entries) bool {
+	if habit.Frequency < 1 {
+		return false
+	}
+
+	warningDays := int(math.Floor(float64(habit.Frequency/7))) + 1
+	to := d
+	from := d.AddDate(0, 0, -int(habit.Frequency)+warningDays)
+	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
+		if entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}] == "y" {
+			return false
+		}
+		if entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}] == "s" {
+			return false
+		}
+	}
+	return true
+}
+
+func score(d time.Time, habits []Habit, entries Entries) float64 {
+	scored := 0.0
+	skipped := 0.0
+	scorableHabits := 0.0
+
+	for _, habit := range habits {
+		if habit.Frequency > 0 {
+			scorableHabits++
+			if outcome, ok := entries[DailyHabit{Day: d.Format(DateFormat), Habit: habit.Name}]; ok {
+
+				switch {
+				case outcome == "y":
+					scored++
+				case outcome == "s":
+					skipped++
+				// look at cases of n being entered but
+				// within bounds of the habit every x days
+				case satisfied(d, &habit, entries):
+					scored++
+				case skipified(d, &habit, entries):
+					skipped++
+				}
+			}
+		}
+	}
+	score := (scored / (scorableHabits - skipped)) * 100
+	return score
+}
+
+//////////////////////////////////////
+// Loading and writing file functions
+//////////////////////////////////////
+
+// loadHabitsConfig loads habits in config file ordered slice
+func loadHabitsConfig() []Habit {
+
+	// file, _ := os.Open("/Users/daryl/.config/harsh/habits")
+	file, err := os.Open("habits")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			result := strings.Split(scanner.Text(), ": ")
+			r1, _ := strconv.Atoi(result[1])
+			h := Habit{Name: result[0], Frequency: Day(r1)}
+			Habits = append(Habits, h)
+		}
+	}
+	return Habits
+}
+
+// loadLog reads entries from log file
+func loadLog() *Entries {
+	file, err := os.Open("log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	entries := Entries{}
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			result := strings.Split(scanner.Text(), " : ")
+			entries[DailyHabit{Day: result[0], Habit: result[1]}] = Outcome(result[2])
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return &entries
+}
+
+// writeHabitLog writes the log entry for a habit to file
 func writeHabitLog(d time.Time, habit string, result string) {
 	f, err := os.OpenFile("log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := f.Write([]byte(d.Format(ISO) + " : " + habit + " : " + result + "\n")); err != nil {
+	if _, err := f.Write([]byte(d.Format(DateFormat) + " : " + habit + " : " + result + "\n")); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		log.Fatal(err)
 	}
