@@ -175,7 +175,7 @@ func askHabits() {
 								break
 							}
 
-							color.FgRed.Printf("%87v", "Sorry! You must choose from")
+							color.FgRed.Printf("%86v", "Sorry! You must choose from")
 							color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 						}
 					}
@@ -469,7 +469,7 @@ func createExampleHabitsFile(configDir string) {
 		f.WriteString("Tracked Finances: 15\n")
 		f.WriteString("New Skill: 90\n")
 		f.WriteString("Too much coffee: 0\n")
-		f.WriteString("User harsh: 0\n")
+		f.WriteString("Used harsh: 0\n")
 		f.Close()
 	}
 }

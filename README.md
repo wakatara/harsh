@@ -68,16 +68,22 @@ On OSX and Linux based systems, the `habits` and `log` files will be under `~/.c
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
 
 You'll see an example file like this:
-```
-    # The numbers specifies how frequently you want to do a habit:
-    # 1 means daily, 7 means weekly, 0 means you're just tracking the habit.
-    # 0 frequency tracking habits will not flag warnings or count towards scoring. 
+
+``` harsh
+    # This is your habits file.
+    # It tells harsh what to track and how frequently.
+    # 1 means daily, 7 means weekly, 14 every two weeks.
+    # 0 is for tracking a habit. 0 frequency habits will not warn or score.
     # Examples:
 
-    Gym: 3
-    Cleaned: 7
-    Used harsh: 1
+    Gymmed: 2
+    Bed by midnight: 1
+    Cleaned House: 7
     Called Mom: 7
+    Tracked Finances: 15
+    New Skill: 90
+    Too much coffee: 0
+    Used harsh: 0
 ```
 
 The trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
