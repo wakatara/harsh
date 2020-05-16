@@ -397,7 +397,8 @@ func loadLog(configDir string) *Entries {
 
 // writeHabitLog writes the log entry for a habit to file
 func writeHabitLog(d time.Time, habit string, result string) {
-	f, err := os.OpenFile("log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	fileName := filepath.Join(configDir, "/log")
+	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
