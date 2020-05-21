@@ -2,45 +2,72 @@
 
 ## Usage
 
-harsh is habit tracking for geeks. A minimalist, command line tool for tracking and examining your habits.
+harsh is habit tracking for geeks. A minimalist, command line tool for tracking and understanding your habits.
 
 Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
 
-There're 3 commands: ask, log, and todo.
+There're 3 commands: `ask`, `log`, and `todo`.
 
-Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge so this provides deliberated, explicit habits to track. 
+Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge so this provides deliberated, explicit habits to track.
 
-It's written in GoLang and adds features such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhausting number of habit trackers, this was what worked for me. If you're interested in why I wrote it, there's [launch blog post on my motivations](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
+It's written in GoLang and adds features on top of habitctl (on which it's based) such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhausting number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post on my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
-My biggest hope that it helps you accomplish what you're trying to do in your life.
-
+My biggest hope that it helps you get done what you're trying to in your life.
 
 ## Installation
 
-harsh is available on Linux, OSX, and Windows (note: currently untested on Windows), as a specific goal was increasing take up and adoption of a portable, command line, text-based approach.
+harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows remains untested at the moment so any help verifying it works and correcting bugs appreciated.
 
-On OSX
+### Install the pre-compiled binary
 
-```
-brew install wakatara/harsh/formula
-```
-
-which will also alert you to future updates when you `brew update`.
-
-
-On Linux
+*homebrew tap* (only on macOS for now):
 
 ```
-apt install harsh
+$ brew install wakatara/tap/harsh
+```
+(this will also nicely alert you of updates when you `brew update`)
+
+*snapcraft*:
+
+```
+$ sudo snap install harsh
 ```
 
-If you want to compile it yourself, you can grab the source code from this repo and
+*manually*:
+
+Download the pre-compiled binaries from the releases page and copy to the desired location.
+
+
+### Compiling from source
+
+If you just want to build from source cause you like that sort of thing, follow these steps:
+
+*Clone:*
 
 ```
-go install harsh
+$ git clone https://github.com/wakatara/harsh
+$ cd harsh
 ```
 
-Personally, I alias the `harsh` executable to `h` and shorten commands to `h log` etc. Strangely, it increases my use of the app and makes tracking easier. YMMV.
+*Get the dependencies:*
+
+```
+$ go get ./...
+```
+
+*Build:*
+
+```
+$ go build -o harsh .
+```
+
+*Verify it works:*
+
+```
+$ ./harsh --version
+```
+
+You can then move the file to the desired location. 
 
 ## Usage
 
@@ -62,7 +89,7 @@ When you run `harsh` for the first time, it will set up the required files:
     Happy tracking! I genuinely hope this helps you get better.
 ```
 
-On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under 
+On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under `~\AppData\`
 
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
@@ -71,7 +98,7 @@ You'll see an example file like this:
 
 ``` harsh
     # This is your habits file.
-    # It tells harsh what to track and how frequently.
+    # It tells harsh what to track and how frequently in days.
     # 1 means daily, 7 means weekly, 14 every two weeks.
     # 0 is for tracking a habit. 0 frequency habits will not warn or score.
     # Examples:
@@ -108,7 +135,7 @@ Here are some more ideas of what to track:
 - Went for a walk
 - Told SO they're amazing
 
-Then, simply run `h` regularly, specify whether or not you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
+Then, simply run `harsh ask` regularly, specify whether you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
 
 The consistency graph shows your last 100 days.
 
@@ -164,29 +191,37 @@ harsh also has a warnings feature to help flag to you when you're in danger of b
 For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
 
 
-Enter `h help` if you're lost:
+Enter `harsh help` if you're lost:
 
-    $ h help
-        NAME:
-        harsh - A minimalist habit tracking CLI for geeks
 
-        USAGE:
-        harsh [global options] command [command options] [arguments...]
+``` text
+    λ ~/harsh help 
+    NAME:
+    Harsh - habit tracking for geeks
 
-        COMMANDS:
-        ask, a   Asks about and logs your undone habits
-        log, l   Shows graphs of habits log
-        todo, t  Shows undone habits for today.
-        help, h  Shows a list of commands or help for one command
+    USAGE:
+    harsh [global options] command [command options] [arguments...]
 
-        GLOBAL OPTIONS:
-        --version value  Version of the Harsh app
-        --help, -h       show help
+    VERSION:
+    0.8.1
+
+    DESCRIPTION:
+    A simple, minimalist CLI for tracking and understanding habits.
+
+    COMMANDS:
+    ask, a   Asks and records your undone habits
+    log, l   Shows graph of habits
+    todo, t  Shows undone habits for today.
+    help, h  Shows a list of commands or help for one command
+
+    GLOBAL OPTIONS:
+    --help, -h     show help (default: false)
+    --version, -v  print the version (default: false)
+```
 
 ## License: MIT License
 
 *harsh* is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
-
 
 ## Contributing
 
@@ -200,7 +235,7 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 
 ## Contributors
 
-* [Daryl Manning](https://github.com/wakatara) - creator, maintainer, and evil supervillain mastermind
+* [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil supervillain mastermind
 
 ## Thanks
 
