@@ -47,13 +47,10 @@ type Entries map[DailyHabit]Outcome
 
 func main() {
 	app := &cli.App{
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "version, v",
-				Value: "0.8.0",
-				Usage: "Version of the Harsh app",
-			},
-		},
+		Name:        "Harsh",
+		Usage:       "habit tracking for geeks",
+		Description: "A simple, minimalist CLI for tracking and understanding habits.",
+		Version:     "0.8.1",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
