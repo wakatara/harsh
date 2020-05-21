@@ -412,7 +412,7 @@ func writeHabitLog(d time.Time, habit string, result string) {
 // If they do not exist, calls writeNewHabits and writeNewLog
 func findConfigFiles() string {
 	if runtime.GOOS == "windows" {
-		configDir = "APPDATA"
+		configDir = "AppData"
 	} else {
 		configDir = filepath.Join(os.Getenv("HOME"), ".config/harsh")
 	}
