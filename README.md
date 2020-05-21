@@ -20,48 +20,48 @@ harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal 
 
 ### Install the pre-compiled binary
 
-*homebrew tap* (only on macOS for now):
+**homebrew tap** (MacOS only):
 
 ```
 $ brew install wakatara/tap/harsh
 ```
 (this will also nicely alert you of updates when you `brew update`)
 
-*snapcraft*:
+**snapcraft**:
 
 ```
 $ sudo snap install harsh
 ```
 
-*manually*:
+**manually**:
 
 Download the pre-compiled binaries from the releases page and copy to the desired location.
 
 
 ### Compiling from source
 
-If you just want to build from source cause you like that sort of thing, follow these steps:
+If you want to build from source cause you like that sort of thing, follow these steps:
 
-*Clone:*
+**Clone:**
 
 ```
 $ git clone https://github.com/wakatara/harsh
 $ cd harsh
 ```
 
-*Get the dependencies:*
+**Get the dependencies:**
 
 ```
 $ go get ./...
 ```
 
-*Build:*
+**Build:**
 
 ```
 $ go build -o harsh .
 ```
 
-*Verify it works:*
+**Verify it works:**
 
 ```
 $ ./harsh --version
