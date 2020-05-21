@@ -74,7 +74,7 @@ You can then move the file to the desired location.
 When you run `harsh` for the first time, it will set up the required files:
 
 ```
-    $ h
+    $ harsh
     Welcome to harsh!
     
     Created /Users/daryl/.config/harsh/habits  This file lists your habits.
@@ -140,7 +140,7 @@ Then, simply run `harsh ask` regularly, specify whether you did the habit from t
 The consistency graph shows your last 100 days.
 
 ```
-    $ h
+    $ harsh ask
     2020-01-05:
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
@@ -152,7 +152,7 @@ The consistency graph shows your last 100 days.
 (Some weeks later)
 
 ```
-    $ h log
+    $ harsh log
                               ▄▃▃▄▄▃▄▆▆▆▅▆▆▇▆▄▃▄▆▃▆▃▆▂▅▄▃▄▅▆▅▃▃▃▆▂▄▅▄▅▅▅▆▄▄▆▇▆▅▅▄▃▅▆▄▆▃▃▂▅▆
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━━
         Cleaned the apartment ━──────                 ━──────           ━──────    •······        
@@ -185,6 +185,8 @@ harsh also has a warnings feature to help flag to you when you're in danger of b
 
 For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
 
+
+## Halps
 
 Enter `harsh help` if you're lost:
 
