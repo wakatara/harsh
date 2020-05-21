@@ -145,12 +145,8 @@ The consistency graph shows your last 100 days.
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
-                Used harsh    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
-    2018-09-16+02:00:
-                    Meditated        ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━ [y/n/s/⏎] y
-        Cleaned the apartment ──────                 ━──────           ━──────    •······ [y/n/s/⏎] n
-               Had a headache            ━  ━     ━━                  ━━   ━   ━━         [y/n/s/⏎] n
-                Used harsh   ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━[y/n/s/⏎] y
+                   Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
+                                             ... some habits omitted ...
 ```
 
 (Some weeks later)
@@ -161,8 +157,7 @@ The consistency graph shows your last 100 days.
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━━
         Cleaned the apartment ━──────                 ━──────           ━──────    •······        
                Had a headache             ━  ━     ━━                  ━━   ━   ━━         
-                Used harsh    ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━
-
+                   Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━
                                              ... some habits omitted ...
 
     Yesterday's score: 88.3%
@@ -170,7 +165,7 @@ The consistency graph shows your last 100 days.
 
 The sparkline at the top give a graphical representation of each day's score.
 
-The score at the bottom specifies how many of your habits you fulfilled that day of total possible and removes any you may have skipped from the calculation.
+The score at the bottom specifies how many of your habits you met that day of total possible and removes any you may have skipped from the calculation.
 
 ### Done
 
