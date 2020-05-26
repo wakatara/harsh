@@ -6,17 +6,17 @@ harsh is habit tracking for geeks. A minimalist, command line tool for tracking 
 
 Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
 
-There're 3 commands: `ask`, `log`, and `todo`.
+There are 3 commands: `ask`, `log`, and `todo`.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge so this provides deliberated, explicit habits to track.
 
-It's written in GoLang and adds features on top of habitctl (on which it's based) such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhausting number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post on my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
+It's written in GoLang and adds features on top of habitctl (its inspiration) such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
-My biggest hope that it helps you get done what you're trying to in your life.
+My biggest hope that it helps you get done what you're trying to get done in your life.
 
 ## Installation
 
-harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows remains untested at the moment so any help verifying it works and correcting bugs appreciated.
+harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is completely untested at the moment so any help verifying it works as advertised and correcting any bugs appreciated.
 
 ### Install the pre-compiled binary
 
@@ -113,11 +113,13 @@ You'll see an example file like this:
     Used harsh: 0
 ```
 
-The trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
+For each habit, pick an integer number of days that you want to be repeating that habit in. If it's not obvious, habits can have any character that is not a `:` as that delimits the period. We also use `:` as the separator in log files as well for easy parsing.
 
-If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is *strangely* also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones.
+The real trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
 
-Here are some more ideas of what to track:
+If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is *strangely* also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones. If you're coming into this cold, I'd also recommend a good read of James Clear's Atomic Habits. 
+
+Here are some ideas of what to track:
 
 - Went to bed on time
 - Got X hours of sleep
@@ -232,10 +234,10 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 
 ## Contributors
 
-* [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil supervillain mastermind
+* [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil mastermind
 
 ## Thanks
 
-* [Bjorn A](https://github.com/gaqzi) - for initial Go code review and improvements pre-release
-* [James RC](https://github.com/yarbelk) - for initial Go code review and improvements pre-release
-* [Blinary](https://github.com/blinry) - for writing habitctl which this is an homage to and riff off of.
+* [Bjorn A](https://github.com/gaqzi) - for initial code review and improvements pre-release
+* [James RC](https://github.com/yarbelk) - for initial code review and improvements pre-release
+* [Blinary](https://github.com/blinry) - for writing habitctl which harsh is an homage to and riff on.
