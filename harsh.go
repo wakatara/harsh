@@ -91,7 +91,7 @@ func main() {
 			{
 				Name:    "log",
 				Aliases: []string{"l"},
-				Usage:   "Shows graph of habits",
+				Usage:   "Shows log graph of habits",
 				Action: func(c *cli.Context) error {
 					config := findConfigFiles()
 					habits := loadHabitsConfig(config)
