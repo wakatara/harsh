@@ -26,8 +26,10 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-brews:
-- github:
+brews: 
+- 
+  name: harsh
+  github:
     owner: wakatara
     name: homebrew-tap
   description: habit tracking for geeks. A minimalist CLI for examining your habits. 
