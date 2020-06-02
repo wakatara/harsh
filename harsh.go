@@ -139,6 +139,10 @@ func askHabits() {
 	to := time.Now()
 	from := to.AddDate(0, 0, -60)
 
+	if len(*entries) == 0 {
+		onboard()
+	}
+
 	// Goes back 8 days in case of unresolved entries
 	// then iterates through unresolved todos
 	dayHabits := getTodos(to, 8, *entries)
@@ -425,7 +429,7 @@ func findConfigFiles() string {
 	return configDir
 }
 
-// welcome onboards a new user and creates example habits and log files
+// welcome a new user and creates example habits and log files
 func welcome(configDir string) {
 	createExampleHabitsFile(configDir)
 	createNewLogFile(configDir)
@@ -443,6 +447,34 @@ func welcome(configDir string) {
 	fmt.Println("                        (the graph gets way cooler looking over time.")
 	fmt.Println("\nHappy tracking! I genuinely hope this helps you achieve your goals. Bonne chance!\n")
 	os.Exit(0)
+}
+
+// first time ask is used and log empty asks user how far back to track
+func onboard() int {
+	fmt.Println("Your log file looks empty. You're starting tracking.")
+	fmt.Println("How many days back shall we start tracking from in days?")
+	fmt.Println("harsh will ask you about each habit for every day back.")
+	fmt.Println("Today would be 1. Choose. (1-14) ")
+	var numberOfDays int
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		dayResult, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+
+		dayResult = strings.TrimSuffix(dayResult, "\n")
+		dayNum, err := strconv.Atoi(dayResult)
+		if err == nil {
+			if dayNum > 0 && dayNum < 14 {
+				numberOfDays = dayNum
+				break
+			}
+		}
+
+		color.FgRed.Printf("%86v", "Sorry! Please choose a valid number (1-14) ")
+	}
+	return numberOfDays
 }
 
 // createExampleHabitsFile writes a fresh Habits file for people to follow
