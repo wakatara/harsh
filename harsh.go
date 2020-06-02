@@ -50,7 +50,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.1",
+		Version:     "0.8.3",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -163,7 +163,7 @@ func askHabits() {
 							}
 
 							habitResult = strings.TrimSuffix(habitResult, "\n")
-							if strings.ContainsAny(habitResult, "yns") {
+							if strings.ContainsAny(habitResult, "yns") && len(habitResult) == 1 {
 								writeHabitLog(dt, habit.Name, habitResult)
 								break
 							}
