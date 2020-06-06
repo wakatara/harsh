@@ -50,13 +50,16 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.3",
+		Version:     "0.8.4",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
 				Aliases: []string{"a"},
 				Usage:   "Asks and records your undone habits",
 				Action: func(c *cli.Context) error {
+					config := findConfigFiles()
+					// check for onboarding
+					loadLog(config)
 
 					askHabits()
 
@@ -139,14 +142,15 @@ func askHabits() {
 	to := time.Now()
 	from := to.AddDate(0, 0, -60)
 
+	// Goes back 8 days to check unresolved entries
+	// For onboarding, we ask how many days to start
+	// tracking from
+	checkBackDays := 8
 	if len(*entries) == 0 {
-		onboard()
+		checkBackDays = onboard()
 	}
 
-	// Goes back 8 days in case of unresolved entries
-	// then iterates through unresolved todos
-	dayHabits := getTodos(to, 8, *entries)
-
+	dayHabits := getTodos(to, checkBackDays, *entries)
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		if dayhabit, ok := dayHabits[dt.Format(DateFormat)]; ok {
 			fmt.Println(dt.Format(DateFormat) + ":")
@@ -445,16 +449,17 @@ func welcome(configDir string) {
 	fmt.Println("Running   harsh todo    will show you undone habits for today.")
 	fmt.Println("Running   harsh log     will show you a consistency graph of your efforts.")
 	fmt.Println("                        (the graph gets way cooler looking over time.")
-	fmt.Println("\nHappy tracking! I genuinely hope this helps you achieve your goals. Bonne chance!\n")
+	fmt.Println("For more depth, you can read https://github.com/wakatara/harsh#usage")
+	fmt.Println("\nHappy tracking! I genuinely hope this helps you with your goals. Bueno suerte!\n")
 	os.Exit(0)
 }
 
 // first time ask is used and log empty asks user how far back to track
 func onboard() int {
-	fmt.Println("Your log file looks empty. You're starting tracking.")
+	fmt.Println("Your log file looks empty. Let's setup your tracking.")
 	fmt.Println("How many days back shall we start tracking from in days?")
 	fmt.Println("harsh will ask you about each habit for every day back.")
-	fmt.Println("Today would be 1. Choose. (1-14) ")
+	fmt.Println("Starting today would be 0. Choose. (0-7) ")
 	var numberOfDays int
 	for {
 		reader := bufio.NewReader(os.Stdin)
@@ -466,13 +471,13 @@ func onboard() int {
 		dayResult = strings.TrimSuffix(dayResult, "\n")
 		dayNum, err := strconv.Atoi(dayResult)
 		if err == nil {
-			if dayNum > 0 && dayNum < 14 {
+			if dayNum >= 0 && dayNum < 7 {
 				numberOfDays = dayNum
 				break
 			}
 		}
 
-		color.FgRed.Printf("%86v", "Sorry! Please choose a valid number (1-14) ")
+		color.FgRed.Printf("Sorry! Please choose a valid number (0-7) ")
 	}
 	return numberOfDays
 }
