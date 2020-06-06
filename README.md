@@ -1,7 +1,5 @@
 # Harsh Taskmaster
 
-## Usage
-
 harsh is habit tracking for geeks. A minimalist, command line tool for tracking and understanding your habits.
 
 Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
