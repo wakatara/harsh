@@ -36,3 +36,16 @@ brews:
   homepage: https://github.com/wakatara/harsh
   test: |
     system "#{bin}/harsh --version"
+snapcrafts:
+  - name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    summary: habit tracking for geeks. A minimalist CLI for examining your habits.
+    description: |
+      Harsh provides a simple, portable, minimalist command line interface for
+      tracking and examining your habits with text files and beautiful 
+      consistency graphs, sparklines, and scoring to let you know how you are 
+      doing on progressing (or breaking) your habits.
+      https://github.com/wakatara/harsh
+    grade: stable
+    confinement: strict
+    license: MIT
+    publish: true
