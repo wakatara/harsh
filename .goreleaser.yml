@@ -41,7 +41,7 @@ snapcrafts:
     summary: habit tracking for geeks. A minimalist CLI for examining your habits.
     description: |
       Harsh provides a simple, portable, minimalist command line interface for
-      tracking and examining your habits with text files and beautiful 
+      tracking and examining your habits with text files and actionable
       consistency graphs, sparklines, and scoring to let you know how you are 
       doing on progressing (or breaking) your habits.
       https://github.com/wakatara/harsh
