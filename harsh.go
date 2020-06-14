@@ -227,8 +227,9 @@ func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) [
 	i := 0
 
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
-		score := score(d, habits, entries)
-		if score == 100 {
+		dailyScore := score(d, habits, entries)
+		// divide score into  score to map to sparks slice graphic for sparkline
+		if dailyScore == 100 {
 			i = 8
 		} else {
 			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
