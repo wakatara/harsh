@@ -232,7 +232,7 @@ func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) [
 		if dailyScore == 100 {
 			i = 8
 		} else {
-			i = int(math.Ceil(score / float64(100/(len(sparks)-1))))
+			i = int(math.Ceil(dailyScore / float64(100/(len(sparks)-1))))
 		}
 		sparkline = append(sparkline, sparks[i])
 	}
