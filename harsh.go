@@ -50,7 +50,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.4",
+		Version:     "0.8.5",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -102,6 +102,7 @@ func main() {
 
 					to := time.Now()
 					from := to.AddDate(0, 0, -100)
+					firstRecord := firstRecord(from, to, habits, *entries)
 					consistency := map[string][]string{}
 
 					sparkline := buildSpark(habits, *entries, from, to)
@@ -110,7 +111,7 @@ func main() {
 					fmt.Printf("\n")
 
 					for _, habit := range habits {
-						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, from, to))
+						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, firstRecord[habit], from, to))
 						fmt.Printf("%25v", habit.Name+"  ")
 						fmt.Printf(strings.Join(consistency[habit.Name], ""))
 						fmt.Printf("\n")
@@ -141,6 +142,7 @@ func askHabits() {
 	entries := loadLog(config)
 	to := time.Now()
 	from := to.AddDate(0, 0, -60)
+	firstRecord := firstRecord(from, to, habits, *entries)
 
 	// Goes back 8 days to check unresolved entries
 	// For onboarding, we ask how many days to start
@@ -148,20 +150,34 @@ func askHabits() {
 	checkBackDays := 8
 	if len(*entries) == 0 {
 		checkBackDays = onboard()
+		for _, habit := range habits {
+			firstRecord[habit] = to.AddDate(0, 0, -(checkBackDays + 1))
+		}
 	}
 
 	dayHabits := getTodos(to, checkBackDays, *entries)
+
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		if dayhabit, ok := dayHabits[dt.Format(DateFormat)]; ok {
-			fmt.Println(dt.Format(DateFormat) + ":")
+
+			// Day header prompt
+			var dayUnrecordedCount int
+			for _, habit := range habits {
+				if len(dayhabit) > 0 && dt.After(firstRecord[habit]) {
+					dayUnrecordedCount++
+				}
+			}
+			if dayUnrecordedCount > 0 {
+				fmt.Println(dt.Format(DateFormat) + ":")
+			}
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
 			for _, habit := range habits {
 				for _, dh := range dayhabit {
-					if habit.Name == dh.Name {
+					if habit.Name == dh.Name && dt.After(firstRecord[habit]) {
 						for {
 							fmt.Printf("%25v", habit.Name+"  ")
-							fmt.Printf(buildGraph(&habit, *entries, from, to))
+							fmt.Printf(buildGraph(&habit, *entries, firstRecord[habit], from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -189,6 +205,18 @@ func askHabits() {
 			}
 		}
 	}
+}
+
+func firstRecord(from time.Time, to time.Time, habits []Habit, entries Entries) map[Habit]time.Time {
+	firstRecord := map[Habit]time.Time{}
+	for dt := to; dt.Before(from) == false; dt = dt.AddDate(0, 0, -1) {
+		for _, habit := range habits {
+			if _, ok := entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}]; ok {
+				firstRecord[habit] = dt
+			}
+		}
+	}
+	return firstRecord
 }
 
 func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
@@ -240,9 +268,10 @@ func buildSpark(habits []Habit, entries Entries, from time.Time, to time.Time) [
 	return sparkline
 }
 
-func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) string {
+func buildGraph(habit *Habit, entries Entries, firstRecord time.Time, from time.Time, to time.Time) string {
 	var graphDay string
 	var consistency []string
+
 	for d := from; d.After(to) == false; d = d.AddDate(0, 0, 1) {
 		if outcome, ok := entries[DailyHabit{Day: d.Format(DateFormat), Habit: habit.Name}]; ok {
 			switch {
@@ -260,8 +289,10 @@ func buildGraph(habit *Habit, entries Entries, from time.Time, to time.Time) str
 				graphDay = " "
 			}
 		} else {
-			// warning sigils max out at 2 weeks (~90 day habit in formula)
-			if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
+			if d.Before(firstRecord) {
+				graphDay = " "
+			} else if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
+				// warning sigils max out at 2 weeks (~90 day habit in formula)
 				graphDay = "!"
 			} else {
 				graphDay = " "
