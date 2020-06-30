@@ -520,9 +520,12 @@ func createExampleHabitsFile(configDir string) {
 	_, err := os.Stat(fileName)
 	if os.IsNotExist(err) {
 		if _, err := os.Stat(configDir); os.IsNotExist(err) {
-			os.Mkdir(configDir, 0755)
+			os.MkdirAll(configDir, os.ModePerm)
 		}
-		f, _ := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalf("error opening file: %v", err)
+		}
 		f.WriteString("# This is your habits file.\n")
 		f.WriteString("# It tells harsh what to track and how frequently.\n")
 		f.WriteString("# 1 means daily, 7 means weekly, 14 every two weeks.\n")
@@ -546,8 +549,12 @@ func createNewLogFile(configDir string) {
 	_, err := os.Stat(fileName)
 	if os.IsNotExist(err) {
 		if _, err := os.Stat(configDir); os.IsNotExist(err) {
-			os.Mkdir(configDir, 0755)
+			os.MkdirAll(configDir, os.ModePerm)
 		}
-		os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0644)
+		_, err := os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatalf("error opening file: %v", err)
+		}
+
 	}
 }
