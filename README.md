@@ -16,6 +16,29 @@ My biggest hope that it helps you get done what you're trying to get done in you
 
 harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is completely untested at the moment so any help verifying it works as advertised and correcting any bugs appreciated.
 
+
+### With working Go environment
+
+If you have a working Go environment and Go 1.14+, the simplest way is:
+
+``` bash
+go get -u github.com/wakatara/harsh
+
+```
+
+from the command line. 
+
+You can also use
+
+``` bash
+go get github.com/wakatara/harsh
+
+```
+
+to update to new versions as well though, unlike a package manager, you will not
+be informed of new versions.
+
+
 ### Install the pre-compiled binary
 
 **homebrew tap** (MacOS only):
@@ -31,10 +54,11 @@ $ brew install wakatara/tap/harsh
 $ sudo snap install harsh
 ```
 
-**manually**:
+### Manually
 
-Download the pre-compiled binaries from the releases page and copy to the desired location.
-
+Alternatively, you can download the pre-compiled binaries from 
+[the releases page](https://github.com/wakatara/harsh/releases) 
+and copy to the desired location.in your $PATH.
 
 ### Compiling from source
 
@@ -65,7 +89,7 @@ $ go build -o harsh .
 $ ./harsh --version
 ```
 
-You can then move the file to the desired location. 
+You can then move the file to the desired location in your `$PATH`.
 
 ## Usage
 
