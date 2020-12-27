@@ -33,16 +33,16 @@ type Habit struct {
 
 var Habits []Habit
 
-// Outcome is explicitly recorded outcome of habit
-// on a day and restricted to y,s, or n
+// Outcome is the explicit recorded outcome of habit on a day (y, n, or s)
 type Outcome string
 
+// DailyHabit cobines Day and Habit with an Outcome to yield Entries
 type DailyHabit struct {
 	Day   string
 	Habit string
 }
 
-// Entries maps {ISO date + habit}: Outcome and log format
+// Entries maps DailyHabit{ISO date + habit}: Outcome and log format
 type Entries map[DailyHabit]Outcome
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.6",
+		Version:     "0.8.7",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -186,7 +186,7 @@ func askHabits() {
 								fmt.Fprintln(os.Stderr, err)
 							}
 
-							habitResult = strings.TrimSuffix(habitResult, "\n")
+							habitResult = strings.TrimSpace(habitResult)
 							if strings.ContainsAny(habitResult, "yns") && len(habitResult) == 1 {
 								writeHabitLog(dt, habit.Name, habitResult)
 								break
@@ -500,7 +500,7 @@ func onboard() int {
 			fmt.Fprintln(os.Stderr, err)
 		}
 
-		dayResult = strings.TrimSuffix(dayResult, "\n")
+		dayResult = strings.TrimSpace(dayResult)
 		dayNum, err := strconv.Atoi(dayResult)
 		if err == nil {
 			if dayNum >= 0 && dayNum < 7 {
