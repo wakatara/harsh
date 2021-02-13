@@ -451,10 +451,15 @@ func writeHabitLog(d time.Time, habit string, result string) {
 // findConfigFile checks os relevant habits and log file exist, returns path
 // If they do not exist, calls writeNewHabits and writeNewLog
 func findConfigFiles() string {
-	if runtime.GOOS == "windows" {
-		configDir = "AppData"
-	} else {
-		configDir = filepath.Join(os.Getenv("HOME"), ".config/harsh")
+
+	configDir = os.Getenv("HARSHPATH")
+
+	if (len(configDir) == 0) {
+		if runtime.GOOS == "windows" {
+			configDir = filepath.Join(os.Getenv("APPDATA"), "harsh")
+		} else {
+			configDir = filepath.Join(os.Getenv("HOME"), ".config/harsh")
+		}
 	}
 
 	if _, err := os.Stat(filepath.Join(configDir, "habits")); err == nil {

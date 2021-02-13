@@ -111,7 +111,8 @@ When you run `harsh` for the first time, it will set up the required files:
     Happy tracking! I genuinely hope this helps you get better.
 ```
 
-On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under `~\AppData\`
+On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under `%APPDATA%\harsh`.
+Alternatively, you can set a different directory using the `HARSHPATH` environment variable. 
 
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
