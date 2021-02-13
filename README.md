@@ -14,7 +14,7 @@ My biggest hope that it helps you get done what you're trying to get done in you
 
 ## Installation
 
-harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is completely untested at the moment so any help verifying it works as advertised and correcting any bugs appreciated.
+harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested so any help verifying it works as advertised and correcting bugs appreciated.
 
 
 ### With working Go environment
@@ -47,12 +47,6 @@ be informed of new versions.
 $ brew install wakatara/tap/harsh
 ```
 (this will also nicely alert you of updates when you `brew update`)
-
-**snapcraft**:
-
-```
-$ sudo snap install harsh
-```
 
 ### Manually
 
@@ -258,9 +252,11 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 ## Contributors
 
 * [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil mastermind
+* [Aisling](https://github.com/ais) - improved configuration discovery.
 
 ## Thanks
 
 * [Bjorn A](https://github.com/gaqzi) - for initial code review and improvements pre-release
 * [James RC](https://github.com/yarbelk) - for initial code review and improvements pre-release
 * [Blinary](https://github.com/blinry) - for writing habitctl which harsh is an homage to and riff on.
+
