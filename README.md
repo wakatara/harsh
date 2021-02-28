@@ -14,7 +14,7 @@ My biggest hope that it helps you get done what you're trying to get done in you
 
 ## Installation
 
-harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested so any help verifying it works as advertised and correcting bugs appreciated.
+harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request there for 0.8.8 that helped with config issues there. We have also updated harsh to support arm64 architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
 
 
 ### With working Go environment

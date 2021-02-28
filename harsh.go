@@ -50,7 +50,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.7",
+		Version:     "0.8.8",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -454,7 +454,7 @@ func findConfigFiles() string {
 
 	configDir = os.Getenv("HARSHPATH")
 
-	if (len(configDir) == 0) {
+	if len(configDir) == 0 {
 		if runtime.GOOS == "windows" {
 			configDir = filepath.Join(os.Getenv("APPDATA"), "harsh")
 		} else {
