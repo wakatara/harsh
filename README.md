@@ -14,8 +14,7 @@ My biggest hope that it helps you get done what you're trying to get done in you
 
 ## Installation
 
-harsh is available on Linux, OSX (homebrew too), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request there for 0.8.8 that helped with config issues there. We have also updated harsh to support arm64 architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
-
+harsh is available on OSX (homebrew too), Linux (as a Snap as well), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request there for 0.8.8 that helped with config issues there. We have also updated harsh to support arm64 architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
 
 ### With working Go environment
 
@@ -47,6 +46,13 @@ be informed of new versions.
 $ brew install wakatara/tap/harsh
 ```
 (this will also nicely alert you of updates when you `brew update`)
+
+**Snap** (Linux only):
+
+```
+$ sudo snap install harsh
+```
+(you'll also be alerted when there are updates)
 
 ### Manually
 
