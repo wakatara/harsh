@@ -40,7 +40,7 @@ be informed of new versions.
 
 ### Install the pre-compiled binary
 
-**homebrew tap** (MacOS only):
+**homebrew tap** (Mac and Linux):
 
 ```
 $ brew install wakatara/tap/harsh
