@@ -8,13 +8,13 @@ There are 3 commands: `ask`, `log`, and `todo`.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge so this provides deliberated, explicit habits to track.
 
-It's written in GoLang and adds features on top of habitctl (its inspiration) such as bug fixes, skips, warns, and commenting. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
+It's written in GoLang and adds features on top of habitctl (its inspiration) such as bug fixes, skips, and streak break warnings. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
 My biggest hope that it helps you get done what you're trying to get done in your life.
 
 ## Installation
 
-harsh is available on OSX (homebrew too), Linux (as a Snap as well), and Windows as a specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request there for 0.8.8 that helped with config issues there. We have also updated harsh to support arm64 architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
+harsh is available on OSX (homebrew too), Linux (as a Snap and homebrew as well), and Windows. A specific goal was increasing take up and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request there for 0.8.8 that helped with config issues there. We have also updated harsh to support arm64 architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
 
 ### With working Go environment
 
