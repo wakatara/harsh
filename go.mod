@@ -1,4 +1,4 @@
-module harsh
+module github.com/wakatara/harsh
 
 go 1.16
 
