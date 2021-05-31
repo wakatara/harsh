@@ -72,7 +72,7 @@ func main() {
 				Usage:   "Shows undone habits for today.",
 				Action: func(c *cli.Context) error {
 					config := findConfigFiles()
-					habits := loadHabitsConfig(config)
+					habits, _ := loadHabitsConfig(config)
 					entries := loadLog(config)
 					to := time.Now()
 					undone := getTodos(to, 0, *entries)
@@ -97,7 +97,7 @@ func main() {
 				Usage:   "Shows graph of logged habits",
 				Action: func(c *cli.Context) error {
 					config := findConfigFiles()
-					habits := loadHabitsConfig(config)
+					habits, maxHabitNameLength := loadHabitsConfig(config)
 					entries := loadLog(config)
 
 					to := time.Now()
@@ -106,13 +106,13 @@ func main() {
 					consistency := map[string][]string{}
 
 					sparkline := buildSpark(habits, *entries, from, to)
-					fmt.Printf("%25v", "")
+					fmt.Printf("%*v", maxHabitNameLength, "")
 					fmt.Printf(strings.Join(sparkline, ""))
 					fmt.Printf("\n")
 
 					for _, habit := range habits {
 						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, firstRecord[habit], from, to))
-						fmt.Printf("%25v", habit.Name+"  ")
+						fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
 						fmt.Printf(strings.Join(consistency[habit.Name], ""))
 						fmt.Printf("\n")
 					}
@@ -138,7 +138,7 @@ func main() {
 // Ask function prompts
 func askHabits() {
 	config := findConfigFiles()
-	habits := loadHabitsConfig(config)
+	habits, maxHabitNameLength := loadHabitsConfig(config)
 	entries := loadLog(config)
 	to := time.Now()
 	from := to.AddDate(0, 0, -60)
@@ -176,7 +176,7 @@ func askHabits() {
 				for _, dh := range dayhabit {
 					if habit.Name == dh.Name && dt.After(firstRecord[habit]) {
 						for {
-							fmt.Printf("%25v", habit.Name+"  ")
+							fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
 							fmt.Printf(buildGraph(&habit, *entries, firstRecord[habit], from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
@@ -196,7 +196,7 @@ func askHabits() {
 								break
 							}
 
-							color.FgRed.Printf("%86v", "Sorry! You must choose from")
+							color.FgRed.Printf("%*v", maxHabitNameLength+21, "Sorry! You must choose from")
 							color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
 						}
 					}
@@ -222,7 +222,7 @@ func firstRecord(from time.Time, to time.Time, habits []Habit, entries Entries) 
 func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	tasksUndone := map[string][]Habit{}
 	config := findConfigFiles()
-	habits := loadHabitsConfig(config)
+	habits, _ := loadHabitsConfig(config)
 	dayHabits := map[Habit]bool{}
 
 	from := to.AddDate(0, 0, -daysBack)
@@ -386,7 +386,7 @@ func score(d time.Time, habits []Habit, entries Entries) float64 {
 //////////////////////////////////////
 
 // loadHabitsConfig loads habits in config file ordered slice
-func loadHabitsConfig(configDir string) []Habit {
+func loadHabitsConfig(configDir string) ([]Habit, int) {
 
 	file, err := os.Open(filepath.Join(configDir, "/habits"))
 	if err != nil {
@@ -404,7 +404,15 @@ func loadHabitsConfig(configDir string) []Habit {
 			Habits = append(Habits, h)
 		}
 	}
-	return Habits
+
+	maxHabitNameLength := 0
+	for _, h := range Habits {
+		if len(h.Name) > maxHabitNameLength {
+			maxHabitNameLength = len(h.Name)
+		}
+	}
+
+	return Habits, maxHabitNameLength + 10
 }
 
 // loadLog reads entries from log file
