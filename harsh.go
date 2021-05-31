@@ -50,7 +50,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.8",
+		Version:     "0.8.9",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
