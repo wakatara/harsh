@@ -577,7 +577,7 @@ func onboard() int {
 		dayResult = strings.TrimSpace(dayResult)
 		dayNum, err := strconv.Atoi(dayResult)
 		if err == nil {
-			if dayNum >= 0 && dayNum < 7 {
+			if dayNum >= 0 && dayNum <= 7 {
 				numberOfDays = dayNum
 				break
 			}
