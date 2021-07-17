@@ -5,6 +5,7 @@ harsh is habit tracking for geeks. A minimalist, command line tool for tracking 
 Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
 
 There are 3 commands: `ask`, `log`, and `todo`.
+(and since version 0.8.10, one subcommand `log stats`)
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit habits to track.
 
@@ -93,6 +94,8 @@ You can then move the file to the desired location in your `$PATH`.
 
 ## Usage
 
+### Getting Started
+
 When you run `harsh` for the first time, it will set up the required files:
 
 ```
@@ -160,6 +163,8 @@ Here are some ideas of what to track:
 - Went for a walk
 - Told SO they're amazing
 
+### Ask Command
+
 Then, simply run `harsh ask` regularly, specify whether you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
 
 The consistency graph shows your last 100 days.
@@ -173,6 +178,8 @@ The consistency graph shows your last 100 days.
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
                                              ... some habits omitted ...
 ```
+
+### Log Command
 
 (Some weeks later)
 
@@ -192,6 +199,12 @@ The sparkline at the top give a graphical representation of each day's score.
 
 The score at the bottom specifies how many of your habits you met that day of total possible and removes any you may have skipped from the calculation.
 
+### Log Stats Subcommand
+
+When you've been tracking for longer than 100 days (the length of the consistency graph), you can get summary statistics of your entire log. This can be suprisingly useful to see quantified.
+
+Run the subcommand `harsh log stats` to get an analysis of everything in your log file and give you an idea of how many days you've been on streak, how many days you broke the chain, and how many days you may have skipped as well as the total number of days you've been tracking for (note: I swap out my file every year, but at least one person wanted the feature to track over 800 days of log files.).
+
 ### Done
 
 A done habit gives you a nice bright `━` on the consistency graph line. It's done.
@@ -210,7 +223,6 @@ harsh also has a warnings feature to help flag to you when you're in danger of b
 
 For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
 
-
 ## Halps
 
 Enter `harsh help` if you're lost:
@@ -225,7 +237,7 @@ Enter `harsh help` if you're lost:
     harsh [global options] command [command options] [arguments...]
 
     VERSION:
-    0.8.1
+    0.8.10
 
     DESCRIPTION:
     A simple, minimalist CLI for tracking and understanding habits.
