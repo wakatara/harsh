@@ -92,9 +92,7 @@ $ ./harsh --version
 
 You can then move the file to the desired location in your `$PATH`.
 
-## Usage
-
-### Getting Started
+## Usage and Commands
 
 When you run `harsh` for the first time, it will set up the required files:
 
@@ -163,8 +161,6 @@ Here are some ideas of what to track:
 - Went for a walk
 - Told SO they're amazing
 
-### Ask Command
-
 Then, simply run `harsh ask` regularly, specify whether you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
 
 The consistency graph shows your last 100 days.
@@ -178,8 +174,6 @@ The consistency graph shows your last 100 days.
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
                                              ... some habits omitted ...
 ```
-
-### Log Command
 
 (Some weeks later)
 
@@ -198,13 +192,6 @@ The consistency graph shows your last 100 days.
 The sparkline at the top give a graphical representation of each day's score.
 
 The score at the bottom specifies how many of your habits you met that day of total possible and removes any you may have skipped from the calculation.
-
-### Log Stats Subcommand
-
-When you've been tracking for longer than 100 days (the length of the consistency graph), you can get summary statistics of your entire log. This can be suprisingly useful to see quantified.
-
-Run the subcommand `harsh log stats` to get an analysis of everything in your log file and give you an idea of how many days you've been on streak, how many days you broke the chain, and how many days you may have skipped as well as the total number of days you've been tracking for (note: I swap out my file every year, but at least one person wanted the feature to track over 800 days of log files.).
-
 ### Done
 
 A done habit gives you a nice bright `━` on the consistency graph line. It's done.
@@ -222,7 +209,11 @@ Much like satisfied habits where you've performed them once in the period, "skip
 harsh also has a warnings feature to help flag to you when you're in danger of breaking your consistency graph. Harsh will give you a warning by showing a "!" symbol in your upcoming habits.
 
 For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
+## Subcommands
 
+Run `harsh log stats` to get an analysis of your entire log file and give you a quantified idea of how many days you've been on streak, how many days you broke your consistency chain, and how many days you may have skipped -- as well as the total number of days you've been tracking a particular habit for (note: I swap out my file every year, but at least one person wanted this feature to track over 800+ days of log files.).
+
+In particular, when you've been tracking for longer than 100 days (the visual length of the consistency graph), you can get summary stats for your entire log (I did not think this was useful until I implemented it.). This can be surprisingly useful to see longer trends quantified.
 ## Halps
 
 Enter `harsh help` if you're lost:
