@@ -42,6 +42,14 @@ type DailyHabit struct {
 	Habit string
 }
 
+// HabitStats holds total stats for a Habit in the file
+type HabitStats struct {
+	DaysTracked int
+	Streaks     int
+	Breaks      int
+	Skips       int
+}
+
 // Entries maps DailyHabit{ISO date + habit}: Outcome and log format
 type Entries map[DailyHabit]Outcome
 
@@ -50,7 +58,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.9",
+		Version:     "0.8.10",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -121,6 +129,33 @@ func main() {
 					fmt.Printf("Yesterday's Score: " + scoring + "%%\n")
 
 					return nil
+				},
+				Subcommands: []*cli.Command{
+					{
+						Name:    "stats",
+						Aliases: []string{"s"},
+						Usage:   "Shows habit stats for entire log file",
+						Action: func(c *cli.Context) error {
+							config := findConfigFiles()
+							habits, maxHabitNameLength := loadHabitsConfig(config)
+							entries := loadLog(config)
+
+							to := time.Now()
+							from := to.AddDate(0, 0, -1825)
+							firstRecord := firstRecord(from, to, habits, *entries)
+							stats := map[string]HabitStats{}
+
+							for _, habit := range habits {
+								stats[habit.Name] = buildStats(&habit, *entries, firstRecord[habit], to)
+								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
+								color.FgGreen.Printf("Streaks " + strconv.Itoa(stats[habit.Name].Streaks) + " days\t")
+								color.FgRed.Printf("Breaks " + strconv.Itoa(stats[habit.Name].Breaks) + " days\t")
+								color.FgYellow.Printf("Skips  " + strconv.Itoa(stats[habit.Name].Skips) + " days\t")
+								fmt.Printf("Tracked " + strconv.Itoa(stats[habit.Name].DaysTracked) + " days\n")
+							}
+							return nil
+						},
+					},
 				},
 			},
 		},
@@ -301,6 +336,32 @@ func buildGraph(habit *Habit, entries Entries, firstRecord time.Time, from time.
 		consistency = append(consistency, graphDay)
 	}
 	return strings.Join(consistency, "")
+}
+
+func buildStats(habit *Habit, entries Entries, firstRecord time.Time, to time.Time) HabitStats {
+	var streaks int
+	var breaks int
+	var skips int
+
+	for d := firstRecord; d.After(to) == false; d = d.AddDate(0, 0, 1) {
+		if outcome, ok := entries[DailyHabit{Day: d.Format(DateFormat), Habit: habit.Name}]; ok {
+			switch {
+			case outcome == "y":
+				streaks += 1
+			case outcome == "s":
+				skips += 1
+			// look at cases of "n" being entered but
+			// within bounds of the habit every x days
+			case satisfied(d, habit, entries):
+				streaks += 1
+			case skipified(d, habit, entries):
+				skips += 1
+			case outcome == "n":
+				breaks += 1
+			}
+		}
+	}
+	return HabitStats{DaysTracked: int((to.Sub(firstRecord)).Hours() / 24), Streaks: streaks, Breaks: breaks, Skips: skips}
 }
 
 func satisfied(d time.Time, habit *Habit, entries Entries) bool {
