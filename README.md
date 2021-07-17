@@ -276,5 +276,5 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 
 * [Bjorn A](https://github.com/gaqzi) - for initial code review and improvements pre-release
 * [James RC](https://github.com/yarbelk) - for initial code review and improvements pre-release
-* [Blinary](https://github.com/blinry) - for writing habitctl which harsh is an homage to and riff on.
+* [blinry](https://github.com/blinry) - for writing habitctl which harsh is an homage to and riff on.
 
