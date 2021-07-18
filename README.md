@@ -22,23 +22,12 @@ harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebre
 If you have a working Go environment and Go 1.14+, the simplest way is:
 
 ``` bash
-go get -u github.com/wakatara/harsh
+go install github.com/wakatara/harsh
 
 ```
 
-from the command line. 
-
-You can also use
-
-``` bash
-go get github.com/wakatara/harsh
-
-```
-
-to update to new versions as well though, unlike a package manager, you will not
-be informed of new versions.
-
-
+from the command line, though, unlike a package manager like brew or snap, you won't
+get informed of new version releases.
 ### Install the pre-compiled binary
 
 **Homebrew tap** (Mac and Linux):
@@ -53,7 +42,7 @@ $ brew install wakatara/tap/harsh
 ```
 $ sudo snap install harsh
 ```
-(you'll also be alerted when there are updates)
+(you'll also get alerted when there are updates)
 
 ### Manually
 
