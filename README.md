@@ -102,8 +102,10 @@ When you run `harsh` for the first time, it will set up the required files:
 ```
 
 On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under `%APPDATA%\harsh`.
-Alternatively, you can set a different directory using the `HARSHPATH` environment variable. 
 
+Alternatively, you can set a different directory using the `HARSHPATH` environment variable.
+
+**Warning:** If you are using the snaps version of harsh, it will override (sensibility) and places the config *and* log files in `~/snap/harsh/current/`. If you then uninstall the app it will most likely nuke your config *and* log files and you will suffer catastrophic data loss. For this reason, we *highly* recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and leave files there. 
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
 
