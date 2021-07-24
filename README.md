@@ -107,7 +107,7 @@ Alternatively, you can set a different directory using the `HARSHPATH` environme
 
 | :warning: **WARNING**      |
 |:---------------------------|
-| If you are using the snaps version of harsh, it will override (sensible) defaults and places the config *and* log files in `~/snap/harsh/current/`. If you then uninstall the harsh snap it will nuke your config *and* log files and you may suffer catastrophic data loss (please always exercise a good backup regime). For this reason, we *highly* recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and leave files there right after installing. |
+| If using the snap version of harsh, it overrides (sensible) defaults and places the config *and* log files in `~/snap/harsh/current/`. If you then snap uninstall the harsh app, snaps uninstaller will nuke your config *and* log files and you may lose your config and log data if not backed up (*please always* exercise a good backup regime). For this reason, we *highly* recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and move config and log files there right after installing. |
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
 
