@@ -105,7 +105,10 @@ On OSX and Linux based systems, the `habits` and `log` files will be under `~/.c
 
 Alternatively, you can set a different directory using the `HARSHPATH` environment variable.
 
-**WARNING:** If you are using the snaps version of harsh, it will override (sensible) defaults and places the config *and* log files in `~/snap/harsh/current/`. If you then uninstall the app it will most likely nuke your config *and* log files and you may suffer catastrophic data loss (please always be exercising a good backup regime if you use harsh or no). For this reason, we *highly* recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and leave files there.
+---
+:warning: **WARNING**
+If you are using the snaps version of harsh, it will override (sensible) defaults and places the config *and* log files in `~/snap/harsh/current/`. If you then uninstall the app it will most likely nuke your config *and* log files and you may suffer catastrophic data loss (please always be exercising a good backup regime if you use harsh or no). For this reason, we *highly* recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and leave files there.
+---
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
 
