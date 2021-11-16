@@ -154,7 +154,11 @@ Here are some ideas of what to track:
 - Went for a walk
 - Told SO they're amazing
 
-Then, simply run `harsh ask` regularly, specify whether you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs! 
+Then, simply run `harsh ask` regularly, specify whether you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs!
+
+`harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now.
+
+As of `0.8.12`, to support longer term pattern tracking (and unreliable memory), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date purposes to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. As such, I'd use the comments sparing and to denote why you had to skip, or broke a consistency chain with an `n`, or for when you're trying to figure out why habit *X* may or may not have succeeded. 
 
 The consistency graph shows your last 100 days.
 
