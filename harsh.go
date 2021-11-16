@@ -58,7 +58,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.10",
+		Version:     "0.8.12",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -68,9 +68,7 @@ func main() {
 					config := findConfigFiles()
 					// check for onboarding
 					loadLog(config)
-
 					askHabits()
-
 					return nil
 				},
 			},
@@ -216,14 +214,22 @@ func askHabits() {
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
-							habitResult, err := reader.ReadString('\n')
+							habitResultInput, err := reader.ReadString('\n')
 							if err != nil {
 								fmt.Fprintln(os.Stderr, err)
 							}
 
-							habitResult = strings.TrimSpace(habitResult)
+							habitResultString := strings.Split(habitResultInput, "#")
+							habitResult := strings.TrimSpace(habitResultString[0])
+							var comment string
+							if len(habitResultString) > 1 {
+								comment = strings.TrimSpace(habitResultString[1])
+							} else {
+								comment = ""
+							}
+
 							if strings.ContainsAny(habitResult, "yns") && len(habitResult) == 1 {
-								writeHabitLog(dt, habit.Name, habitResult)
+								writeHabitLog(dt, habit.Name, habitResult, comment)
 								break
 							}
 
@@ -231,8 +237,8 @@ func askHabits() {
 								break
 							}
 
-							color.FgRed.Printf("%*v", maxHabitNameLength+21, "Sorry! You must choose from")
-							color.FgRed.Printf(" [y/n/s/⏎] " + "\n")
+							color.FgRed.Printf("%*v", maxHabitNameLength+25, "Sorry! Please choose from")
+							color.FgRed.Printf(" [y/n/s/⏎] " + "(and an optional #-denoted comment)" + "\n")
 						}
 					}
 				}
@@ -489,6 +495,7 @@ func loadLog(configDir string) *Entries {
 	entries := Entries{}
 	for scanner.Scan() {
 		if scanner.Text() != "" {
+			// Discards comments from record read as result [3]
 			result := strings.Split(scanner.Text(), " : ")
 			entries[DailyHabit{Day: result[0], Habit: result[1]}] = Outcome(result[2])
 		}
@@ -502,13 +509,16 @@ func loadLog(configDir string) *Entries {
 }
 
 // writeHabitLog writes the log entry for a habit to file
-func writeHabitLog(d time.Time, habit string, result string) {
+func writeHabitLog(d time.Time, habit string, result string, comment string) {
 	fileName := filepath.Join(configDir, "/log")
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := f.Write([]byte(d.Format(DateFormat) + " : " + habit + " : " + result + "\n")); err != nil {
+	if len(comment) > 0 {
+		comment = " : " + comment
+	}
+	if _, err := f.Write([]byte(d.Format(DateFormat) + " : " + habit + " : " + result + comment + "\n")); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		log.Fatal(err)
 	}
