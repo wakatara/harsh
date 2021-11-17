@@ -81,7 +81,7 @@ $ ./harsh --version
 
 You can then move the file to the desired location in your `$PATH`.
 
-## Usage and Commands
+## Getting Started
 
 When you run `harsh` for the first time, it will set up the required files:
 
@@ -154,13 +154,17 @@ Here are some ideas of what to track:
 - Went for a walk
 - Told SO they're amazing
 
-Then, simply run `harsh ask` regularly, specify whether you did the habit from the prompt (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs!
+## Usage and Commands
+
+Simply run `harsh ask` regularly, specify whether you did the habit from the prompt on a particular day (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs!
 
 `harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now.
 
-As of `0.8.12`, to support longer term pattern tracking (and unreliable memory), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date purposes to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. As such, I'd use the comments sparing and to denote why you had to skip, or broke a consistency chain with an `n`, or for when you're trying to figure out why habit *X* may or may not have succeeded. 
+As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for anlaysis on the `:` deliimiter. 
 
-The consistency graph shows your last 100 days.
+Personally, I'd use the comments sparing and to denote why you had to skip, broke a consistency chain with an `n`, or for when you're trying to figure out something notable on a day so when you look back you can see why habit *X* may or may not have succeeded. 
+
+`harsh log` The consistency graph shows your last 100 days.
 
 ```
     $ harsh ask
@@ -188,7 +192,29 @@ The consistency graph shows your last 100 days.
 
 The sparkline at the top give a graphical representation of each day's score.
 
-The score at the bottom specifies how many of your habits you met that day of total possible and removes any you may have skipped from the calculation.
+The score at the bottom specifies how many of your habits you met that previous day of total possible and removes any you may have skipped from the calculation.
+
+### Subcommands
+
+Run `harsh log stats` gives an analysis of your entire log file and a quantified idea of days you've been on streak, how many days you broke your consistency chain, and how many days you may have skipped -- as well as the total number of days you've been tracking a particular habit for (note: I swap out my file every year, but at least one person wanted this feature to track over 800+ days of log files they'd converted from another app.). It's also nicely coloured to help visually separate the information.
+
+In particular, when you've been tracking for longer than 100 days (the visual length of the consistency graph), you can get summary stats for your entire log (tbh, I did not think this was useful until I implemented it. I was wrong.). This can be surprisingly useful to see longer trends quantified.
+
+```
+               Slept 7h+  Streaks 173 days      Breaks 147 days Skips  1 days   Tracked 320 days
+           Morning Pages  Streaks 310 days      Breaks 9 days   Skips  2 days   Tracked 320 days
+             Share daily  Streaks 320 days      Breaks 0 days   Skips  1 days   Tracked 320 days
+                Workouts  Streaks 246 days      Breaks 27 days  Skips  48 days  Tracked 320 days
+              Read Daily  Streaks 302 days      Breaks 18 days  Skips  0 days   Tracked 320 days
+             Write daily  Streaks 320 days      Breaks 0 days   Skips  1 days   Tracked 320 days
+                     TIL  Streaks 285 days      Breaks 26 days  Skips  9 days   Tracked 320 days
+                 Running  Streaks 117 days      Breaks 56 days  Skips  148 days Tracked 320 days
+        Blog Fortnightly  Streaks 314 days      Breaks 6 days   Skips  0 days   Tracked 320 days
+                                            ...
+```
+As you can see here, I need to work on sleep more than anything, but digging down on these stats I shocked myself at skipped and breaks in workouts (covid vaccine related in some cases), and how I need to rethink how some of these were set up or I'm doing them (running, blogging etc.). The point is not how terrible I am, but that looking into the numbers revealed patterns (sleep, affects workouts, running, and TIL - today I learned - rather terribly). YMMV.
+
+
 ### Done
 
 A done habit gives you a nice bright `━` on the consistency graph line. It's done.
@@ -206,11 +232,7 @@ Much like satisfied habits where you've performed them once in the period, "skip
 harsh also has a warnings feature to help flag to you when you're in danger of breaking your consistency graph. Harsh will give you a warning by showing a "!" symbol in your upcoming habits.
 
 For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
-## Subcommands
 
-Run `harsh log stats` to get an analysis of your entire log file and give you a quantified idea of how many days you've been on streak, how many days you broke your consistency chain, and how many days you may have skipped -- as well as the total number of days you've been tracking a particular habit for (note: I swap out my file every year, but at least one person wanted this feature to track over 800+ days of log files.).
-
-In particular, when you've been tracking for longer than 100 days (the visual length of the consistency graph), you can get summary stats for your entire log (I did not think this was useful until I implemented it.). This can be surprisingly useful to see longer trends quantified.
 ## Halps
 
 Enter `harsh help` if you're lost:
