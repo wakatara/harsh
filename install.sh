@@ -33,7 +33,7 @@ getPackage() {
     suffix=""
     case $uname in
     "Darwin")
-    suffix=".tar.gz"
+    # suffix=".tar.gz"
         arch=$(uname -m)
         echo $arch
         case $arch in
@@ -100,20 +100,22 @@ getPackage() {
         echo "\nFailed to expand archve: $targetFile"
         exit 1
     else
-        # Remove the tar file
+        # Remove the tar file, LICENSE and README
         echo "OK"
         rm "$targetFile"
+        rm "$(pwd)/LICENSE"
+        rm "$(pwd)/README.md"
 
         # Get the parent dir of the 'bin' folder holding the binary
-        targetFile=$(echo "$targetFile" | sed "s+/${REPO}${suffix}++g")
-        suffix=$(echo $suffix | sed 's/.tgz//g')
+        # targetFile=$(echo "$targetFile" | sed "s+/${REPO}${suffix}++g")
+        # suffix=$(echo $suffix | sed 's/.tgz//g')
 
-        targetFile="${targetFile}/${REPO}${suffix}"
+        targetFile="${targetFile}/${REPO}/harsh"
 
         chmod +x "$targetFile"
 
         # Calculate SHA
-        shaurl=$(echo $url | sed 's/.tgz/.sha256/g')
+        shaurl=$(echo $url | sed 's/.tar.gz/.sha256/g')
         SHA256=$(curl -sLS $shaurl | awk '{print $1}')
         echo "SHA256 fetched from release: $SHA256"
         # NOTE to other maintainers
