@@ -2,10 +2,10 @@
 
 harsh is habit tracking for geeks. A minimalist, command line tool for tracking and understanding your habits.
 
-Succintly: it's quick and gets out of your way. And gives you amazing visibililty on your habits.
+Succinctly: it's quick and gets out of your way. And gives you amazing visibility on your habits.
 
-There are 3 commands: `ask`, `log`, and `todo`.
-(and since version 0.8.10, one subcommand `log stats`)
+There're 3 commands: `ask`, `log`, and `todo`.
+(and one subcommand `log stats`)
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit habits to track.
 
@@ -16,19 +16,7 @@ My biggest hope that it helps you get done what you're trying to get done in you
 ## Installation
 
 harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebrew), and Windows. A specific goal was increasing uptake and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request that helped with config issues. We have also updated harsh to support ARM architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
-
-### With working Go environment
-
-If you have a working Go environment and Go 1.14+, the simplest way is:
-
-``` bash
-go install github.com/wakatara/harsh
-
-```
-
-from the command line, though, unlike a package manager like brew or snap, you won't
-get informed of new version releases.
-### Install the pre-compiled binary
+### Install via package manager
 
 **Homebrew tap** (Mac and Linux):
 
@@ -44,11 +32,35 @@ $ sudo snap install harsh
 ```
 (you'll also get alerted when there are updates)
 
+### Easy one-line install
+
+If you're not using a package manager, by far the easiest way to install harsh and get started is to use this one-line bash command if you're on OSX or Linux:
+
+```bash
+curl -sSLf https://raw.githubusercontent.com/wakatara/harsh/master/install.sh | sh
+```
+
+The script downloads the latest release directly from github, verifies it cryptographically, and then moves the executable to `usr/local/bin` ready for immediate use on the command line.
+
+### With working Go environment
+
+You may prefer a direct Go install if you have a working Go environment and Go 1.14+.
+
+``` bash
+go install github.com/wakatara/harsh
+
+```
+
+from the command line. Unlike a package manager like brew or snap, you won't
+get informed of new version releases.
+
+
 ### Manually
 
 Alternatively, you can download the pre-compiled binaries from 
 [the releases page](https://github.com/wakatara/harsh/releases) 
-and copy to the desired location. making sure it is in your `$PATH`.
+and copy to the desired location (`/usr/local/bin` recommended), 
+making sure it's in your `$PATH`.
 
 ### Compiling from source
 
