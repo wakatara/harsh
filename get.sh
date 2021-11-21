@@ -38,12 +38,12 @@ getPackage() {
         echo $arch
         case $arch in
         "x86_64")
-        suffix="Darwin_x86_64.tar.gz"
+        suffix="_Darwin_x86_64.tar.gz"
         ;;
         esac
         case $arch in
         "aarch64")
-        suffix="Darwin_arm64.tar.gz"
+        suffix="_Darwin_arm64.tar.gz"
         ;;
         esac
     ;;
@@ -52,29 +52,28 @@ getPackage() {
         echo $arch
         case $arch in
         "x86_64")
-        suffix="Linux_x86_64.tar.gz"
+        suffix="_Linux_x86_64.tar.gz"
         ;;
         esac
         case $arch in
         "i386")
-        suffix="Linux_i386.tar.gz"
+        suffix="_Linux_i386.tar.gz"
         ;;
         esac
         case $arch in
         "aarch64")
-        suffix="Linux_arm64.tar.gz"
+        suffix="_Linux_arm64.tar.gz"
         ;;
         esac
         case $arch in
         "armv6l" | "armv7l")
-        suffix="Linux_armv6.tar.gz"
+        suffix="_Linux_armv6.tar.gz"
         ;;
         esac
     ;;
     esac
 
     targetFile="/tmp/$REPO$suffix"
-
     if [ "$userid" != "0" ]; then
         targetFile="$(pwd)/$REPO$suffix"
     fi
