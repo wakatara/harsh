@@ -46,7 +46,6 @@ getPackage() {
         suffix="Darwin_arm64.tar.gz"
         ;;
         esac
-        ;;
     ;;
     "Linux")
         arch=$(uname -m)
