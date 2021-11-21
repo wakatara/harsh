@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export OWNER=inlets
-export REPO=inletsctl
+export OWNER=wakatara
+export REPO=harsh
 export SUCCESS_CMD="$REPO version"
 export BINLOCATION="/usr/local/bin"
 
@@ -33,24 +33,42 @@ getPackage() {
     suffix=""
     case $uname in
     "Darwin")
-    suffix="-darwin.tgz"
+    suffix=".tar.gz"
+        arch=$(uname -m)
+        echo $arch
+        case $arch in
+        "x86_64")
+        suffix="Darwin_x86_64.tar.gz"
+        ;;
+        esac
+        case $arch in
+        "aarch64")
+        suffix="Darwin_arm64.tar.gz"
+        ;;
+        esac
+        ;;
     ;;
     "Linux")
         arch=$(uname -m)
         echo $arch
         case $arch in
         "x86_64")
-        suffix=".tgz"
+        suffix="Linux_x86_64.tar.gz"
+        ;;
+        esac
+        case $arch in
+        "i386")
+        suffix="Linux_i386.tar.gz"
         ;;
         esac
         case $arch in
         "aarch64")
-        suffix="-arm64.tgz"
+        suffix="Linux_arm64.tar.gz"
         ;;
         esac
         case $arch in
         "armv6l" | "armv7l")
-        suffix="-armhf.tgz"
+        suffix="Linux_armv6.tar.gz"
         ;;
         esac
     ;;
