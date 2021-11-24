@@ -170,7 +170,7 @@ Here are some ideas of what to track:
 
 Simply run `harsh ask` regularly, specify whether you did the habit from the prompt on a particular day (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs!
 
-`harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now.
+`harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now. CTRL-c breaks you out of the ask cycle at any point and returns you to your prompt.
 
 As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for anlaysis on the `:` deliimiter. 
 
