@@ -566,7 +566,7 @@ func welcome(configDir string) {
 	fmt.Println("Running   harsh log     will show you a consistency graph of your efforts.")
 	fmt.Println("                        (the graph gets way cooler looking over time.")
 	fmt.Println("For more depth, you can read https://github.com/wakatara/harsh#usage")
-	fmt.Println("\nHappy tracking! I genuinely hope this helps you with your goals. Bueno suerte!\n")
+	fmt.Println("\nHappy tracking! I genuinely hope this helps you with your goals. Buena suerte!\n")
 	os.Exit(0)
 }
 
