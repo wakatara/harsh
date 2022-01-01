@@ -132,19 +132,30 @@ You'll see an example file like this:
     # 0 is for tracking a habit. 0 frequency habits will not warn or score.
     # Examples:
 
-    Gymmed: 2
+    ! Dailies
+    Gymmed: 1
     Bed by midnight: 1
+    
+    ! Weeklies
     Cleaned House: 7
     Called Mom: 7
-    Tracked Finances: 15
+    
+    ! Monthly+
+    Did Finances: 30
     New Skill: 90
+
+    ! Tracking
     Too much coffee: 0
     Used harsh: 0
 ```
 
 For each habit, pick an integer number of days that you want to be repeating that habit in. If it's not obvious, habits can have any character that is not a `:` as that delimits the period. We also use `:` as the separator in log files as well for easy parsing.
 
-The real trick is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
+Headings are denoted by a "!" at the start of a line and allow you to categorize habits visually (useful if you have a lot of them).
+
+Comments can go in the habits file by starting a line with "#" and are not parsed by the program.
+
+The real trick of tracking is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
 
 If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is *strangely* also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones. If you're coming into this cold, I'd also recommend a good read of James Clear's Atomic Habits. 
 
@@ -180,9 +191,14 @@ Personally, I'd use the comments sparing and to denote why you had to skip, brok
 
 ```
     $ harsh ask
-    2020-01-05:
+    **2020-01-05:**
+    **Dailies**
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
+    
+    **Weeklies**
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
+    
+    **Tracking**
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
                                              ... some habits omitted ...
@@ -231,7 +247,7 @@ As you can see here, I need to work on sleep more than anything, but digging dow
 
 A done habit gives you a nice bright `━` on the consistency graph line. It's done.
 
-Additionally, the app checks in future days if you are still within the "everyx days" period of performing the habit by drawing a dimmer `─` after the done marker to let you know you've satisfied the requirement for that habit.
+Additionally, the app checks in future days if you are still within the "every x days" period of performing the habit by drawing a dimmer `─` after the done marker to let you know you've satisfied the requirement for that habit.
 
 ### Skips
 
