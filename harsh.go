@@ -212,19 +212,20 @@ func askHabits() {
 				}
 			}
 			if dayUnrecordedCount > 0 {
-				fmt.Println(dt.Format(DateFormat) + ":")
+				color.Bold.Println(dt.Format(DateFormat) + ":")
 			}
 
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
 			heading := ""
 			for _, habit := range habits {
+				// fmt.Print(dayhabit)
 				for _, dh := range dayhabit {
-					if heading != habit.Heading && dayUnrecordedCount > 0 {
-						color.Bold.Printf("\n" + habit.Heading + "\n")
-						heading = habit.Heading
-					}
 					if habit.Name == dh.Name && dt.After(firstRecord[habit]) {
+						if heading != dh.Heading {
+							color.Bold.Printf("\n" + habit.Heading + "\n")
+							heading = habit.Heading
+						}
 						for {
 							fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
 							fmt.Printf(buildGraph(&habit, *entries, firstRecord[habit], from, to))
