@@ -79,17 +79,22 @@ func main() {
 				Usage:   "Shows undone habits for today.",
 				Action: func(c *cli.Context) error {
 					config := findConfigFiles()
-					habits, _ := loadHabitsConfig(config)
+					habits, maxHabitNameLength := loadHabitsConfig(config)
 					entries := loadLog(config)
 					to := time.Now()
 					undone := getTodos(to, 0, *entries)
 
+					heading := ""
 					for date, todos := range undone {
-						fmt.Println(date + ":")
+						color.Bold.Println(date + ":")
 						for _, habit := range habits {
+							if heading != habit.Heading {
+								color.Bold.Printf("\n" + habit.Heading + "\n")
+								heading = habit.Heading
+							}
 							for _, todo := range todos {
 								if habit.Name == todo.Name && todo.Frequency > 0 {
-									fmt.Println("     " + todo.Name)
+									fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
 								}
 							}
 						}
