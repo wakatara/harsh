@@ -384,7 +384,7 @@ func buildStats(habit *Habit, entries Entries, firstRecord time.Time, to time.Ti
 			}
 		}
 	}
-	return HabitStats{DaysTracked: int((to.Sub(firstRecord)).Hours() / 24), Streaks: streaks, Breaks: breaks, Skips: skips}
+	return HabitStats{DaysTracked: int(((to.Sub(firstRecord)).Hours() / 24) + 1), Streaks: streaks, Breaks: breaks, Skips: skips}
 }
 
 func satisfied(d time.Time, habit *Habit, entries Entries) bool {
