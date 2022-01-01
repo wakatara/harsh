@@ -27,6 +27,7 @@ var configDir string
 type Day int
 
 type Habit struct {
+	Heading   string
 	Name      string
 	Frequency Day
 }
@@ -58,7 +59,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.12",
+		Version:     "0.8.13",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -116,15 +117,20 @@ func main() {
 					fmt.Printf(strings.Join(sparkline, ""))
 					fmt.Printf("\n")
 
+					heading := ""
 					for _, habit := range habits {
 						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, firstRecord[habit], from, to))
+						if heading != habit.Heading {
+							color.Bold.Printf(habit.Heading + "\n")
+							heading = habit.Heading
+						}
 						fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
 						fmt.Printf(strings.Join(consistency[habit.Name], ""))
 						fmt.Printf("\n")
 					}
 
 					scoring := fmt.Sprintf("%.1f", score(time.Now().AddDate(0, 0, -1), habits, *entries))
-					fmt.Printf("Yesterday's Score: " + scoring + "%%\n")
+					fmt.Printf("\n" + "Yesterday's Score: " + scoring + "%%\n")
 
 					return nil
 				},
@@ -143,7 +149,12 @@ func main() {
 							firstRecord := firstRecord(from, to, habits, *entries)
 							stats := map[string]HabitStats{}
 
+							heading := ""
 							for _, habit := range habits {
+								if heading != habit.Heading {
+									color.Bold.Printf("\n" + habit.Heading + "\n")
+									heading = habit.Heading
+								}
 								stats[habit.Name] = buildStats(&habit, *entries, firstRecord[habit], to)
 								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
 								color.FgGreen.Printf("Streaks " + strconv.Itoa(stats[habit.Name].Streaks) + " days\t")
@@ -178,9 +189,9 @@ func askHabits() {
 	firstRecord := firstRecord(from, to, habits, *entries)
 
 	// Goes back 8 days to check unresolved entries
-	// For onboarding, we ask how many days to start
-	// tracking from
 	checkBackDays := 8
+	// If log file is empty, we onboard the user
+	// For onboarding, we ask how many days to start tracking from
 	if len(*entries) == 0 {
 		checkBackDays = onboard()
 		for _, habit := range habits {
@@ -203,10 +214,16 @@ func askHabits() {
 			if dayUnrecordedCount > 0 {
 				fmt.Println(dt.Format(DateFormat) + ":")
 			}
+
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
+			heading := ""
 			for _, habit := range habits {
 				for _, dh := range dayhabit {
+					if heading != habit.Heading && dayUnrecordedCount > 0 {
+						color.Bold.Printf("\n" + habit.Heading + "\n")
+						heading = habit.Heading
+					}
 					if habit.Name == dh.Name && dt.After(firstRecord[habit]) {
 						for {
 							fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
@@ -463,12 +480,18 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 
 	scanner := bufio.NewScanner(file)
 
+	var heading string
 	for scanner.Scan() {
-		if len(scanner.Text()) > 0 && scanner.Text()[0] != '#' {
-			result := strings.Split(scanner.Text(), ": ")
-			r1, _ := strconv.Atoi(result[1])
-			h := Habit{Name: result[0], Frequency: Day(r1)}
-			Habits = append(Habits, h)
+		if len(scanner.Text()) > 0 {
+			if scanner.Text()[0] == '!' {
+				result := strings.Split(scanner.Text(), "! ")
+				heading = result[1]
+			} else if scanner.Text()[0] != '#' {
+				result := strings.Split(scanner.Text(), ": ")
+				r1, _ := strconv.Atoi(result[1])
+				h := Habit{Heading: heading, Name: result[0], Frequency: Day(r1)}
+				Habits = append(Habits, h)
+			}
 		}
 	}
 
