@@ -191,14 +191,14 @@ Personally, I'd use the comments sparing and to denote why you had to skip, brok
 
 ```
     $ harsh ask
-    **2020-01-05:**
-    **Dailies**
+    2020-01-05:
+    Dailies
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
     
-    **Weeklies**
+    Weeklies
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
     
-    **Tracking**
+    Tracking
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
                                              ... some habits omitted ...
