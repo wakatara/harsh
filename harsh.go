@@ -209,16 +209,7 @@ func askHabits() {
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		if dayhabit, ok := dayHabits[dt.Format(DateFormat)]; ok {
 
-			// Day header prompt
-			var dayUnrecordedCount int
-			for _, habit := range habits {
-				if len(dayhabit) > 0 && dt.After(firstRecord[habit]) {
-					dayUnrecordedCount++
-				}
-			}
-			if dayUnrecordedCount > 0 {
-				color.Bold.Println(dt.Format(DateFormat) + ":")
-			}
+			color.Bold.Println(dt.Format(DateFormat) + ":")
 
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
@@ -288,18 +279,21 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	config := findConfigFiles()
 	habits, _ := loadHabitsConfig(config)
 	dayHabits := map[Habit]bool{}
-
 	from := to.AddDate(0, 0, -daysBack)
+	firstRecord := firstRecord(from, to, habits, entries)
 
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
-		// build map of habit array to make deletions
-		// cleaner+more efficient than linear search array deletes
+		// build map of habit array to make deletions cleaner
+		// +more efficient than linear search array deletes
 		for _, habit := range habits {
 			dayHabits[habit] = true
 		}
 
 		for _, habit := range habits {
 			if _, ok := entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}]; ok {
+				delete(dayHabits, habit)
+			}
+			if dt.Before(firstRecord[habit]) {
 				delete(dayHabits, habit)
 			}
 		}
