@@ -114,7 +114,7 @@ func main() {
 
 					to := time.Now()
 					from := to.AddDate(0, 0, -100)
-					firstRecord := firstRecord(from, to, habits, *entries)
+					firstRecords := firstRecords(from, to, habits, *entries)
 					consistency := map[string][]string{}
 
 					sparkline := buildSpark(habits, *entries, from, to)
@@ -124,7 +124,7 @@ func main() {
 
 					heading := ""
 					for _, habit := range habits {
-						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, firstRecord[habit], from, to))
+						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, firstRecords[habit], from, to))
 						if heading != habit.Heading {
 							color.Bold.Printf(habit.Heading + "\n")
 							heading = habit.Heading
@@ -151,7 +151,7 @@ func main() {
 
 							to := time.Now()
 							from := to.AddDate(0, 0, -1825)
-							firstRecord := firstRecord(from, to, habits, *entries)
+							firstRecords := firstRecords(from, to, habits, *entries)
 							stats := map[string]HabitStats{}
 
 							heading := ""
@@ -160,7 +160,7 @@ func main() {
 									color.Bold.Printf("\n" + habit.Heading + "\n")
 									heading = habit.Heading
 								}
-								stats[habit.Name] = buildStats(&habit, *entries, firstRecord[habit], to)
+								stats[habit.Name] = buildStats(&habit, *entries, firstRecords[habit], to)
 								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
 								color.FgGreen.Printf("Streaks " + strconv.Itoa(stats[habit.Name].Streaks) + " days\t")
 								color.FgRed.Printf("Breaks " + strconv.Itoa(stats[habit.Name].Breaks) + " days\t")
@@ -191,7 +191,7 @@ func askHabits() {
 	entries := loadLog(config)
 	to := time.Now()
 	from := to.AddDate(0, 0, -60)
-	firstRecord := firstRecord(from, to, habits, *entries)
+	firstRecords := firstRecords(from, to, habits, *entries)
 
 	// Goes back 8 days to check unresolved entries
 	checkBackDays := 8
@@ -200,7 +200,7 @@ func askHabits() {
 	if len(*entries) == 0 {
 		checkBackDays = onboard()
 		for _, habit := range habits {
-			firstRecord[habit] = to.AddDate(0, 0, -(checkBackDays + 1))
+			firstRecords[habit] = to.AddDate(0, 0, -(checkBackDays + 1))
 		}
 	}
 
@@ -217,14 +217,14 @@ func askHabits() {
 			for _, habit := range habits {
 				// fmt.Print(dayhabit)
 				for _, dh := range dayhabit {
-					if habit.Name == dh.Name && dt.After(firstRecord[habit]) {
+					if habit.Name == dh.Name && dt.After(firstRecords[habit]) {
 						if heading != dh.Heading {
 							color.Bold.Printf("\n" + habit.Heading + "\n")
 							heading = habit.Heading
 						}
 						for {
 							fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-							fmt.Printf(buildGraph(&habit, *entries, firstRecord[habit], from, to))
+							fmt.Printf(buildGraph(&habit, *entries, firstRecords[habit], from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -262,16 +262,16 @@ func askHabits() {
 	}
 }
 
-func firstRecord(from time.Time, to time.Time, habits []Habit, entries Entries) map[Habit]time.Time {
-	firstRecord := map[Habit]time.Time{}
+func firstRecords(from time.Time, to time.Time, habits []Habit, entries Entries) map[Habit]time.Time {
+	firstRecords := map[Habit]time.Time{}
 	for dt := to; dt.Before(from) == false; dt = dt.AddDate(0, 0, -1) {
 		for _, habit := range habits {
 			if _, ok := entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}]; ok {
-				firstRecord[habit] = dt
+				firstRecords[habit] = dt
 			}
 		}
 	}
-	return firstRecord
+	return firstRecords
 }
 
 func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
@@ -280,7 +280,7 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	habits, _ := loadHabitsConfig(config)
 	dayHabits := map[Habit]bool{}
 	from := to.AddDate(0, 0, -daysBack)
-	firstRecord := firstRecord(from, to, habits, entries)
+	firstRecords := firstRecords(from, to, habits, entries)
 
 	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
 		// build map of habit array to make deletions cleaner
@@ -293,7 +293,7 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 			if _, ok := entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}]; ok {
 				delete(dayHabits, habit)
 			}
-			if dt.Before(firstRecord[habit]) {
+			if dt.Before(firstRecords[habit]) {
 				delete(dayHabits, habit)
 			}
 		}
@@ -347,9 +347,10 @@ func buildGraph(habit *Habit, entries Entries, firstRecord time.Time, from time.
 				graphDay = " "
 			}
 		} else {
-			if d.Before(firstRecord) {
-				graphDay = " "
-			} else if warning(d, habit, entries) && (to.Sub(d).Hours() < 336) {
+			// if d.Before(firstRecord) {
+			// 	graphDay = " "
+			// } else
+			if warning(d, habit, entries, firstRecord) && (to.Sub(d).Hours() < 336) {
 				// warning sigils max out at 2 weeks (~90 day habit in formula)
 				graphDay = "!"
 			} else {
@@ -417,7 +418,7 @@ func skipified(d time.Time, habit *Habit, entries Entries) bool {
 	return false
 }
 
-func warning(d time.Time, habit *Habit, entries Entries) bool {
+func warning(d time.Time, habit *Habit, entries Entries, firstRecord time.Time) bool {
 	if habit.Frequency < 1 {
 		return false
 	}
@@ -430,6 +431,9 @@ func warning(d time.Time, habit *Habit, entries Entries) bool {
 			return false
 		}
 		if entries[DailyHabit{Day: dt.Format(DateFormat), Habit: habit.Name}] == "s" {
+			return false
+		}
+		if dt.Before(firstRecord) {
 			return false
 		}
 	}
