@@ -523,10 +523,12 @@ func loadLog(configDir string) *Entries {
 
 	entries := Entries{}
 	for scanner.Scan() {
-		if scanner.Text() != "" {
-			// Discards comments from record read as result [3]
-			result := strings.Split(scanner.Text(), " : ")
-			entries[DailyHabit{Day: result[0], Habit: result[1]}] = Outcome(result[2])
+		if len(scanner.Text()) > 0 {
+			if scanner.Text()[0] != '#' {
+				// Discards comments from read record read as result[3]
+				result := strings.Split(scanner.Text(), " : ")
+				entries[DailyHabit{Day: result[0], Habit: result[1]}] = Outcome(result[2])
+			}
 		}
 	}
 
