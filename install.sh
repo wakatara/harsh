@@ -139,7 +139,7 @@ getPackage() {
                 echo "  following commands may need to be run manually."
                 echo "============================================================"
                 echo
-                echo "  sudo cp $REPO$suffix $BINLOCATION/$REPO"
+                echo "  sudo mv $installFile $BINLOCATION/$REPO"
                 echo
                 ./${REPO} --version
             else
