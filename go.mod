@@ -1,6 +1,6 @@
 module github.com/wakatara/harsh
 
-go 1.17
+go 1.18
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
