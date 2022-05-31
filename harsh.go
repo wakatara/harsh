@@ -59,7 +59,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.16",
+		Version:     "0.8.17",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -89,13 +89,13 @@ func main() {
 						color.Bold.Println(date + ":")
 						for _, habit := range habits {
 							for _, todo := range todos {
-							  if heading != habit.Heading && habit.Heading == todo.Heading {
-								  color.Bold.Printf("\n" + habit.Heading + "\n")
-								  heading = habit.Heading
-							  }
-							  if habit.Name == todo.Name && todo.Frequency > 0 {
-								  fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
-							  }
+								if heading != habit.Heading && habit.Heading == todo.Heading {
+									color.Bold.Printf("\n" + habit.Heading + "\n")
+									heading = habit.Heading
+								}
+								if habit.Name == todo.Name && todo.Frequency > 0 {
+									fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
+								}
 							}
 						}
 					}
