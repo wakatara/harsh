@@ -1,6 +1,6 @@
 module github.com/wakatara/harsh
 
-go 1.18
+go 1.19
 
 require (
 	github.com/gookit/color v1.5.0
