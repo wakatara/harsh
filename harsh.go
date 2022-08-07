@@ -37,7 +37,7 @@ var Habits []Habit
 // Outcome is the explicit recorded outcome of habit on a day (y, n, or s)
 type Outcome string
 
-// DailyHabit cobines Day and Habit with an Outcome to yield Entries
+// DailyHabit combines Day and Habit with an Outcome to yield Entries
 type DailyHabit struct {
 	Day   string
 	Habit string
