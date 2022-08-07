@@ -282,7 +282,7 @@ func getTodos(to time.Time, daysBack int, entries Entries) map[string][]Habit {
 	from := to.AddDate(0, 0, -daysBack)
 	firstRecords := firstRecords(from, to, habits, entries)
 
-	for dt := from; dt.After(to) == false; dt = dt.AddDate(0, 0, 1) {
+	for dt := to; dt.Before(from) == false; dt = dt.AddDate(0, 0, -1) {
 		// build map of habit array to make deletions cleaner
 		// +more efficient than linear search array deletes
 		for _, habit := range habits {
