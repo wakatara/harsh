@@ -18,19 +18,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-// DateFormat is an ISO8601 date
-// DateFormat = "2006-01-02"
-)
-
 var configDir string
 
-type Day int
+type Days int
 
 type Habit struct {
 	Heading   string
 	Name      string
-	Frequency Day
+	Frequency Days
 }
 
 var Habits []Habit
@@ -302,10 +297,6 @@ func getTodos(to civil.Date, daysBack int, entries Entries) map[string][]Habit {
 			tasksUndone[dt.String()] = append(tasksUndone[dt.String()], habit)
 		}
 	}
-	fmt.Println(time.Now())
-	fmt.Println(to)
-	fmt.Println(from)
-	fmt.Println(tasksUndone)
 	return tasksUndone
 }
 
@@ -494,7 +485,7 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 			} else if scanner.Text()[0] != '#' {
 				result := strings.Split(scanner.Text(), ": ")
 				r1, _ := strconv.Atoi(result[1])
-				h := Habit{Heading: heading, Name: result[0], Frequency: Day(r1)}
+				h := Habit{Heading: heading, Name: result[0], Frequency: Days(r1)}
 				Habits = append(Habits, h)
 			}
 		}
