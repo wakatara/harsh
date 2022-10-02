@@ -35,7 +35,7 @@ type Outcome string
 
 // DailyHabit combines Day and Habit with an Outcome to yield Entries
 type DailyHabit struct {
-	Day   string
+	Day   civil.Date
 	Habit string
 }
 
@@ -261,7 +261,7 @@ func firstRecords(from civil.Date, to civil.Date, habits []Habit, entries Entrie
 	firstRecords := map[Habit]civil.Date{}
 	for dt := to; dt.Before(from) == false; dt = dt.AddDays(-1) {
 		for _, habit := range habits {
-			if _, ok := entries[DailyHabit{Day: dt.String(), Habit: habit.Name}]; ok {
+			if _, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				firstRecords[habit] = dt
 			}
 		}
@@ -285,7 +285,7 @@ func getTodos(to civil.Date, daysBack int, entries Entries) map[string][]Habit {
 		}
 
 		for _, habit := range habits {
-			if _, ok := entries[DailyHabit{Day: dt.String(), Habit: habit.Name}]; ok {
+			if _, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				delete(dayHabits, habit)
 			}
 			if dt.Before(firstRecords[habit]) {
@@ -326,7 +326,7 @@ func buildGraph(habit *Habit, entries Entries, firstRecord civil.Date, from civi
 	var consistency []string
 
 	for d := from; d.After(to) == false; d = d.AddDays(1) {
-		if outcome, ok := entries[DailyHabit{Day: d.String(), Habit: habit.Name}]; ok {
+		if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
 				graphDay = "━"
@@ -360,7 +360,7 @@ func buildStats(habit *Habit, entries Entries, firstRecord civil.Date, to civil.
 	var skips int
 
 	for d := firstRecord; d.After(to) == false; d = d.AddDays(1) {
-		if outcome, ok := entries[DailyHabit{Day: d.String(), Habit: habit.Name}]; ok {
+		if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
 				streaks += 1
@@ -388,7 +388,7 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDays(-int(habit.Frequency))
 	for dt := from; dt.Before(to) == false; dt = dt.AddDays(-1) {
-		if entries[DailyHabit{Day: dt.String(), Habit: habit.Name}] == "y" {
+		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
 			return true
 		}
 	}
@@ -403,7 +403,7 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDays(-int(habit.Frequency))
 	for dt := from; dt.Before(to) == false; dt = dt.AddDays(-1) {
-		if entries[DailyHabit{Day: dt.String(), Habit: habit.Name}] == "s" {
+		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
 			return true
 		}
 	}
@@ -419,10 +419,10 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 	to := d
 	from := d.AddDays(-int(habit.Frequency) + warningDays)
 	for dt := from; dt.After(to) == false; dt = dt.AddDays(1) {
-		if entries[DailyHabit{Day: dt.String(), Habit: habit.Name}] == "y" {
+		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
 			return false
 		}
-		if entries[DailyHabit{Day: dt.String(), Habit: habit.Name}] == "s" {
+		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
 			return false
 		}
 		if dt.Before(firstRecord) {
@@ -440,7 +440,7 @@ func score(d civil.Date, habits []Habit, entries Entries) float64 {
 	for _, habit := range habits {
 		if habit.Frequency > 0 {
 			scorableHabits++
-			if outcome, ok := entries[DailyHabit{Day: d.String(), Habit: habit.Name}]; ok {
+			if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 
 				switch {
 				case outcome == "y":
@@ -517,7 +517,11 @@ func loadLog(configDir string) *Entries {
 			if scanner.Text()[0] != '#' {
 				// Discards comments from read record read as result[3]
 				result := strings.Split(scanner.Text(), " : ")
-				entries[DailyHabit{Day: result[0], Habit: result[1]}] = Outcome(result[2])
+				cd, err := civil.ParseDate(result[0])
+				if err != nil {
+					fmt.Println("Error parsing log date format.")
+				}
+				entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome(result[2])
 			}
 		}
 	}
