@@ -55,7 +55,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.18",
+		Version:     "0.8.19",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -158,10 +158,21 @@ func main() {
 								}
 								stats[habit.Name] = buildStats(&habit, *entries, firstRecords[habit], to)
 								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-								color.FgGreen.Printf("Streaks " + strconv.Itoa(stats[habit.Name].Streaks) + " days\t")
-								color.FgRed.Printf("Breaks " + strconv.Itoa(stats[habit.Name].Breaks) + " days\t")
-								color.FgYellow.Printf("Skips  " + strconv.Itoa(stats[habit.Name].Skips) + " days\t")
-								fmt.Printf("Tracked " + strconv.Itoa(stats[habit.Name].DaysTracked) + " days\n")
+								color.FgGreen.Printf("Streaks ")
+								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
+								color.FgGreen.Printf(" days")
+								fmt.Printf("%4v", "")
+								color.FgRed.Printf("Breaks ")
+								color.FgRed.Printf("%4v", strconv.Itoa(stats[habit.Name].Breaks))
+								color.FgRed.Printf(" days")
+								fmt.Printf("%4v", "")
+								color.FgYellow.Printf("Skips ")
+								color.FgYellow.Printf("%4v", strconv.Itoa(stats[habit.Name].Skips))
+								color.FgYellow.Printf(" days")
+								fmt.Printf("%4v", "")
+								fmt.Printf("Tracked ")
+								fmt.Printf("%4v", strconv.Itoa(stats[habit.Name].DaysTracked))
+								fmt.Printf(" days\n")
 							}
 							return nil
 						},
