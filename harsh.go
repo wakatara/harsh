@@ -89,7 +89,7 @@ func main() {
 									color.Bold.Printf("\n" + habit.Heading + "\n")
 									heading = habit.Heading
 								}
-								if habit.Name == todo.Name && todo.Frequency > 0 {
+								if habit.Name == todo.Name {
 									fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
 								}
 							}
