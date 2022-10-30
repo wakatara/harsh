@@ -146,7 +146,7 @@ func main() {
 							entries := loadLog(config)
 
 							to := civil.DateOf(time.Now())
-							from := to.AddDays(-1825)
+							from := to.AddDays(-(365 * 5))
 							firstRecords := firstRecords(from, to, habits, *entries)
 							stats := map[string]HabitStats{}
 
