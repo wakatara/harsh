@@ -55,7 +55,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.19",
+		Version:     "0.8.20",
 		Commands: []*cli.Command{
 			{
 				Name:    "ask",
@@ -468,7 +468,11 @@ func score(d civil.Date, habits []Habit, entries Entries) float64 {
 			}
 		}
 	}
-	score := (scored / (scorableHabits - skipped)) * 100
+
+	score := 100.0 // deal with scorable habits - skipped = 0 causing divide by zero issue
+	if scorableHabits-skipped != 0 {
+		score = (scored / (scorableHabits - skipped)) * 100
+	}
 	return score
 }
 
