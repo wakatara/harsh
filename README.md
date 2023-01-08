@@ -291,6 +291,20 @@ Enter `harsh help` if you're lost:
     --version, -v  print the version (default: false)
 ```
 
+## Quality of Life Usage Improvement
+
+As you increasingly use `harsh` for tracking, you'll inevitably end up making small errors in your log file or will want to edit your config file. While people have suggested adding a `harsh config` command to the app, this feels like overkill for the intended audience (geeks) but you can gert the same effect through using aliases. 
+
+As a simple quality of life improvement, add the following to your `bash`, `zsh`, `fish` (what I use), or shell of choice:
+
+``` bash
+alias h="harsh"
+alias hc="nvim ~/.config/harsh/habits"
+alias hl="nvim ~/.config/harsh/log"
+```
+
+For me, this equates to me ending up typing `h log` for the graph, `h ask` etc etc. When I need to edit the log file because I was a bit too itchy with my trigger finger (or decide I should add a note), `hl` is my friend.
+
 ## License: MIT License
 
 *harsh* is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
