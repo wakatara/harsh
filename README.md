@@ -324,6 +324,7 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 * [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil mastermind
 * [Aisling](https://github.com/ais) - improved configuration discovery.
 * [vchslv13](https://github.com/vchslv13) - improved shell installation script.
+* [manu-cyber](https://github.com/manu-cyber) - documentation fixes.
 
 ## Thanks
 
