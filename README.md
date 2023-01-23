@@ -95,10 +95,10 @@ You can then move the file to the desired location in your `$PATH`.
 
 ## Getting Started
 
-When you run `harsh` for the first time, it will set up the required files:
+When you run `harsh ask` for the first time, it will set up the required files:
 
 ```
-    $ harsh
+    $ harsh ask
     Welcome to harsh!
     
     Created /Users/daryl/.config/harsh/habits  This file lists your habits.
