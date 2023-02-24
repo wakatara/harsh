@@ -37,6 +37,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GORELEASER_HARSH_HOMEBREW_PUBLISHER }}
