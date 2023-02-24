@@ -288,6 +288,7 @@ Enter `harsh help` if you're lost:
 
     GLOBAL OPTIONS:
     --help, -h     show help (default: false)
+    --no-color, -n  no colors in output (default: false)
     --version, -v  print the version (default: false)
 ```
 
@@ -304,6 +305,12 @@ alias hl="nvim ~/.config/harsh/log"
 ```
 
 For me, this equates to me ending up typing `h log` for the graph, `h ask` etc etc. When I need to edit the log file because I was a bit too itchy with my trigger finger (or decide I should add a note), `hl` is my friend.
+
+## No Colour option
+
+New from 0.8.22, if you are logging the output of `harsh log stat` and other features which contains colour codes, you can instead use `--no-color` flag via `harsh --no-color [command]` (or `harsh -n [command]`) in order to suppress colour codes. This is also very helpful in n/vim with the `:.! harsh -n log stats` command stanza to record harsh's output to n/vim's buffer (learned that from the feature requester!).
+
+Much like the above feature of accessing config and log files, you can alias `harsh -n` in your shell if you prefer to suppress all colour output coming from all harsh commands.
 
 ## License: MIT License
 
