@@ -55,7 +55,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.21",
+		Version:     "0.8.22",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -159,12 +159,12 @@ func main() {
 
 							heading := ""
 							for _, habit := range habits {
+								if c.Bool("no-color") {
+									color.Disable()
+								}
 								if heading != habit.Heading {
 									color.Bold.Printf("\n" + habit.Heading + "\n")
 									heading = habit.Heading
-								}
-								if c.Bool("no-color") {
-									color.Disable()
 								}
 								stats[habit.Name] = buildStats(&habit, *entries, firstRecords[habit], to)
 								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
