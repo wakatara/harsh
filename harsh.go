@@ -603,20 +603,21 @@ func findConfigFiles() string {
 func welcome(configDir string) {
 	createExampleHabitsFile(configDir)
 	createNewLogFile(configDir)
-	fmt.Println("Welcome to harsh!\n")
+	fmt.Println("Welcome to harsh!")
 	fmt.Println("Created " + filepath.Join(configDir, "/habits") + "   This file lists your habits.")
 	fmt.Println("Created " + filepath.Join(configDir, "/log") + "      This file is your habit log.")
-
-	fmt.Println("\nNo habits of your own yet?")
+  fmt.Println("")
+	fmt.Println("No habits of your own yet?")
 	fmt.Println("Open your habits file @ " + filepath.Join(configDir, "/habits"))
 	fmt.Println("with a text editor (nano, vim, VS Code, Atom, emacs) and modify and save the habits list.")
-	fmt.Println("Then:\n")
+	fmt.Println("Then:")
 	fmt.Println("Run       harsh ask     to start tracking")
 	fmt.Println("Running   harsh todo    will show you undone habits for today.")
 	fmt.Println("Running   harsh log     will show you a consistency graph of your efforts.")
 	fmt.Println("                        (the graph gets way cooler looking over time.")
 	fmt.Println("For more depth, you can read https://github.com/wakatara/harsh#usage")
-	fmt.Println("\nHappy tracking! I genuinely hope this helps you with your goals. Buena suerte!\n")
+	fmt.Println("")
+  fmt.Println("Happy tracking! I genuinely hope this helps you with your goals. Buena suerte!")
 	os.Exit(0)
 }
 
