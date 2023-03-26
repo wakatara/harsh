@@ -2,12 +2,12 @@
 
 harsh is habit tracking for geeks. A minimalist, command line tool for tracking and understanding your habits.
 
-Succinctly: it's quick and gets out of your way. And gives you amazing visibility on your habits.
+Succinctly: it's quick and gets out of your way. And gives you excellent visibility on your habits.
 
 There're 3 commands: `ask`, `log`, and `todo`.
 (and one subcommand `log stats`)
 
-Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit habits to track.
+Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit, habits to track.
 
 It's written in GoLang and adds features on top of habitctl (its inspiration) such as bug fixes, skips, and streak break warnings. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
@@ -183,7 +183,7 @@ Simply run `harsh ask` regularly, specify whether you did the habit from the pro
 
 `harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now. CTRL-c breaks you out of the ask cycle at any point and returns you to your prompt.
 
-As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for anlaysis on the `:` deliimiter. 
+As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for analysis on the `:` deliimiter. 
 
 Personally, I'd use the comments sparing and to denote why you had to skip, broke a consistency chain with an `n`, or for when you're trying to figure out something notable on a day so when you look back you can see why habit *X* may or may not have succeeded. 
 
@@ -308,7 +308,7 @@ For me, this equates to me ending up typing `h log` for the graph, `h ask` etc e
 
 ## No Colour option
 
-New from 0.8.22, if you are logging the output of `harsh log stat` and other features which contains colour codes, you can instead use `--no-color` flag via `harsh --no-color [command]` (or `harsh -n [command]`) in order to suppress colour codes. This is also very helpful in n/vim with the `:.! harsh -n log stats` command stanza to record harsh's output to n/vim's buffer (learned that from the feature requester!).
+New from 0.8.22: if you are logging the output of `harsh log stat` and other features which contains colour codes, you can instead use `--no-color` flag via `harsh --no-color [command]` (or `harsh -n [command]`) to suppress colourized output. This is also very helpful in n/vim with the `:.! harsh -n log stats` command stanza to record harsh's output to n/vim's buffer (learned that from the feature requester!).
 
 Much like the above feature of accessing config and log files, you can alias `harsh -n` in your shell if you prefer to suppress all colour output coming from all harsh commands.
 
