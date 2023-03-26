@@ -606,7 +606,7 @@ func welcome(configDir string) {
 	fmt.Println("Welcome to harsh!")
 	fmt.Println("Created " + filepath.Join(configDir, "/habits") + "   This file lists your habits.")
 	fmt.Println("Created " + filepath.Join(configDir, "/log") + "      This file is your habit log.")
-  fmt.Println("")
+	fmt.Println("")
 	fmt.Println("No habits of your own yet?")
 	fmt.Println("Open your habits file @ " + filepath.Join(configDir, "/habits"))
 	fmt.Println("with a text editor (nano, vim, VS Code, Atom, emacs) and modify and save the habits list.")
@@ -617,7 +617,7 @@ func welcome(configDir string) {
 	fmt.Println("                        (the graph gets way cooler looking over time.")
 	fmt.Println("For more depth, you can read https://github.com/wakatara/harsh#usage")
 	fmt.Println("")
-  fmt.Println("Happy tracking! I genuinely hope this helps you with your goals. Buena suerte!")
+	fmt.Println("Happy tracking! I genuinely hope this helps you with your goals. Buena suerte!")
 	os.Exit(0)
 }
 
