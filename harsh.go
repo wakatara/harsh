@@ -55,7 +55,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.22",
+		Version:     "0.8.23",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -69,9 +69,6 @@ func main() {
 				Aliases: []string{"a"},
 				Usage:   "Asks and records your undone habits",
 				Action: func(c *cli.Context) error {
-					config := findConfigFiles()
-					// check for onboarding
-					loadLog(config)
 					askHabits()
 					return nil
 				},
