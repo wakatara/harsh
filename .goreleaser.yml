@@ -1,6 +1,5 @@
 before:
   hooks:
-    - make clean
     - go mod tidy
 builds:
 - env:
