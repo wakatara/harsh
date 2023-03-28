@@ -9,13 +9,13 @@ There're 3 commands: `ask`, `log`, and `todo`.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit, habits to track.
 
-It's written in GoLang and adds features on top of habitctl (its inspiration) such as bug fixes, skips, and streak break warnings. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
+It's written in GoLang and adds features and fixes on top of habitctl (its inspiration) such as skips, streak break warnings, and stats. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
 My biggest hope that it helps you get done what you're trying to get done in your life.
 
 ## Installation
 
-harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebrew), and Windows. A specific goal was increasing uptake and adoption of a portable, command line, text-based approach. Windows is somewhat untested though we had a nice pull request that helped with config issues. We have also updated harsh to support ARM architecture for OSX (M1 chipped Macs) and Linux as of 0.8.8.
+harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebrew), FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake and adoption of a portable, command line, text-based approach. We have also updated harsh to support ARM architectures for OSX (M1 and M2 chipped Macs) and Linux as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available as of 0.8.23.
 ### Install via package manager
 
 **Homebrew tap** (Mac and Linux):
@@ -308,7 +308,7 @@ For me, this equates to me ending up typing `h log` for the graph, `h ask` etc e
 
 ## No Colour option
 
-New from 0.8.22: if you are logging the output of `harsh log stat` and other features which contains colour codes, you can instead use `--no-color` flag via `harsh --no-color [command]` (or `harsh -n [command]`) to suppress colourized output. This is also very helpful in n/vim with the `:.! harsh -n log stats` command stanza to record harsh's output to n/vim's buffer (learned that from the feature requester!).
+New from 0.8.22: if you are logging the output of `harsh log stat` and other features which contains colour codes, you can instead use `--no-color` flag via `harsh --no-color [command]` (or `harsh -n [command]`) to suppress colourized output. This is also very helpful in n/vim with the `:.! harsh -n log stats` command stanza to record harsh's output to n/vim's buffer to augment your weekly, monthly, or daily tracking (learned that vim snippet from the feature requester!).
 
 Much like the above feature of accessing config and log files, you can alias `harsh -n` in your shell if you prefer to suppress all colour output coming from all harsh commands.
 
