@@ -119,7 +119,7 @@ func main() {
 
 					sparkline := buildSpark(habits, *entries, from, to)
 					fmt.Printf("%*v", maxHabitNameLength, "")
-					fmt.Printf(strings.Join(sparkline, ""))
+					fmt.Print(strings.Join(sparkline, ""))
 					fmt.Printf("\n")
 
 					heading := ""
@@ -130,7 +130,7 @@ func main() {
 							heading = habit.Heading
 						}
 						fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-						fmt.Printf(strings.Join(consistency[habit.Name], ""))
+						fmt.Print(strings.Join(consistency[habit.Name], ""))
 						fmt.Printf("\n")
 					}
 
@@ -220,7 +220,7 @@ func askHabits() {
 
 	dayHabits := getTodos(to, checkBackDays, *entries)
 
-	for dt := from; dt.After(to) == false; dt = dt.AddDays(1) {
+	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if dayhabit, ok := dayHabits[dt.String()]; ok {
 
 			color.Bold.Println(dt.String() + ":")
@@ -237,7 +237,7 @@ func askHabits() {
 						}
 						for {
 							fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-							fmt.Printf(buildGraph(&habit, *entries, firstRecords[habit], from, to))
+							fmt.Print(buildGraph(&habit, *entries, firstRecords[habit], from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -277,7 +277,7 @@ func askHabits() {
 
 func firstRecords(from civil.Date, to civil.Date, habits []Habit, entries Entries) map[Habit]civil.Date {
 	firstRecords := map[Habit]civil.Date{}
-	for dt := to; dt.Before(from) == false; dt = dt.AddDays(-1) {
+	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
 		for _, habit := range habits {
 			if _, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				firstRecords[habit] = dt
@@ -295,7 +295,7 @@ func getTodos(to civil.Date, daysBack int, entries Entries) map[string][]Habit {
 	dayHabits := map[Habit]bool{}
 	from := to.AddDays(-daysBack)
 	firstRecords := firstRecords(from, to, habits, entries)
-	for dt := to; dt.Before(from) == false; dt = dt.AddDays(-1) {
+	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
 		// build map of habit array to make deletions cleaner
 		// +more efficient than linear search array deletes
 		for _, habit := range habits {
@@ -325,7 +325,7 @@ func buildSpark(habits []Habit, entries Entries, from civil.Date, to civil.Date)
 	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
 	i := 0
 
-	for d := from; d.After(to) == false; d = d.AddDays(1) {
+	for d := from; !d.After(to); d = d.AddDays(1) {
 		dailyScore := score(d, habits, entries)
 		// divide score into  score to map to sparks slice graphic for sparkline
 		if dailyScore == 100 {
@@ -343,7 +343,7 @@ func buildGraph(habit *Habit, entries Entries, firstRecord civil.Date, from civi
 	var graphDay string
 	var consistency []string
 
-	for d := from; d.After(to) == false; d = d.AddDays(1) {
+	for d := from; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
@@ -377,7 +377,7 @@ func buildStats(habit *Habit, entries Entries, firstRecord civil.Date, to civil.
 	var breaks int
 	var skips int
 
-	for d := firstRecord; d.After(to) == false; d = d.AddDays(1) {
+	for d := firstRecord; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
@@ -405,7 +405,7 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 
 	from := d
 	to := d.AddDays(-int(habit.Frequency))
-	for dt := from; dt.Before(to) == false; dt = dt.AddDays(-1) {
+	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
 		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
 			return true
 		}
@@ -420,7 +420,7 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 
 	from := d
 	to := d.AddDays(-int(habit.Frequency))
-	for dt := from; dt.Before(to) == false; dt = dt.AddDays(-1) {
+	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
 		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
 			return true
 		}
@@ -436,7 +436,7 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 	warningDays := int(math.Floor(float64(habit.Frequency/7))) + 1
 	to := d
 	from := d.AddDays(-int(habit.Frequency) + warningDays)
-	for dt := from; dt.After(to) == false; dt = dt.AddDays(1) {
+	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
 			return false
 		}
