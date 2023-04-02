@@ -433,7 +433,7 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 		return false
 	}
 
-	warningDays := int(math.Floor(float64(habit.Frequency/7))) + 1
+	warningDays := int(habit.Frequency)/7 + 1
 	to := d
 	from := d.AddDays(-int(habit.Frequency) + warningDays)
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
