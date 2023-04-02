@@ -85,6 +85,9 @@ func main() {
 					undone := getTodos(to, 0, *entries)
 
 					heading := ""
+          if len(undone) == 0 {
+            fmt.Println("All todos logged up to today.")
+          }
 					for date, todos := range undone {
 						color.Bold.Println(date + ":")
 						for _, habit := range habits {
