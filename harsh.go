@@ -87,21 +87,22 @@ func main() {
 					heading := ""
           if len(undone) == 0 {
             fmt.Println("All todos logged up to today.")
+          } else {
+					  for date, todos := range undone {
+						  color.Bold.Println(date + ":")
+						  for _, habit := range habits {
+							  for _, todo := range todos {
+								  if heading != habit.Heading && habit.Heading == todo.Heading {
+									  color.Bold.Printf("\n" + habit.Heading + "\n")
+									  heading = habit.Heading
+								  }
+								  if habit.Name == todo.Name {
+									  fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
+								  }
+							  }
+						  }
+					  }
           }
-					for date, todos := range undone {
-						color.Bold.Println(date + ":")
-						for _, habit := range habits {
-							for _, todo := range todos {
-								if heading != habit.Heading && habit.Heading == todo.Heading {
-									color.Bold.Printf("\n" + habit.Heading + "\n")
-									heading = habit.Heading
-								}
-								if habit.Name == todo.Name {
-									fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
-								}
-							}
-						}
-					}
 
 					return nil
 				},
