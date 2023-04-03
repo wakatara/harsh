@@ -28,8 +28,6 @@ type Habit struct {
 	Frequency Days
 }
 
-var Habits []Habit
-
 // Outcome is the explicit recorded outcome of habit on a day (y, n, or s)
 type Outcome string
 
@@ -50,12 +48,18 @@ type HabitStats struct {
 // Entries maps DailyHabit{ISO date + habit}: Outcome and log format
 type Entries map[DailyHabit]Outcome
 
+type Harsh struct {
+  Habits            []Habit
+  MaxHabitNameLength int
+  Entries           *Entries
+}
+
 func main() {
 	app := &cli.App{
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.23",
+		Version:     "0.8.24",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -69,7 +73,8 @@ func main() {
 				Aliases: []string{"a"},
 				Usage:   "Asks and records your undone habits",
 				Action: func(c *cli.Context) error {
-					askHabits()
+          harsh := newHarsh()
+          harsh.askHabits()
 					return nil
 				},
 			},
@@ -78,11 +83,9 @@ func main() {
 				Aliases: []string{"t"},
 				Usage:   "Shows undone habits for today.",
 				Action: func(c *cli.Context) error {
-					config := findConfigFiles()
-					habits, maxHabitNameLength := loadHabitsConfig(config)
-					entries := loadLog(config)
+				  harsh := newHarsh()
 					to := civil.DateOf(time.Now())
-					undone := getTodos(to, 0, *entries)
+					undone := harsh.getTodos(to, 0)
 
 					heading := ""
           if len(undone) == 0 {
@@ -90,14 +93,14 @@ func main() {
           } else {
 					  for date, todos := range undone {
 						  color.Bold.Println(date + ":")
-						  for _, habit := range habits {
+						  for _, habit := range harsh.Habits {
 							  for _, todo := range todos {
 								  if heading != habit.Heading && habit.Heading == todo.Heading {
 									  color.Bold.Printf("\n" + habit.Heading + "\n")
 									  heading = habit.Heading
 								  }
 								  if habit.Name == todo.Name {
-									  fmt.Printf("%*v", maxHabitNameLength, todo.Name+"\n")
+									  fmt.Printf("%*v", harsh.MaxHabitNameLength, todo.Name+"\n")
 								  }
 							  }
 						  }
@@ -112,33 +115,31 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "Shows graph of logged habits",
 				Action: func(c *cli.Context) error {
-					config := findConfigFiles()
-					habits, maxHabitNameLength := loadHabitsConfig(config)
-					entries := loadLog(config)
+          harsh := newHarsh()
 
 					to := civil.DateOf(time.Now())
 					from := to.AddDays(-100)
-					firstRecords := firstRecords(from, to, habits, *entries)
+					firstRecords := harsh.firstRecords(from, to)
 					consistency := map[string][]string{}
 
-					sparkline := buildSpark(habits, *entries, from, to)
-					fmt.Printf("%*v", maxHabitNameLength, "")
+					sparkline := harsh.buildSpark(from, to)
+					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
 					fmt.Print(strings.Join(sparkline, ""))
 					fmt.Printf("\n")
 
 					heading := ""
-					for _, habit := range habits {
-						consistency[habit.Name] = append(consistency[habit.Name], buildGraph(&habit, *entries, firstRecords[habit], from, to))
+					for _, habit := range harsh.Habits {
+						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(&habit, firstRecords[habit], from, to))
 						if heading != habit.Heading {
 							color.Bold.Printf(habit.Heading + "\n")
 							heading = habit.Heading
 						}
-						fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
+						fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
 						fmt.Print(strings.Join(consistency[habit.Name], ""))
 						fmt.Printf("\n")
 					}
 
-					scoring := fmt.Sprintf("%.1f", score(civil.DateOf(time.Now()).AddDays(-1), habits, *entries))
+					scoring := fmt.Sprintf("%.1f", harsh.score(civil.DateOf(time.Now()).AddDays(-1)))
 					fmt.Printf("\n" + "Yesterday's Score: " + scoring + "%%\n")
 
 					return nil
@@ -149,17 +150,15 @@ func main() {
 						Aliases: []string{"s"},
 						Usage:   "Shows habit stats for entire log file",
 						Action: func(c *cli.Context) error {
-							config := findConfigFiles()
-							habits, maxHabitNameLength := loadHabitsConfig(config)
-							entries := loadLog(config)
+						  harsh := newHarsh()
 
 							to := civil.DateOf(time.Now())
 							from := to.AddDays(-(365 * 5))
-							firstRecords := firstRecords(from, to, habits, *entries)
+							firstRecords := harsh.firstRecords(from, to)
 							stats := map[string]HabitStats{}
 
 							heading := ""
-							for _, habit := range habits {
+							for _, habit := range harsh.Habits {
 								if c.Bool("no-color") {
 									color.Disable()
 								}
@@ -167,8 +166,8 @@ func main() {
 									color.Bold.Printf("\n" + habit.Heading + "\n")
 									heading = habit.Heading
 								}
-								stats[habit.Name] = buildStats(&habit, *entries, firstRecords[habit], to)
-								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
+								stats[habit.Name] = harsh.buildStats(&habit, firstRecords[habit], to)
+								fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
 								color.FgGreen.Printf("Streaks ")
 								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
 								color.FgGreen.Printf(" days")
@@ -202,27 +201,33 @@ func main() {
 	}
 }
 
-// Ask function prompts
-func askHabits() {
-	config := findConfigFiles()
+func newHarsh() *Harsh {
+ 	config := findConfigFiles()
 	habits, maxHabitNameLength := loadHabitsConfig(config)
 	entries := loadLog(config)
-	to := civil.DateOf(time.Now())
+  
+ return &Harsh{habits, maxHabitNameLength, entries}
+}
+
+// Ask function prompts
+func (h *Harsh) askHabits() {
+	
+  to := civil.DateOf(time.Now())
 	from := to.AddDays(-60)
-	firstRecords := firstRecords(from, to, habits, *entries)
+	firstRecords := h.firstRecords(from, to)
 
 	// Goes back 8 days to check unresolved entries
 	checkBackDays := 8
 	// If log file is empty, we onboard the user
 	// For onboarding, we ask how many days to start tracking from
-	if len(*entries) == 0 {
+	if len(*h.Entries) == 0 {
 		checkBackDays = onboard()
-		for _, habit := range habits {
+		for _, habit := range h.Habits {
 			firstRecords[habit] = to.AddDays(-(checkBackDays + 1))
 		}
 	}
 
-	dayHabits := getTodos(to, checkBackDays, *entries)
+	dayHabits := h.getTodos(to, checkBackDays)
 
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if dayhabit, ok := dayHabits[dt.String()]; ok {
@@ -232,7 +237,7 @@ func askHabits() {
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
 			heading := ""
-			for _, habit := range habits {
+			for _, habit := range h.Habits {
 				for _, dh := range dayhabit {
 					if habit.Name == dh.Name && dt.After(firstRecords[habit]) {
 						if heading != dh.Heading {
@@ -240,8 +245,8 @@ func askHabits() {
 							heading = habit.Heading
 						}
 						for {
-							fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-							fmt.Print(buildGraph(&habit, *entries, firstRecords[habit], from, to))
+							fmt.Printf("%*v", h.MaxHabitNameLength, habit.Name+"  ")
+							fmt.Print(h.buildGraph(&habit, firstRecords[habit], from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -268,7 +273,7 @@ func askHabits() {
 								break
 							}
 
-							color.FgRed.Printf("%*v", maxHabitNameLength+25, "Sorry! Please choose from")
+							color.FgRed.Printf("%*v", h.MaxHabitNameLength+25, "Sorry! Please choose from")
 							color.FgRed.Printf(" [y/n/s/⏎] " + "(and an optional #-denoted comment)" + "\n")
 						}
 					}
@@ -279,11 +284,11 @@ func askHabits() {
 	}
 }
 
-func firstRecords(from civil.Date, to civil.Date, habits []Habit, entries Entries) map[Habit]civil.Date {
+func (h *Harsh) firstRecords(from civil.Date, to civil.Date) map[Habit]civil.Date {
 	firstRecords := map[Habit]civil.Date{}
 	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
-		for _, habit := range habits {
-			if _, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+		for _, habit := range h.Habits {
+			if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				firstRecords[habit] = dt
 			}
 		}
@@ -291,23 +296,20 @@ func firstRecords(from civil.Date, to civil.Date, habits []Habit, entries Entrie
 	return firstRecords
 }
 
-func getTodos(to civil.Date, daysBack int, entries Entries) map[string][]Habit {
-	to = civil.DateOf(time.Now())
+func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]Habit {
 	tasksUndone := map[string][]Habit{}
-	config := findConfigFiles()
-	habits, _ := loadHabitsConfig(config)
 	dayHabits := map[Habit]bool{}
 	from := to.AddDays(-daysBack)
-	firstRecords := firstRecords(from, to, habits, entries)
+	firstRecords := h.firstRecords(from, to)
 	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
 		// build map of habit array to make deletions cleaner
 		// +more efficient than linear search array deletes
-		for _, habit := range habits {
+		for _, habit := range h.Habits {
 			dayHabits[habit] = true
 		}
 
-		for _, habit := range habits {
-			if _, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+		for _, habit := range h.Habits {
+			if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				delete(dayHabits, habit)
 			}
 			if dt.Before(firstRecords[habit]) {
@@ -323,14 +325,14 @@ func getTodos(to civil.Date, daysBack int, entries Entries) map[string][]Habit {
 }
 
 // Consistency graph, sparkline, and scoring functions
-func buildSpark(habits []Habit, entries Entries, from civil.Date, to civil.Date) []string {
+func (h *Harsh) buildSpark(from civil.Date, to civil.Date) []string {
 
 	sparkline := []string{}
 	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
 	i := 0
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
-		dailyScore := score(d, habits, entries)
+		dailyScore := h.score(d)
 		// divide score into  score to map to sparks slice graphic for sparkline
 		if dailyScore == 100 {
 			i = 8
@@ -343,12 +345,12 @@ func buildSpark(habits []Habit, entries Entries, from civil.Date, to civil.Date)
 	return sparkline
 }
 
-func buildGraph(habit *Habit, entries Entries, firstRecord civil.Date, from civil.Date, to civil.Date) string {
+func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date, to civil.Date) string {
 	var graphDay string
 	var consistency []string
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
-		if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
+		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
 				graphDay = "━"
@@ -356,16 +358,16 @@ func buildGraph(habit *Habit, entries Entries, firstRecord civil.Date, from civi
 				graphDay = "•"
 			// look at cases of "n" being entered but
 			// within bounds of the habit every x days
-			case satisfied(d, habit, entries):
+			case satisfied(d, habit, *h.Entries):
 				graphDay = "─"
-			case skipified(d, habit, entries):
+			case skipified(d, habit, *h.Entries):
 				graphDay = "·"
 			case outcome == "n":
 				graphDay = " "
 			}
 		} else {
-			if warning(d, habit, entries, firstRecord) && (to.DaysSince(d) < 14) {
-				// warning sigils max out at 2 weeks (~90 day habit in formula)
+			if warning(d, habit, *h.Entries, firstRecord) && (to.DaysSince(d) < 14) {
+        // warning: sigils max out at 2 weeks (~90 day habit in formula)
 				graphDay = "!"
 			} else {
 				graphDay = " "
@@ -376,13 +378,13 @@ func buildGraph(habit *Habit, entries Entries, firstRecord civil.Date, from civi
 	return strings.Join(consistency, "")
 }
 
-func buildStats(habit *Habit, entries Entries, firstRecord civil.Date, to civil.Date) HabitStats {
+func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) HabitStats {
 	var streaks int
 	var breaks int
 	var skips int
 
 	for d := firstRecord; !d.After(to); d = d.AddDays(1) {
-		if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
+		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
 				streaks += 1
@@ -390,9 +392,9 @@ func buildStats(habit *Habit, entries Entries, firstRecord civil.Date, to civil.
 				skips += 1
 			// look at cases of "n" being entered but
 			// within bounds of the habit every x days
-			case satisfied(d, habit, entries):
+			case satisfied(d, habit, *h.Entries):
 				streaks += 1
-			case skipified(d, habit, entries):
+			case skipified(d, habit, *h.Entries):
 				skips += 1
 			case outcome == "n":
 				breaks += 1
@@ -454,15 +456,15 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 	return true
 }
 
-func score(d civil.Date, habits []Habit, entries Entries) float64 {
+func (h *Harsh) score(d civil.Date) float64 {
 	scored := 0.0
 	skipped := 0.0
 	scorableHabits := 0.0
 
-	for _, habit := range habits {
+	for _, habit := range h.Habits {
 		if habit.Frequency > 0 {
 			scorableHabits++
-			if outcome, ok := entries[DailyHabit{Day: d, Habit: habit.Name}]; ok {
+			if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 
 				switch {
 				case outcome == "y":
@@ -471,9 +473,9 @@ func score(d civil.Date, habits []Habit, entries Entries) float64 {
 					skipped++
 				// look at cases of n being entered but
 				// within bounds of the habit every x days
-				case satisfied(d, &habit, entries):
+				case satisfied(d, &habit, *h.Entries):
 					scored++
-				case skipified(d, &habit, entries):
+				case skipified(d, &habit, *h.Entries):
 					skipped++
 				}
 			}
@@ -503,6 +505,7 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 	scanner := bufio.NewScanner(file)
 
 	var heading string
+  var habits []Habit
 	for scanner.Scan() {
 		if len(scanner.Text()) > 0 {
 			if scanner.Text()[0] == '!' {
@@ -512,19 +515,19 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 				result := strings.Split(scanner.Text(), ": ")
 				r1, _ := strconv.Atoi(result[1])
 				h := Habit{Heading: heading, Name: result[0], Frequency: Days(r1)}
-				Habits = append(Habits, h)
+				habits = append(habits, h)
 			}
 		}
 	}
 
 	maxHabitNameLength := 0
-	for _, h := range Habits {
+	for _, h := range habits {
 		if len(h.Name) > maxHabitNameLength {
 			maxHabitNameLength = len(h.Name)
 		}
 	}
 
-	return Habits, maxHabitNameLength + 10
+	return habits, maxHabitNameLength + 10
 }
 
 // loadLog reads entries from log file
@@ -691,6 +694,5 @@ func createNewLogFile(configDir string) {
 		if err != nil {
 			log.Fatalf("error opening file: %v", err)
 		}
-
 	}
 }
