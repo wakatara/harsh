@@ -49,9 +49,9 @@ type HabitStats struct {
 type Entries map[DailyHabit]Outcome
 
 type Harsh struct {
-  Habits            []Habit
-  MaxHabitNameLength int
-  Entries           *Entries
+	Habits             []Habit
+	MaxHabitNameLength int
+	Entries            *Entries
 }
 
 func main() {
@@ -72,9 +72,9 @@ func main() {
 				Name:    "ask",
 				Aliases: []string{"a"},
 				Usage:   "Asks and records your undone habits",
-				Action: func(c *cli.Context) error {
-          harsh := newHarsh()
-          harsh.askHabits()
+				Action: func(_ *cli.Context) error {
+					harsh := newHarsh()
+					harsh.askHabits()
 					return nil
 				},
 			},
@@ -82,30 +82,30 @@ func main() {
 				Name:    "todo",
 				Aliases: []string{"t"},
 				Usage:   "Shows undone habits for today.",
-				Action: func(c *cli.Context) error {
-				  harsh := newHarsh()
+				Action: func(_ *cli.Context) error {
+					harsh := newHarsh()
 					to := civil.DateOf(time.Now())
 					undone := harsh.getTodos(to, 0)
 
 					heading := ""
-          if len(undone) == 0 {
-            fmt.Println("All todos logged up to today.")
-          } else {
-					  for date, todos := range undone {
-						  color.Bold.Println(date + ":")
-						  for _, habit := range harsh.Habits {
-							  for _, todo := range todos {
-								  if heading != habit.Heading && habit.Heading == todo.Heading {
-									  color.Bold.Printf("\n" + habit.Heading + "\n")
-									  heading = habit.Heading
-								  }
-								  if habit.Name == todo.Name {
-									  fmt.Printf("%*v", harsh.MaxHabitNameLength, todo.Name+"\n")
-								  }
-							  }
-						  }
-					  }
-          }
+					if len(undone) == 0 {
+						fmt.Println("All todos logged up to today.")
+					} else {
+						for date, todos := range undone {
+							color.Bold.Println(date + ":")
+							for _, habit := range harsh.Habits {
+								for _, todo := range todos {
+									if heading != habit.Heading && habit.Heading == todo.Heading {
+										color.Bold.Printf("\n" + habit.Heading + "\n")
+										heading = habit.Heading
+									}
+									if habit.Name == todo.Name {
+										fmt.Printf("%*v", harsh.MaxHabitNameLength, todo.Name+"\n")
+									}
+								}
+							}
+						}
+					}
 
 					return nil
 				},
@@ -114,8 +114,8 @@ func main() {
 				Name:    "log",
 				Aliases: []string{"l"},
 				Usage:   "Shows graph of logged habits",
-				Action: func(c *cli.Context) error {
-          harsh := newHarsh()
+				Action: func(_ *cli.Context) error {
+					harsh := newHarsh()
 
 					to := civil.DateOf(time.Now())
 					from := to.AddDays(-100)
@@ -150,7 +150,7 @@ func main() {
 						Aliases: []string{"s"},
 						Usage:   "Shows habit stats for entire log file",
 						Action: func(c *cli.Context) error {
-						  harsh := newHarsh()
+							harsh := newHarsh()
 
 							to := civil.DateOf(time.Now())
 							from := to.AddDays(-(365 * 5))
@@ -202,17 +202,17 @@ func main() {
 }
 
 func newHarsh() *Harsh {
- 	config := findConfigFiles()
+	config := findConfigFiles()
 	habits, maxHabitNameLength := loadHabitsConfig(config)
 	entries := loadLog(config)
-  
- return &Harsh{habits, maxHabitNameLength, entries}
+
+	return &Harsh{habits, maxHabitNameLength, entries}
 }
 
 // Ask function prompts
 func (h *Harsh) askHabits() {
-	
-  to := civil.DateOf(time.Now())
+
+	to := civil.DateOf(time.Now())
 	from := to.AddDays(-60)
 	firstRecords := h.firstRecords(from, to)
 
@@ -266,6 +266,8 @@ func (h *Harsh) askHabits() {
 
 							if strings.ContainsAny(habitResult, "yns") && len(habitResult) == 1 {
 								writeHabitLog(dt, habit.Name, habitResult, comment)
+								// Updates the Entries map to get updated buildGraph across days
+								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome(habitResult)
 								break
 							}
 
@@ -367,7 +369,7 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 			}
 		} else {
 			if warning(d, habit, *h.Entries, firstRecord) && (to.DaysSince(d) < 14) {
-        // warning: sigils max out at 2 weeks (~90 day habit in formula)
+				// warning: sigils max out at 2 weeks (~90 day habit in formula)
 				graphDay = "!"
 			} else {
 				graphDay = " "
@@ -505,7 +507,7 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 	scanner := bufio.NewScanner(file)
 
 	var heading string
-  var habits []Habit
+	var habits []Habit
 	for scanner.Scan() {
 		if len(scanner.Text()) > 0 {
 			if scanner.Text()[0] == '!' {
