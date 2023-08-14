@@ -2,57 +2,56 @@ before:
   hooks:
     - go mod tidy
 builds:
-- env:
-    - CGO_ENABLED=0
-  goos:
-    - linux
-    - darwin
-    - freebsd
-    - openbsd
-    - windows
-  goarch:
-    - 386
-    - amd64
-    - arm64
-    # - arm
-  # goarm:
-  #   - 6
-  #   - 7
-  # ignore:
-  # - goos: openbsd
-  #   goarch: arm
-  # - goos: openbsd
-  #   goarch: arm64
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - freebsd
+      - openbsd
+      - windows
+    goarch:
+      - 386
+      - amd64
+      - arm64
+      # - arm
+    # goarm:
+    #   - 6
+    #   - 7
+    # ignore:
+    # - goos: openbsd
+    #   goarch: arm
+    # - goos: openbsd
+    #   goarch: arm64
 archives:
-- name_template: >-
+  - name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
-brews: 
-- 
-  name: harsh
-  tap:
-    owner: wakatara
-    name: homebrew-tap
-  description: habit tracking for geeks. A minimalist CLI for examining your habits. 
-  homepage: https://github.com/wakatara/harsh
-  license: MIT
-  test: |
-    system "#{bin}/harsh --version"
+      - "^docs:"
+      - "^test:"
+brews:
+  - name: harsh
+    repository:
+      owner: wakatara
+      name: homebrew-tap
+    description: habit tracking for geeks. A minimalist CLI for examining your habits.
+    homepage: https://github.com/wakatara/harsh
+    license: MIT
+    test: |
+      system "#{bin}/harsh --version"
 snapcrafts:
-  - name_template: '{{ .ProjectName }}_{{ .Arch }}'
+  - name_template: "{{ .ProjectName }}_{{ .Arch }}"
     summary: habit tracking for geeks. A minimalist CLI for examining your habits.
     description: |
       Harsh provides a simple, portable, minimalist command line interface for
