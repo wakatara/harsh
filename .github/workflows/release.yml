@@ -3,7 +3,7 @@ name: goreleaser
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 permissions:
   contents: write
@@ -12,30 +12,25 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      -
-        name: Set up Snapcraft
+      - name: Set up Snapcraft
         run: |
           sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install snapcraft    
-      -
-        name: Set up Go
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install snapcraft
+      - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '>=1.20.0'
-      -
-        name: Snapcraft Login
+          go-version: ">=1.21.0"
+      - name: Snapcraft Login
         if: success() && startsWith(github.ref, 'refs/tags/v')
         env:
           SNAPCRAFT_LOGIN: ${{ secrets.SNAPCRAFT_LOGIN }}
         run: |
           snapcraft login --with <(echo "$SNAPCRAFT_LOGIN")
-      -
-        name: Run GoReleaser
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4.2.0
         with:
           distribution: goreleaser
