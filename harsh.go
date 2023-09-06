@@ -51,7 +51,8 @@ type Entries map[DailyHabit]Outcome
 type Harsh struct {
 	Habits             []Habit
 	MaxHabitNameLength int
-	Entries            *Entries
+  Entries            *Entries
+	FirstRecords       map[Habit]civil.Date
 }
 
 func main() {
@@ -59,7 +60,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.28",
+		Version:     "0.8.29",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -119,7 +120,6 @@ func main() {
 
 					to := civil.DateOf(time.Now())
 					from := to.AddDays(-100)
-					firstRecords := harsh.firstRecords(from, to)
 					consistency := map[string][]string{}
 
 					sparkline := harsh.buildSpark(from, to)
@@ -129,7 +129,7 @@ func main() {
 
 					heading := ""
 					for _, habit := range harsh.Habits {
-						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(&habit, firstRecords[habit], from, to))
+						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(&habit, harsh.FirstRecords[habit], from, to))
 						if heading != habit.Heading {
 							color.Bold.Printf(habit.Heading + "\n")
 							heading = habit.Heading
@@ -153,8 +153,8 @@ func main() {
 							harsh := newHarsh()
 
 							to := civil.DateOf(time.Now())
-							from := to.AddDays(-(365 * 5))
-							firstRecords := harsh.firstRecords(from, to)
+							// from := to.AddDays(-(365 * 5))
+							// firstRecords := harsh.firstRecords(from, to)
 							stats := map[string]HabitStats{}
 
 							heading := ""
@@ -166,7 +166,7 @@ func main() {
 									color.Bold.Printf("\n" + habit.Heading + "\n")
 									heading = habit.Heading
 								}
-								stats[habit.Name] = harsh.buildStats(&habit, firstRecords[habit], to)
+								stats[habit.Name] = harsh.buildStats(&habit, harsh.FirstRecords[habit], to)
 								fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
 								color.FgGreen.Printf("Streaks ")
 								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
@@ -205,8 +205,11 @@ func newHarsh() *Harsh {
 	config := findConfigFiles()
 	habits, maxHabitNameLength := loadHabitsConfig(config)
 	entries := loadLog(config)
+	to := civil.DateOf(time.Now())
+	from := to.AddDays(-100)
+	firstRecords := entries.firstRecords(from, to, habits)
 
-	return &Harsh{habits, maxHabitNameLength, entries}
+	return &Harsh{habits, maxHabitNameLength, entries, firstRecords}
 }
 
 // Ask function prompts
@@ -214,16 +217,15 @@ func (h *Harsh) askHabits() {
 
 	to := civil.DateOf(time.Now())
 	from := to.AddDays(-60)
-	firstRecords := h.firstRecords(from, to)
 
 	// Goes back 8 days to check unresolved entries
-	checkBackDays := 8
+	checkBackDays := 10
 	// If log file is empty, we onboard the user
 	// For onboarding, we ask how many days to start tracking from
 	if len(*h.Entries) == 0 {
 		checkBackDays = onboard()
 		for _, habit := range h.Habits {
-			firstRecords[habit] = to.AddDays(-(checkBackDays + 1))
+			h.FirstRecords[habit] = to.AddDays(-(checkBackDays + 1))
 		}
 	}
 
@@ -239,14 +241,14 @@ func (h *Harsh) askHabits() {
 			heading := ""
 			for _, habit := range h.Habits {
 				for _, dh := range dayhabit {
-					if habit.Name == dh.Name && dt.After(firstRecords[habit]) {
+					if habit.Name == dh.Name && dt.After(h.FirstRecords[habit]) {
 						if heading != dh.Heading {
 							color.Bold.Printf("\n" + habit.Heading + "\n")
 							heading = habit.Heading
 						}
 						for {
 							fmt.Printf("%*v", h.MaxHabitNameLength, habit.Name+"  ")
-							fmt.Print(h.buildGraph(&habit, firstRecords[habit], from, to))
+							fmt.Print(h.buildGraph(&habit, h.FirstRecords[habit], from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -286,11 +288,11 @@ func (h *Harsh) askHabits() {
 	}
 }
 
-func (h *Harsh) firstRecords(from civil.Date, to civil.Date) map[Habit]civil.Date {
-	firstRecords := map[Habit]civil.Date{}
+func (e *Entries) firstRecords(from civil.Date, to civil.Date, habits []Habit) map[Habit]civil.Date {
+	firstRecords := map[Habit]civil.Date{} 
 	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
-		for _, habit := range h.Habits {
-			if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+		for _, habit := range habits {
+			if _, ok := (*e)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				firstRecords[habit] = dt
 			}
 		}
@@ -302,7 +304,6 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]Habit {
 	tasksUndone := map[string][]Habit{}
 	dayHabits := map[Habit]bool{}
 	from := to.AddDays(-daysBack)
-	firstRecords := h.firstRecords(from, to)
 	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
 		// build map of habit array to make deletions cleaner
 		// +more efficient than linear search array deletes
@@ -314,7 +315,7 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]Habit {
 			if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				delete(dayHabits, habit)
 			}
-			if dt.Before(firstRecords[habit]) {
+			if dt.Before(h.FirstRecords[habit]) {
 				delete(dayHabits, habit)
 			}
 		}
@@ -464,7 +465,7 @@ func (h *Harsh) score(d civil.Date) float64 {
 	scorableHabits := 0.0
 
 	for _, habit := range h.Habits {
-		if habit.Frequency > 0 {
+		if habit.Frequency > 0 && !d.Before(h.FirstRecords[habit]) {
 			scorableHabits++
 			if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 
@@ -484,7 +485,7 @@ func (h *Harsh) score(d civil.Date) float64 {
 		}
 	}
 
-	score := 100.0 // deal with scorable habits - skipped = 0 causing divide by zero issue
+	score := 100.0 // deal with scorable habits - skipped == 0 causing divide by zero issue
 	if scorableHabits-skipped != 0 {
 		score = (scored / (scorableHabits - skipped)) * 100
 	}
