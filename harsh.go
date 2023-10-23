@@ -51,7 +51,7 @@ type Entries map[DailyHabit]Outcome
 type Harsh struct {
 	Habits             []Habit
 	MaxHabitNameLength int
-  Entries            *Entries
+	Entries            *Entries
 	FirstRecords       map[Habit]civil.Date
 }
 
@@ -60,7 +60,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.29",
+		Version:     "0.8.30",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -121,6 +121,7 @@ func main() {
 					to := civil.DateOf(time.Now())
 					from := to.AddDays(-100)
 					consistency := map[string][]string{}
+					undone := harsh.getTodos(to, 0)
 
 					sparkline := harsh.buildSpark(from, to)
 					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
@@ -139,8 +140,15 @@ func main() {
 						fmt.Printf("\n")
 					}
 
+					undone_num := strconv.Itoa(len(undone[to.String()]))
+
 					scoring := fmt.Sprintf("%.1f", harsh.score(civil.DateOf(time.Now()).AddDays(-1)))
-					fmt.Printf("\n" + "Yesterday's Score: " + scoring + "%%\n")
+					fmt.Printf("\n" + "Yesterday's Score: ")
+					fmt.Printf("%9v", scoring)
+					fmt.Printf("%%\n")
+					fmt.Printf("Today's unlogged todos: ")
+					fmt.Printf("%2v", undone_num)
+					fmt.Printf("\n")
 
 					return nil
 				},
@@ -289,7 +297,7 @@ func (h *Harsh) askHabits() {
 }
 
 func (e *Entries) firstRecords(from civil.Date, to civil.Date, habits []Habit) map[Habit]civil.Date {
-	firstRecords := map[Habit]civil.Date{} 
+	firstRecords := map[Habit]civil.Date{}
 	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
 		for _, habit := range habits {
 			if _, ok := (*e)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
