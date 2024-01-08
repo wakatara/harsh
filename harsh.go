@@ -60,7 +60,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.30",
+		Version:     "0.8.31",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -146,8 +146,12 @@ func main() {
 					fmt.Printf("\n" + "Yesterday's Score: ")
 					fmt.Printf("%9v", scoring)
 					fmt.Printf("%%\n")
-					fmt.Printf("Today's unlogged todos: ")
-					fmt.Printf("%2v", undone_num)
+					if undone_num == "0" {
+						fmt.Printf("All todos logged for today.")
+					} else {
+						fmt.Printf("Today's unlogged todos: ")
+						fmt.Printf("%2v", undone_num)
+					}
 					fmt.Printf("\n")
 
 					return nil
