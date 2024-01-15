@@ -5,7 +5,7 @@ harsh is habit tracking for geeks. A minimalist, command line tool for tracking 
 Succinctly: it's quick and gets out of your way. And gives you excellent visibility on your habits.
 
 There're 3 commands: `ask`, `log`, and `todo`.
-(and one subcommand `log stats`)
+(and two subcommands `log stats` and `log check <match term>`)
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit, habits to track.
 
@@ -16,6 +16,7 @@ My biggest hope that it helps you get done what you're trying to get done in you
 ## Installation
 
 harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebrew), FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake and adoption of a portable, command line, text-based approach. We have also updated harsh to support ARM architectures for OSX (M1 and M2 chipped Macs) and Linux as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available as of 0.8.23.
+
 ### Install via package manager
 
 **Homebrew tap** (Mac and Linux):
@@ -23,6 +24,7 @@ harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebre
 ```
 $ brew install wakatara/tap/harsh
 ```
+
 (this will also nicely alert you of updates when you `brew update`)
 
 **Snap** (Linux only):
@@ -30,6 +32,7 @@ $ brew install wakatara/tap/harsh
 ```
 $ sudo snap install harsh
 ```
+
 (you'll also get alerted when there are updates)
 
 ### Easy one-line install
@@ -46,7 +49,7 @@ The script downloads the latest release directly from github, verifies it crypto
 
 You may prefer a direct Go install if you have a working Go environment and Go 1.14+.
 
-``` bash
+```bash
 go install github.com/wakatara/harsh
 
 ```
@@ -54,12 +57,11 @@ go install github.com/wakatara/harsh
 from the command line. Unlike a package manager like brew or snap, you won't
 get informed of new version releases.
 
-
 ### Manually
 
-Alternatively, you can download the pre-compiled binaries from 
-[the releases page](https://github.com/wakatara/harsh/releases) 
-and copy to the desired location (`/usr/local/bin` recommended), 
+Alternatively, you can download the pre-compiled binaries from
+[the releases page](https://github.com/wakatara/harsh/releases)
+and copy to the desired location (`/usr/local/bin` recommended),
 making sure it's in your `$PATH`.
 
 ### Compiling from source
@@ -100,10 +102,10 @@ When you run `harsh ask` for the first time, it will set up the required files:
 ```
     $ harsh ask
     Welcome to harsh!
-    
+
     Created /Users/daryl/.config/harsh/habits  This file lists your habits.
     Created /Users/daryl/.config/harsh/log     This file is your habit log.
-    
+
     What? No habits yet?
     Open the habits file and edit the habit list using a text editor.
     Then run `harsh ask` to start tracking
@@ -117,15 +119,15 @@ On OSX and Linux based systems, the `habits` and `log` files will be under `~/.c
 
 Alternatively, you can set a different directory using the `HARSHPATH` environment variable.
 
-| :warning: **WARNING**      |
-|:---------------------------|
-| Ubuntu's snap overrides (sensible) defaults and forcibly places harsh's config *and* log files in `~/snap/harsh/current/`. If you `snap remove` the harsh app, snap's uninstaller will nuke your config *and* log files with the sandbox and you may lose your config and log data if it's not backed up (please *always* exercise a good backup regime). For this reason, we *highly* recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and move config and log files there right after installing to protect them. Or *never* uninstall harsh. :grin: |
+| :warning: **WARNING**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ubuntu's snap overrides (sensible) defaults and forcibly places harsh's config _and_ log files in `~/snap/harsh/current/`. If you `snap remove` the harsh app, snap's uninstaller will nuke your config _and_ log files with the sandbox and you may lose your config and log data if it's not backed up (please _always_ exercise a good backup regime). For this reason, we _highly_ recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and move config and log files there right after installing to protect them. Or _never_ uninstall harsh. :grin: |
 
-Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs). 
+Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs).
 
 You'll see an example file like this:
 
-``` harsh
+```harsh
     # This is your habits file.
     # It tells harsh what to track and how frequently in days.
     # 1 means daily, 7 means weekly, 14 every two weeks.
@@ -135,11 +137,11 @@ You'll see an example file like this:
     ! Dailies
     Gymmed: 1
     Bed by midnight: 1
-    
+
     ! Weeklies
     Cleaned House: 7
     Called Mom: 7
-    
+
     ! Monthly+
     Did Finances: 30
     New Skill: 90
@@ -157,7 +159,7 @@ Comments can go in the habits file by starting a line with "#" and are not parse
 
 The real trick of tracking is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
 
-If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is *strangely* also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones. If you're coming into this cold, I'd also recommend a good read of James Clear's Atomic Habits. 
+If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is _strangely_ also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones. If you're coming into this cold, I'd also recommend a good read of James Clear's Atomic Habits.
 
 Here are some ideas of what to track:
 
@@ -183,9 +185,9 @@ Simply run `harsh ask` regularly, specify whether you did the habit from the pro
 
 `harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now. CTRL-c breaks you out of the ask cycle at any point and returns you to your prompt.
 
-As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for analysis on the `:` deliimiter. 
+As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for analysis on the `:` deliimiter.
 
-Personally, I'd use the comments sparing and to denote why you had to skip, broke a consistency chain with an `n`, or for when you're trying to figure out something notable on a day so when you look back you can see why habit *X* may or may not have succeeded. 
+Personally, I'd use the comments sparing and to denote why you had to skip, broke a consistency chain with an `n`, or for when you're trying to figure out something notable on a day so when you look back you can see why habit _X_ may or may not have succeeded.
 
 `harsh log` The consistency graph shows your last 100 days.
 
@@ -194,10 +196,10 @@ Personally, I'd use the comments sparing and to denote why you had to skip, brok
     2020-01-05:
     Dailies
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━[y/n/s/⏎] y
-    
+
     Weeklies
         Cleaned the apartment ━──────                 ━──────           ━──────    •······[y/n/s/⏎] n
-    
+
     Tracking
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
@@ -210,8 +212,8 @@ Personally, I'd use the comments sparing and to denote why you had to skip, brok
     $ harsh log
                               ▄▃▃▄▄▃▄▆▆▆▅▆▆▇▆▄▃▄▆▃▆▃▆▂▅▄▃▄▅▆▅▃▃▃▆▂▄▅▄▅▅▅▆▄▄▆▇▆▅▅▄▃▅▆▄▆▃▃▂▅▆
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━━
-        Cleaned the apartment ━──────                 ━──────           ━──────    •······        
-               Had a headache             ━  ━     ━━                  ━━   ━   ━━         
+        Cleaned the apartment ━──────                 ━──────           ━──────    •······
+               Had a headache             ━  ━     ━━                  ━━   ━   ━━
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━    ━
                                              ... some habits omitted ...
 
@@ -240,8 +242,32 @@ In particular, when you've been tracking for longer than 100 days (the visual le
         Blog Fortnightly  Streaks 314 days      Breaks 6 days   Skips  0 days   Tracked 320 days
                                             ...
 ```
+
 As you can see here, I need to work on sleep more than anything, but digging down on these stats I shocked myself at skipped and breaks in workouts (covid vaccine related in some cases), and how I need to rethink how some of these were set up or I'm doing them (running, blogging etc.). The point is not how terrible I am, but that looking into the numbers revealed patterns (sleep, affects workouts, running, and TIL - today I learned - rather terribly). YMMV.
 
+Run `harsh log check <search term>` gives a slightly more in depth analysis of
+individual habits in conjunction with your topline aparkline. The idea here is
+that you can examine individual habits graphically against your topline to see
+if there are patterns of correlation between the variation in an individual
+habit and your overall daily score over time.
+
+Say you expect there's a close correlation between you not getting good sleep
+and your habits generally falling from a state of grace. It's easy to check with
+a `log check` and any string you type from your habits. In my case, I have
+a habit around getting to bed on time and getting a solid 7 I call `Bed by
+11+Slept 7h+`. I can just use the handy `bed` as a short match term for the habit
+and get the result.
+
+```
+    $ harsh log check bed
+
+                             █▇▇▇▇▇▇▇▇▇▇▇▇▇▇█▇▇▇▇▇▇█████▇██▇▇████████▇███████▇█████████████
+        Bed by 11+Slept 7h+      ━ ━    ━ ━━━━    ━━━    ━━    ━ ━━━  ━• ━━━━━━━━ ━━━━ ━━━━
+
+```
+
+As we can see, there is a pretty close correlation here to not getting enough
+sleep (or going to bed too late) and me hitting all my daily habits.
 
 ### Done
 
@@ -253,7 +279,7 @@ Additionally, the app checks in future days if you are still within the "every x
 
 Sometimes, it's impossible to exercise a habit cause life happens. If cleaning the house is a habit you want to exercise, but you happen to be away on a business trip, that is an impossibility. And sometimes, you decide to skip and push the habit to the next period (or a simple day or so). Skips being selected (s in the prompt) allows this to happen. A skip is denoted by a bright `•`.
 
-Much like satisfied habits where you've performed them once in the period, "skipified" habits let you know you're still withing the grace period of the skip with a lighter dot `·`. 
+Much like satisfied habits where you've performed them once in the period, "skipified" habits let you know you're still withing the grace period of the skip with a lighter dot `·`.
 
 ### Warnings
 
@@ -265,9 +291,8 @@ For habits of every less than 7 days period, you get a warning sigil on the day 
 
 Enter `harsh help` if you're lost:
 
-
-``` text
-    λ ~/harsh help 
+```text
+    λ ~/harsh help
     NAME:
     Harsh - habit tracking for geeks
 
@@ -294,11 +319,11 @@ Enter `harsh help` if you're lost:
 
 ## Quality of Life Usage Improvement
 
-As you increasingly use `harsh` for tracking, you'll inevitably end up making small errors in your log file or will want to edit your config file. While people have suggested adding a `harsh config` command to the app, this feels like overkill for the intended audience (geeks) but you can gert the same effect through using aliases. 
+As you increasingly use `harsh` for tracking, you'll inevitably end up making small errors in your log file or will want to edit your config file. While people have suggested adding a `harsh config` command to the app, this feels like overkill for the intended audience (geeks) but you can get the same effect through using aliases.
 
 As a simple quality of life improvement, add the following to your `bash`, `zsh`, `fish` (what I use), or shell of choice:
 
-``` bash
+```bash
 alias h="harsh"
 alias hc="nvim ~/.config/harsh/habits"
 alias hl="nvim ~/.config/harsh/log"
@@ -314,7 +339,7 @@ Much like the above feature of accessing config and log files, you can alias `ha
 
 ## License: MIT License
 
-*harsh* is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
+_harsh_ is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
 
 ## Contributing
 
@@ -328,14 +353,13 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 
 ## Contributors
 
-* [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil mastermind
-* [Aisling](https://github.com/ais) - improved configuration discovery.
-* [vchslv13](https://github.com/vchslv13) - improved shell installation script.
-* [manu-cyber](https://github.com/manu-cyber) - documentation fixes.
+- [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil mastermind
+- [Aisling](https://github.com/ais) - improved configuration discovery.
+- [vchslv13](https://github.com/vchslv13) - improved shell installation script.
+- [manu-cyber](https://github.com/manu-cyber) - documentation fixes.
 
 ## Thanks
 
-* [Bjorn A](https://github.com/gaqzi) - for initial code review and improvements pre-release
-* [James RC](https://github.com/yarbelk) - for initial code review and improvements pre-release
-* [blinry](https://github.com/blinry) - for writing habitctl which harsh is an homage to and riff on.
-
+- [Bjorn A](https://github.com/gaqzi) - for initial code review and improvements pre-release
+- [James RC](https://github.com/yarbelk) - for initial code review and improvements pre-release
+- [blinry](https://github.com/blinry) - for writing habitctl which harsh is an homage to and riff on.
