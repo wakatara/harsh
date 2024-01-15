@@ -80,40 +80,6 @@ func main() {
 				},
 			},
 			{
-				Name:    "check",
-				Aliases: []string{"c"},
-				Usage:   "Checks and compares a matched habit against overall sparklines and scoring.",
-				Action: func(cCtx *cli.Context) error {
-					harsh := newHarsh()
-					habit_fragment := cCtx.Args().First()
-
-					check := Habit{}
-					for _, habit := range harsh.Habits {
-						if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(habit_fragment)) {
-							check = habit
-						}
-					}
-
-					to := civil.DateOf(time.Now())
-					from := to.AddDays(-100)
-					consistency := map[string][]string{}
-
-					sparkline := harsh.buildSpark(from, to)
-					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
-					fmt.Print(strings.Join(sparkline, ""))
-					fmt.Printf("\n")
-
-					consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, harsh.FirstRecords[check], from, to))
-
-					fmt.Printf("%*v", harsh.MaxHabitNameLength, check.Name+"  ")
-					fmt.Print(strings.Join(consistency[check.Name], ""))
-					fmt.Printf("\n")
-
-					fmt.Println(habit_fragment)
-					return nil
-				},
-			},
-			{
 				Name:    "todo",
 				Aliases: []string{"t"},
 				Usage:   "Shows undone habits for today.",
@@ -230,6 +196,41 @@ func main() {
 								fmt.Printf("%4v", strconv.Itoa(stats[habit.Name].DaysTracked))
 								fmt.Printf(" days\n")
 							}
+							return nil
+						},
+					},
+
+					{
+						Name:    "check",
+						Aliases: []string{"c"},
+						Usage:   "Checks and compares a matched habit against overall sparklines and scoring.",
+						Action: func(cCtx *cli.Context) error {
+							harsh := newHarsh()
+							habit_fragment := cCtx.Args().First()
+
+							check := Habit{}
+							for _, habit := range harsh.Habits {
+								if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(habit_fragment)) {
+									check = habit
+								}
+							}
+
+							to := civil.DateOf(time.Now())
+							from := to.AddDays(-100)
+							consistency := map[string][]string{}
+
+							sparkline := harsh.buildSpark(from, to)
+							fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
+							fmt.Print(strings.Join(sparkline, ""))
+							fmt.Printf("\n")
+
+							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, harsh.FirstRecords[check], from, to))
+
+							fmt.Printf("%*v", harsh.MaxHabitNameLength, check.Name+"  ")
+							fmt.Print(strings.Join(consistency[check.Name], ""))
+							fmt.Printf("\n")
+
+							fmt.Println(habit_fragment)
 							return nil
 						},
 					},
