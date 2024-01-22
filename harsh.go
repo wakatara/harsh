@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -304,28 +305,32 @@ func (h *Harsh) askHabits() {
 								fmt.Fprintln(os.Stderr, err)
 							}
 
-							habitResultString := strings.Split(habitResultInput, "#")
-							habitResult := strings.TrimSpace(habitResultString[0])
-							var comment string
-							if len(habitResultString) > 1 {
-								comment = strings.TrimSpace(habitResultString[1])
-							} else {
-								comment = ""
-							}
-
-							if strings.ContainsAny(habitResult, "yns") && len(habitResult) == 1 {
-								writeHabitLog(dt, habit.Name, habitResult, comment)
-								// Updates the Entries map to get updated buildGraph across days
-								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome(habitResult)
+							if habitResultInput == "" {
 								break
 							}
 
-							if habitResult == "" {
-								break
+							pattern := regexp.MustCompile(`^(?:([^@]*)@)?(?:([^#]*)#)?(.*)$`)
+
+							matches := pattern.FindStringSubmatch(habitResultInput)
+
+							fmt.Println(matches[0])
+							result := strings.TrimSpace(matches[1])
+							amount := strings.TrimSpace(matches[2])
+							comment := strings.TrimSpace(matches[3])
+
+							// Check if the order of delimiters is valid
+							if len(matches[2]) == 0 && len(matches[1]) > 0 {
+
+								if strings.ContainsAny(result, "yns") && len(result) == 1 {
+									writeHabitLog(dt, habit.Name, result, comment, amount)
+									// Updates the Entries map to get updated buildGraph across days
+									(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome(result)
+									break
+								}
 							}
 
 							color.FgRed.Printf("%*v", h.MaxHabitNameLength+25, "Sorry! Please choose from")
-							color.FgRed.Printf(" [y/n/s/⏎] " + "(and an optional #-denoted comment)" + "\n")
+							color.FgRed.Printf(" [y/n/s/⏎] " + "(and an optional @-denoted amount and/or a #-denoted comment)" + "\n")
 						}
 					}
 				}
@@ -613,16 +618,14 @@ func loadLog(configDir string) *Entries {
 }
 
 // writeHabitLog writes the log entry for a habit to file
-func writeHabitLog(d civil.Date, habit string, result string, comment string) {
+func writeHabitLog(d civil.Date, habit string, result string, comment string, amount string) {
 	fileName := filepath.Join(configDir, "/log")
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(comment) > 0 {
-		comment = " : " + comment
-	}
-	if _, err := f.Write([]byte(d.String() + " : " + habit + " : " + result + comment + "\n")); err != nil {
+
+	if _, err := f.Write([]byte(d.String() + " : " + habit + " : " + result + " : " + comment + " : " + amount + "\n")); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		log.Fatal(err)
 	}
