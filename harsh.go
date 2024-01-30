@@ -31,6 +31,13 @@ type Habit struct {
 
 // Outcome is the explicit recorded outcome of habit on a day (y, n, or s)
 type Outcome string
+// Outcome is the explicit recorded result of a habit
+// on a day (y, n, or s) and an optional amount and comment
+type Outcome struct {
+	Result  string
+	Amount  string
+	Comment string
+}
 
 // DailyHabit combines Day and Habit with an Outcome to yield Entries
 type DailyHabit struct {
@@ -408,8 +415,10 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
+			case outcome.Result == "y":
 				graphDay = "━"
 			case outcome == "s":
+			case outcome.Result == "s":
 				graphDay = "•"
 			// look at cases of "n" being entered but
 			// within bounds of the habit every x days
@@ -418,6 +427,7 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 			case skipified(d, habit, *h.Entries):
 				graphDay = "·"
 			case outcome == "n":
+			case outcome.Result == "n":
 				graphDay = " "
 			}
 		} else {
@@ -442,8 +452,10 @@ func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) 
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome == "y":
+			case outcome.Result == "y":
 				streaks += 1
 			case outcome == "s":
+			case outcome.Result == "s":
 				skips += 1
 			// look at cases of "n" being entered but
 			// within bounds of the habit every x days
@@ -452,6 +464,7 @@ func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) 
 			case skipified(d, habit, *h.Entries):
 				skips += 1
 			case outcome == "n":
+			case outcome.Result == "n":
 				breaks += 1
 			}
 		}
@@ -469,6 +482,10 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
 		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
 			return true
+		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+			if v.Result == "y" {
+				return true
+			}
 		}
 	}
 	return false
@@ -484,6 +501,10 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
 		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
 			return true
+		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+			if v.Result == "s" {
+				return true
+			}
 		}
 	}
 	return false
@@ -503,6 +524,13 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 		}
 		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
 			return false
+		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+			switch v.Result {
+			case "y":
+				return false
+			case "s":
+				return false
+			}
 		}
 		if dt.Before(firstRecord) {
 			return false
@@ -523,8 +551,10 @@ func (h *Harsh) score(d civil.Date) float64 {
 
 				switch {
 				case outcome == "y":
+				case outcome.Result == "y":
 					scored++
 				case outcome == "s":
+				case outcome.Result == "s":
 					skipped++
 				// look at cases of n being entered but
 				// within bounds of the habit every x days
@@ -606,6 +636,14 @@ func loadLog(configDir string) *Entries {
 					fmt.Println("Error parsing log date format.")
 				}
 				entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome(result[2])
+				switch len(result) {
+				case 5:
+					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: result[4]}
+				case 4:
+					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: ""}
+				default:
+					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: "", Amount: ""}
+				}
 			}
 		}
 	}
