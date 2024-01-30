@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -29,8 +28,6 @@ type Habit struct {
 	Frequency Days
 }
 
-// Outcome is the explicit recorded outcome of habit on a day (y, n, or s)
-type Outcome string
 // Outcome is the explicit recorded result of a habit
 // on a day (y, n, or s) and an optional amount and comment
 type Outcome struct {
@@ -68,7 +65,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.8.31",
+		Version:     "0.9.0",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -312,32 +309,45 @@ func (h *Harsh) askHabits() {
 								fmt.Fprintln(os.Stderr, err)
 							}
 
-							if habitResultInput == "" {
+							var result, amount, comment string
+							// Split the input using "@" as the delimiter
+							if strings.ContainsAny(habitResultInput, "@#") {
+								parts := strings.SplitN(habitResultInput, "@", 2)
+								// Check if "@" is present
+								if len(parts) > 1 {
+									// "@" is present, split the second part using "#" as the delimiter
+									secondParts := strings.SplitN(parts[1], "#", 2)
+									// Extract results
+									result = strings.TrimSpace(parts[0])
+									amount = strings.TrimSpace(secondParts[0])
+									comment = ""
+									if len(secondParts) > 1 {
+										comment = strings.TrimSpace(secondParts[1])
+									}
+								} else {
+									parts := strings.SplitN(habitResultInput, "#", 2)
+									result = strings.TrimSpace(parts[0])
+									comment = ""
+									if len(parts) > 1 {
+										comment = strings.TrimSpace(parts[1])
+									}
+								}
+							} else {
+								result = strings.TrimSpace(habitResultInput)
+							}
+
+							if strings.ContainsAny(result, "yns") && len(result) == 1 {
+								writeHabitLog(dt, habit.Name, result, comment, amount)
+								// Updates the Entries map to get updated buildGraph across days
+								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome{Result: result, Amount: amount, Comment: comment}
+								break
+							}
+							if result == "" {
 								break
 							}
 
-							pattern := regexp.MustCompile(`^(?:([^@]*)@)?(?:([^#]*)#)?(.*)$`)
-
-							matches := pattern.FindStringSubmatch(habitResultInput)
-
-							fmt.Println(matches[0])
-							result := strings.TrimSpace(matches[1])
-							amount := strings.TrimSpace(matches[2])
-							comment := strings.TrimSpace(matches[3])
-
-							// Check if the order of delimiters is valid
-							if len(matches[2]) == 0 && len(matches[1]) > 0 {
-
-								if strings.ContainsAny(result, "yns") && len(result) == 1 {
-									writeHabitLog(dt, habit.Name, result, comment, amount)
-									// Updates the Entries map to get updated buildGraph across days
-									(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome(result)
-									break
-								}
-							}
-
-							color.FgRed.Printf("%*v", h.MaxHabitNameLength+25, "Sorry! Please choose from")
-							color.FgRed.Printf(" [y/n/s/⏎] " + "(and an optional @-denoted amount and/or a #-denoted comment)" + "\n")
+							color.FgRed.Printf("%*v", h.MaxHabitNameLength+22, "Sorry! Please choose from")
+							color.FgRed.Printf(" [y/n/s/⏎] " + "(+ optional @ amount and/or # comment)" + "\n")
 						}
 					}
 				}
@@ -414,10 +424,8 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 	for d := from; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
-			case outcome == "y":
 			case outcome.Result == "y":
 				graphDay = "━"
-			case outcome == "s":
 			case outcome.Result == "s":
 				graphDay = "•"
 			// look at cases of "n" being entered but
@@ -426,7 +434,6 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 				graphDay = "─"
 			case skipified(d, habit, *h.Entries):
 				graphDay = "·"
-			case outcome == "n":
 			case outcome.Result == "n":
 				graphDay = " "
 			}
@@ -451,10 +458,8 @@ func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) 
 	for d := firstRecord; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
-			case outcome == "y":
 			case outcome.Result == "y":
 				streaks += 1
-			case outcome == "s":
 			case outcome.Result == "s":
 				skips += 1
 			// look at cases of "n" being entered but
@@ -463,7 +468,6 @@ func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) 
 				streaks += 1
 			case skipified(d, habit, *h.Entries):
 				skips += 1
-			case outcome == "n":
 			case outcome.Result == "n":
 				breaks += 1
 			}
@@ -480,8 +484,6 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDays(-int(habit.Frequency))
 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
-		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
-			return true
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			if v.Result == "y" {
 				return true
@@ -499,8 +501,6 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 	from := d
 	to := d.AddDays(-int(habit.Frequency))
 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
-		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
-			return true
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			if v.Result == "s" {
 				return true
@@ -519,11 +519,6 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 	to := d
 	from := d.AddDays(-int(habit.Frequency) + warningDays)
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
-		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "y" {
-			return false
-		}
-		if entries[DailyHabit{Day: dt, Habit: habit.Name}] == "s" {
-			return false
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			switch v.Result {
 			case "y":
@@ -550,10 +545,8 @@ func (h *Harsh) score(d civil.Date) float64 {
 			if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 
 				switch {
-				case outcome == "y":
 				case outcome.Result == "y":
 					scored++
-				case outcome == "s":
 				case outcome.Result == "s":
 					skipped++
 				// look at cases of n being entered but
@@ -635,7 +628,6 @@ func loadLog(configDir string) *Entries {
 				if err != nil {
 					fmt.Println("Error parsing log date format.")
 				}
-				entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome(result[2])
 				switch len(result) {
 				case 5:
 					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: result[4]}
