@@ -32,7 +32,7 @@ type Habit struct {
 // on a day (y, n, or s) and an optional amount and comment
 type Outcome struct {
 	Result  string
-	Amount  string
+	Amount  float64
 	Comment string
 }
 
@@ -339,7 +339,8 @@ func (h *Harsh) askHabits() {
 							if strings.ContainsAny(result, "yns") && len(result) == 1 {
 								writeHabitLog(dt, habit.Name, result, comment, amount)
 								// Updates the Entries map to get updated buildGraph across days
-								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome{Result: result, Amount: amount, Comment: comment}
+								famount, _ := strconv.ParseFloat(amount, 64)
+								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome{Result: result, Amount: famount, Comment: comment}
 								break
 							}
 							if result == "" {
@@ -630,11 +631,15 @@ func loadLog(configDir string) *Entries {
 				}
 				switch len(result) {
 				case 5:
-					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: result[4]}
+					amount, err := strconv.ParseFloat(result[4], 64)
+					if err != nil {
+						fmt.Println("Error: there is a non-number in your log file where we expect a number.")
+					}
+					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: amount}
 				case 4:
-					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: ""}
+					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: 0.0}
 				default:
-					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: "", Amount: ""}
+					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: "", Amount: 0.0}
 				}
 			}
 		}
