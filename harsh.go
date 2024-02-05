@@ -45,6 +45,7 @@ type DailyHabit struct {
 // HabitStats holds total stats for a Habit in the file
 type HabitStats struct {
 	DaysTracked int
+	Total       float64
 	Streaks     int
 	Breaks      int
 	Skips       int
@@ -189,6 +190,16 @@ func main() {
 								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
 								color.FgGreen.Printf(" days")
 								fmt.Printf("%4v", "")
+								if stats[habit.Name].Total == 0 {
+									color.FgGray.Printf("      ")
+									color.FgGray.Printf("%4v", " ")
+									color.FgGray.Printf("     ")
+								} else {
+									color.FgGray.Printf("Total ")
+									color.FgGray.Printf("%4v", (stats[habit.Name].Total))
+									color.FgGray.Printf("     ")
+								}
+								fmt.Printf("%4v", "")
 								color.FgRed.Printf("Breaks ")
 								color.FgRed.Printf("%4v", strconv.Itoa(stats[habit.Name].Breaks))
 								color.FgRed.Printf(" days")
@@ -309,30 +320,37 @@ func (h *Harsh) askHabits() {
 								fmt.Fprintln(os.Stderr, err)
 							}
 
+							// No input
+							if len(habitResultInput) == 1 {
+								break
+							}
+
 							var result, amount, comment string
-							// Split the input using "@" as the delimiter
-							if strings.ContainsAny(habitResultInput, "@#") {
+							atIndex := strings.Index(habitResultInput, "@")
+							hashIndex := strings.Index(habitResultInput, "#")
+
+							if atIndex > 0 && hashIndex > 0 && atIndex < hashIndex {
 								parts := strings.SplitN(habitResultInput, "@", 2)
-								// Check if "@" is present
-								if len(parts) > 1 {
-									// "@" is present, split the second part using "#" as the delimiter
-									secondParts := strings.SplitN(parts[1], "#", 2)
-									// Extract results
-									result = strings.TrimSpace(parts[0])
-									amount = strings.TrimSpace(secondParts[0])
-									comment = ""
-									if len(secondParts) > 1 {
-										comment = strings.TrimSpace(secondParts[1])
-									}
-								} else {
-									parts := strings.SplitN(habitResultInput, "#", 2)
-									result = strings.TrimSpace(parts[0])
-									comment = ""
-									if len(parts) > 1 {
-										comment = strings.TrimSpace(parts[1])
-									}
-								}
-							} else {
+								secondParts := strings.SplitN(parts[1], "#", 2)
+								result = strings.TrimSpace(parts[0])
+								amount = strings.TrimSpace(secondParts[0])
+								comment = strings.TrimSpace(secondParts[1])
+							}
+							// only has an @ Amount
+							if hashIndex == -1 && atIndex > 0 {
+								parts := strings.SplitN(habitResultInput, "@", 2)
+								result = strings.TrimSpace(parts[0])
+								amount = strings.TrimSpace(parts[1])
+								comment = ""
+							}
+							// only has a # comment
+							if atIndex == -1 && hashIndex > 0 {
+								parts := strings.SplitN(habitResultInput, "#", 2)
+								result = strings.TrimSpace(parts[0])
+								amount = ""
+								comment = strings.TrimSpace(parts[1])
+							}
+							if atIndex == -1 && hashIndex == -1 {
 								result = strings.TrimSpace(habitResultInput)
 							}
 
@@ -343,12 +361,9 @@ func (h *Harsh) askHabits() {
 								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome{Result: result, Amount: famount, Comment: comment}
 								break
 							}
-							if result == "" {
-								break
-							}
 
 							color.FgRed.Printf("%*v", h.MaxHabitNameLength+22, "Sorry! Please choose from")
-							color.FgRed.Printf(" [y/n/s/⏎] " + "(+ optional @ amount and/or # comment)" + "\n")
+							color.FgRed.Printf(" [y/n/s/⏎] " + "(+ optional @ amounts then # comments)" + "\n")
 						}
 					}
 				}
@@ -452,9 +467,8 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 }
 
 func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) HabitStats {
-	var streaks int
-	var breaks int
-	var skips int
+	var streaks, breaks, skips int
+	var total float64
 
 	for d := firstRecord; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
@@ -472,9 +486,10 @@ func (h *Harsh) buildStats(habit *Habit, firstRecord civil.Date, to civil.Date) 
 			case outcome.Result == "n":
 				breaks += 1
 			}
+			total += outcome.Amount
 		}
 	}
-	return HabitStats{DaysTracked: int((to.DaysSince(firstRecord)) + 1), Streaks: streaks, Breaks: breaks, Skips: skips}
+	return HabitStats{DaysTracked: int((to.DaysSince(firstRecord)) + 1), Streaks: streaks, Breaks: breaks, Skips: skips, Total: total}
 }
 
 func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
