@@ -336,6 +336,9 @@ func (h *Harsh) askHabits() {
 								break
 							}
 
+							// Sanitize : colons out of string for log files
+							habitResultInput = strings.ReplaceAll(habitResultInput, ":", "")
+
 							var result, amount, comment string
 							atIndex := strings.Index(habitResultInput, "@")
 							hashIndex := strings.Index(habitResultInput, "#")
