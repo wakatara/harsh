@@ -660,6 +660,9 @@ func loadLog(configDir string) *Entries {
 				}
 				switch len(result) {
 				case 5:
+					if result[4] == "" {
+						result[4] = "0"
+					}
 					amount, err := strconv.ParseFloat(result[4], 64)
 					if err != nil {
 						fmt.Println("Error: there is a non-number in your log file where we expect a number.")
