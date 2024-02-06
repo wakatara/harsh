@@ -208,13 +208,14 @@ Simply run `harsh ask` regularly, specify whether you did the habit from the pro
 
 `harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now. CTRL-c breaks you out of the ask cycle at any point and returns you to your prompt.
 
-As of version `0.9.0` to support longer term pattern tracking (and fallible
-memories), you can optionally follow any of the `y | n | s` options with
-a optional typed `@` symbol to denote a quantity you want to track for a daily habit (example:
-number of words written, km's run, or pullups performed), and/or an optionaltyped `#`
-symbol for a comment. Primarily for analysis at a later date, at the moment, the `log
-stats` subcommand will total up any amounts you've entered for a habit and show
-you the total along with your streaks, skips, breaks, and days tracked.
+As of version `0.9.0`, to support longer term pattern tracking (and fallible
+memories), you can follow any of the `y | n | s` options with
+an optional typed `@` symbol to then denote a quantity you want to track for the daily habit
+(example: number of words written, km's run, pullups performed etc), and/or an optional
+typed `#` symbol for a comment. Primarily for analysis at a later date.
+
+The `log stats` subcommand will also now total up any amounts you've entered for a habit
+and show you the total along with your streaks, skips, breaks, and days tracked.
 
 An example of how to use this for a habit like PullUps might be:
 
