@@ -1,21 +1,39 @@
 # Harsh Taskmaster
 
-harsh is habit tracking for geeks. A minimalist, command line tool for tracking and understanding your habits.
+harsh is habit tracking for geeks. A minimalist, command line tool for tracking
+and understanding your habits.
 
-Succinctly: it's quick and gets out of your way. And gives you excellent visibility on your habits.
+Succinctly: it's quick and gets out of your way. And gives you excellent
+visibility on your habits.
 
 There're 3 commands: `ask`, `log`, and `todo`.
 (and two subcommands `log stats` and `log check <match term>`)
 
-Designed for simplicity, visibility, and longevity, harsh uses simple text files for tracking that are human-grokable and editable in your favourite text editor. It's simpler, less messy, and more portable than commercial or mobile applications and less fussy to manage than emacs habit tracking (imho). While quantified individual tracking is exhaustive, important habits get lost in the data deluge, so this provides deliberate, explicit, habits to track.
+Designed for simplicity, visibility, and longevity, harsh uses simple text files
+for tracking that are human-grokable and editable in your favourite text editor.
+It's simpler, less messy, and more portable than commercial or mobile
+applications and less fussy to manage than emacs habit tracking (imho). While
+quantified individual tracking is exhaustive, important habits get lost in the
+data deluge, so this provides deliberate, explicit, habits to track and progress.
 
-It's written in GoLang and adds features and fixes on top of habitctl (its inspiration) such as skips, streak break warnings, and stats. If you're a geek, I think you'll like it. Despite trying an exhaustive number of habit trackers, this was what worked for me. YMMV. If you're interested in why I wrote it, there's a [launch post about my motivations on my blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
+It's written in Go and adds features and fixes on top of habitctl (its
+inspiration) such as skips, streak break warnings, and stats. If you're a geek,
+I think you'll like it. Despite trying an exhaustive number of habit trackers,
+this was what worked for me. YMMV. If you're interested in why I wrote it,
+there's a [launch post about my motivations on my
+blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
-My biggest hope that it helps you get done what you're trying to get done in your life.
+My biggest hope that it helps you get done what you're trying to get done in
+your life.
 
 ## Installation
 
-harsh is available on OSX (as a homebrew too), Linux (also as a Snap and homebrew), FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake and adoption of a portable, command line, text-based approach. We have also updated harsh to support ARM architectures for OSX (M1 and M2 chipped Macs) and Linux as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available as of 0.8.23.
+harsh is available on OSX (as a homebrew too), Linux (also as a Snap and
+homebrew), FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake
+and adoption of a portable, command line, text-based approach. We have also
+updated harsh to support ARM architectures for OSX (M1 and M2 chipped Macs) and
+Linux as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available as of
+0.8.23.
 
 ### Install via package manager
 
@@ -37,13 +55,16 @@ $ sudo snap install harsh
 
 ### Easy one-line install
 
-If you're not using a package manager, by far the easiest way to install harsh and get started is to use this one-line bash command if you're on OSX or Linux:
+If you're not using a package manager, by far the easiest way to install harsh
+and get started is to use this one-line bash command if you're on OSX or Linux:
 
 ```bash
 curl -sSLf https://raw.githubusercontent.com/wakatara/harsh/master/install.sh | sh
 ```
 
-The script downloads the latest release directly from github, verifies it cryptographically, and then moves the executable to `usr/local/bin` ready for immediate use on the command line.
+The script downloads the latest release directly from github, verifies it
+cryptographically, and then moves the executable to `usr/local/bin` ready for
+immediate use on the command line.
 
 ### With working Go environment
 
@@ -66,7 +87,8 @@ making sure it's in your `$PATH`.
 
 ### Compiling from source
 
-If you want to build from source cause you like that sort of thing, follow these steps:
+If you want to build from source cause you like that sort of thing, follow these
+steps:
 
 **Clone:**
 
@@ -115,7 +137,8 @@ When you run `harsh ask` for the first time, it will set up the required files:
     Happy tracking! I genuinely hope this helps you get better.
 ```
 
-On OSX and Linux based systems, the `habits` and `log` files will be under `~/.config/harsh/`. On Windows, you can find the files under `%APPDATA%\harsh`.
+On OSX and Linux based systems, the `habits` and `log` files will be under
+`~/.config/harsh/`. On Windows, you can find the files under `%APPDATA%\harsh`.
 
 Alternatively, you can set a different directory using the `HARSHPATH` environment variable.
 
@@ -185,9 +208,40 @@ Simply run `harsh ask` regularly, specify whether you did the habit from the pro
 
 `harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now. CTRL-c breaks you out of the ask cycle at any point and returns you to your prompt.
 
-As of `0.8.12`, to support longer term pattern tracking (and unreliable memories), you can optionally follow any of the `y | n | s` options with a typed `#` symbol and a comment that will get recorded in your log file. This is primarily for analysis at a later date to help uncover patterns between events, reasons you may have written a comment, and either good or bad knock-on effects. The comment gets fed into the log file so can be easily loaded along into spreadsheets or pandas for analysis on the `:` deliimiter.
+As of version `0.9.0` to support longer term pattern tracking (and fallible
+memories), you can optionally follow any of the `y | n | s` options with
+a optional typed `@` symbol to denote a quantity you want to track for a daily habit (example:
+number of words written, km's run, or pullups performed), and/or an optionaltyped `#`
+symbol for a comment. Primarily for analysis at a later date, at the moment, the `log
+stats` subcommand will total up any amounts you've entered for a habit and show
+you the total along with your streaks, skips, breaks, and days tracked.
 
-Personally, I'd use the comments sparing and to denote why you had to skip, broke a consistency chain with an `n`, or for when you're trying to figure out something notable on a day so when you look back you can see why habit _X_ may or may not have succeeded.
+An example of how to use this for a habit like PullUps might be:
+
+```
+    $ harsh ask
+    2024-01-05:
+    Dailies
+                PullUps ━  ━ ━  ━━  ━ ━   ━ ━ ━━━━━━━━━━━  ━ ━ ━[y/n/s/⏎] y @ 15 # Crushed workout today!
+```
+
+This will, besides adding y to the log file, also record "15" and the comment
+"Crushed workout today" to your log file. The feature is backwards compatible
+even with older log files so even if you don't use it, you're alright. 0.9.0
+will also parse older logs. You must use a valid number in the `@` position and
+the only other caveat is if you use both an `@` and `#` in your prompt response,
+the `@` must come before the `#`. The only disallowed character in a prompt is
+`:` as it is used as a field separator in the log files (to make for easy
+importing and parsing by spreadsheet and other tools like pandas.)
+
+The annotating features are primarily for analysis at a later date to help
+uncover patterns between events, reasons you may have written a comment, and
+good or bad knock-on effects.
+
+Personally, I use comments sparingly and to denote why you had to skip, broke
+a consistency chain with an `n`, or for when you're trying to figure out
+something notable on a day so when you look back you can see why habit _X_ may
+or may not have succeeded.
 
 `harsh log` The consistency graph shows your last 100 days.
 
@@ -222,13 +276,23 @@ Personally, I'd use the comments sparing and to denote why you had to skip, brok
 
 The sparkline at the top give a graphical representation of each day's score.
 
-The score at the bottom specifies how many of your habits you met that previous day of total possible and removes any you may have skipped from the calculation.
+The score at the bottom specifies how many of your habits you met that previous
+day of total possible and removes any you may have skipped from the calculation.
 
 ### Subcommands
 
-Run `harsh log stats` gives an analysis of your entire log file and a quantified idea of days you've been on streak, how many days you broke your consistency chain, and how many days you may have skipped -- as well as the total number of days you've been tracking a particular habit for (note: I swap out my file every year, but at least one person wanted this feature to track over 800+ days of log files they'd converted from another app.). It's also nicely coloured to help visually separate the information.
+Run `harsh log stats` gives an analysis of your entire log file and a quantified
+idea of days you've been on streak, how many days you broke your consistency
+chain, and how many days you may have skipped -- as well as the total number of
+days you've been tracking a particular habit for (note: I swap out my file every
+year, but at least one person wanted this feature to track over 800+ days of log
+files they'd converted from another app.). It's also nicely coloured to help
+visually separate the information.
 
-In particular, when you've been tracking for longer than 100 days (the visual length of the consistency graph), you can get summary stats for your entire log (tbh, I did not think this was useful until I implemented it. I was wrong.). This can be surprisingly useful to see longer trends quantified.
+In particular, when you've been tracking for longer than 100 days (the visual
+length of the consistency graph), you can get summary stats for your entire log
+(tbh, I did not think this was useful until I implemented it. I was wrong.).
+This can be surprisingly useful to see longer trends quantified.
 
 ```
                Slept 7h+  Streaks 173 days      Breaks 147 days Skips  1 days   Tracked 320 days
@@ -243,7 +307,12 @@ In particular, when you've been tracking for longer than 100 days (the visual le
                                             ...
 ```
 
-As you can see here, I need to work on sleep more than anything, but digging down on these stats I shocked myself at skipped and breaks in workouts (covid vaccine related in some cases), and how I need to rethink how some of these were set up or I'm doing them (running, blogging etc.). The point is not how terrible I am, but that looking into the numbers revealed patterns (sleep, affects workouts, running, and TIL - today I learned - rather terribly). YMMV.
+As you can see here, I need to work on sleep more than anything, but digging
+down on these stats I shocked myself at skipped and breaks in workouts (covid
+vaccine related in some cases), and how I need to rethink how some of these were
+set up or I'm doing them (running, blogging etc.). The point is not how terrible
+I am, but that looking into the numbers revealed patterns (sleep, affects
+workouts, running, and TIL - today I learned - rather terribly). YMMV.
 
 Run `harsh log check <search term>` gives a slightly more in depth analysis of
 individual habits in conjunction with your topline aparkline. The idea here is
