@@ -190,16 +190,16 @@ func main() {
 								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
 								color.FgGreen.Printf(" days")
 								fmt.Printf("%4v", "")
-								if stats[habit.Name].Total == 0 {
-									color.FgGray.Printf("      ")
-									color.FgGray.Printf("%4v", " ")
-									color.FgGray.Printf("     ")
-								} else {
-									color.FgGray.Printf("Total ")
-									color.FgGray.Printf("%4v", (stats[habit.Name].Total))
-									color.FgGray.Printf("     ")
-								}
-								fmt.Printf("%4v", "")
+								// if stats[habit.Name].Total == 0 {
+								// 	color.FgGray.Printf("      ")
+								// 	color.FgGray.Printf("%4v", " ")
+								// 	color.FgGray.Printf("     ")
+								// } else {
+								// 	color.FgGray.Printf("Total ")
+								// 	color.FgGray.Printf("%4v", (stats[habit.Name].Total))
+								// 	color.FgGray.Printf("     ")
+								// }
+								// fmt.Printf("%4v", "")
 								color.FgRed.Printf("Breaks ")
 								color.FgRed.Printf("%4v", strconv.Itoa(stats[habit.Name].Breaks))
 								color.FgRed.Printf(" days")
@@ -210,7 +210,18 @@ func main() {
 								fmt.Printf("%4v", "")
 								fmt.Printf("Tracked ")
 								fmt.Printf("%4v", strconv.Itoa(stats[habit.Name].DaysTracked))
-								fmt.Printf(" days\n")
+								fmt.Printf(" days")
+								if stats[habit.Name].Total == 0 {
+									fmt.Printf("%4v", "")
+									fmt.Printf("      ")
+									fmt.Printf("%5v", "")
+									fmt.Printf("     \n")
+								} else {
+									fmt.Printf("%4v", "")
+									color.FgBlue.Printf("Total ")
+									color.FgBlue.Printf("%5v", (stats[habit.Name].Total))
+									color.FgBlue.Printf("     \n")
+								}
 							}
 							return nil
 						},
