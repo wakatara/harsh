@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4.1.0
         with:
-          go-version: ">=1.21.0"
+          go-version: ">=1.22.0"
       - name: Snapcraft Login
         run: snapcraft whoami
         env:
