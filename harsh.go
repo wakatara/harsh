@@ -129,9 +129,12 @@ func main() {
 					consistency := map[string][]string{}
 					undone := harsh.getTodos(to, 0)
 
-					sparkline := harsh.buildSpark(from, to)
+					sparkline, calline := harsh.buildSpark(from, to)
 					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
 					fmt.Print(strings.Join(sparkline, ""))
+					fmt.Printf("\n")
+					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
+					fmt.Print(strings.Join(calline, ""))
 					fmt.Printf("\n")
 
 					heading := ""
@@ -246,9 +249,12 @@ func main() {
 							from := to.AddDays(-100)
 							consistency := map[string][]string{}
 
-							sparkline := harsh.buildSpark(from, to)
+							sparkline, calline := harsh.buildSpark(from, to)
 							fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
 							fmt.Print(strings.Join(sparkline, ""))
+							fmt.Printf("\n")
+							fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
+							fmt.Print(strings.Join(calline, ""))
 							fmt.Printf("\n")
 
 							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, harsh.FirstRecords[check], from, to))
@@ -427,11 +433,16 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]Habit {
 }
 
 // Consistency graph, sparkline, and scoring functions
-func (h *Harsh) buildSpark(from civil.Date, to civil.Date) []string {
+func (h *Harsh) buildSpark(from civil.Date, to civil.Date) ([]string, []string) {
 
 	sparkline := []string{}
+	calline := []string{}
 	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
 	i := 0
+	LetterDay := map[string]string{
+		"Sunday": " ", "Monday": "M", "Tuesday": " ", "Wednesday": "W",
+		"Thursday": " ", "Friday": "F", "Saturday": " ",
+	}
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
 		dailyScore := h.score(d)
@@ -441,10 +452,14 @@ func (h *Harsh) buildSpark(from civil.Date, to civil.Date) []string {
 		} else {
 			i = int(math.Ceil(dailyScore / float64(100/(len(sparks)-1))))
 		}
+		t, _ := time.Parse(time.RFC3339, d.String()+"T00:00:00Z")
+		w := t.Weekday().String()
+
+		calline = append(calline, LetterDay[w])
 		sparkline = append(sparkline, sparks[i])
 	}
 
-	return sparkline
+	return sparkline, calline
 }
 
 func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date, to civil.Date) string {
