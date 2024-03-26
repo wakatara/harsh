@@ -19,13 +19,12 @@ import (
 )
 
 var configDir string
-
 type Days int
 
 type Habit struct {
 	Heading   string
 	Name      string
-	Frequency Days
+	Frequency string
 }
 
 // Outcome is the explicit recorded result of a habit
@@ -59,6 +58,8 @@ type Harsh struct {
 	MaxHabitNameLength int
 	Entries            *Entries
 	FirstRecords       map[Habit]civil.Date
+  CountsInRecur      map[Habit]int
+  ReecurrenceDates   map[Habit][]civil.Date
 }
 
 func main() {
@@ -288,6 +289,7 @@ func newHarsh() *Harsh {
 	to := civil.DateOf(time.Now())
 	from := to.AddDays(-100)
 	firstRecords := entries.firstRecords(from, to, habits)
+
 
 	return &Harsh{habits, maxHabitNameLength, entries, firstRecords}
 }
@@ -644,10 +646,13 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 	}
 
 	maxHabitNameLength := 0
+  CountsInRecur := map[Habit]int{}
+  ReecurrenceDates := map[Habit][]civil.Date
 	for _, h := range habits {
 		if len(h.Name) > maxHabitNameLength {
 			maxHabitNameLength = len(h.Name)
 		}
+    CountsInRecur[h.Name], ReecurrenceDates[h.Name] = parseHabitFrequency(h.Name, h.Frequency)
 	}
 
 	return habits, maxHabitNameLength + 10
@@ -698,6 +703,37 @@ func loadLog(configDir string) *Entries {
 
 	return &entries
 }
+
+func parseHabitFrequency(name string, frequency string) (map[string]int, map[string][]civil.Date) {
+  freq := frequency.Split("/")
+  count, err := strconv.Atoi(freq[0].TrimSpace())
+  if err != nil {
+    fmt.Println("Error: A frequency in your habit file has non-number before the period.")
+    os.Exit(1)
+  }
+  p := freq[1].Split()  
+  
+  interval := 0
+  p := period.TrimSpace()
+  switch p[1] {
+  case "w":
+    freq = "WEEKLY"
+  case "m":
+    period = "MONTHLY"
+  case "q":
+    period = "MONTHLY"
+    interval = 3
+
+  case "y":
+    period = "YEARLY"
+
+  }
+
+  return {name: count}, {name, dates}
+
+}
+
+
 
 // writeHabitLog writes the log entry for a habit to file
 func writeHabitLog(d civil.Date, habit string, result string, comment string, amount string) {
