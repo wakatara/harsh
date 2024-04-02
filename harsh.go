@@ -12,9 +12,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"cloud.google.com/go/civil"
 	"github.com/gookit/color"
+	"github.com/teambition/rrule-go"
 	"github.com/urfave/cli/v2"
 )
 
@@ -704,33 +706,67 @@ func loadLog(configDir string) *Entries {
 	return &entries
 }
 
-func parseHabitFrequency(name string, frequency string) (map[string]int, map[string][]civil.Date) {
-  freq := frequency.Split("/")
-  count, err := strconv.Atoi(freq[0].TrimSpace())
+func parseHabitFrequency(name string, frequency string) (map[string]int, map[string][]time.Time) {
+  freq := strings.Split(frequency, "/")
+  target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
   if err != nil {
     fmt.Println("Error: A frequency in your habit file has non-number before the period.")
     os.Exit(1)
   }
-  p := freq[1].Split()  
   
-  interval := 0
-  p := period.TrimSpace()
-  switch p[1] {
-  case "w":
-    freq = "WEEKLY"
-  case "m":
-    period = "MONTHLY"
-  case "q":
-    period = "MONTHLY"
-    interval = 3
-
-  case "y":
-    period = "YEARLY"
-
+  var c, duration string
+  for i, e := range freq[1] {
+    if unicode.IsLetter(e) {
+      c = freq[1][:i]
+      duration = freq[1][i:]
+    }
   }
 
-  return {name: count}, {name, dates}
+  count := 1
+  count, err = strconv.Atoi(c)
+  if err != nil {
+    fmt.Println("Error: A frequency in your habit file has a non-parseable duration.")
+    os.Exit(1)
+  }
 
+  var period rrule.Frequency
+  var interval int
+  switch duration {
+  case "d":
+    period = rrule.DAILY
+    interval = 1 * count
+  case "w":
+    period = rrule.WEEKLY
+    interval = 1
+  // case "wd":
+  //   freq = "rrule.DAILY"
+  //   days = "(0,1,2,3,4)"  
+  // case "we":
+  //   freq = "rrule.DAILY"
+  //   days = "(5,6)"
+  case "m":
+    period = rrule.MONTHLY
+  case "q":
+    period = rrule.MONTHLY
+    interval = 3
+  default:
+    period = rrule.DAILY
+  }
+
+  start_date := civil.DateOf(time.Now()).AddDays(-100)
+  dtstart := start_date.In(time.UTC)
+
+  dates, _ := rrule.NewRRule(rrule.ROption{
+		Freq:    period,
+		Count:   interval,
+    Dtstart: dtstart,
+  })
+
+  d := dates.All()
+
+  fmt.Println(dates.String())
+  
+  return map[name]target, map[name]d 
 }
 
 
