@@ -21,12 +21,16 @@ import (
 )
 
 var configDir string
+
 type Days int
 
 type Habit struct {
-	Heading   string
-	Name      string
-	Frequency string
+	Heading     string
+	Name        string
+	Frequency   string
+	Target      int
+	DueDates    []civil.Date
+	FirstRecord civil.Date
 }
 
 // Outcome is the explicit recorded result of a habit
@@ -59,9 +63,6 @@ type Harsh struct {
 	Habits             []Habit
 	MaxHabitNameLength int
 	Entries            *Entries
-	FirstRecords       map[Habit]civil.Date
-  CountsInRecur      map[Habit]int
-  ReecurrenceDates   map[Habit][]civil.Date
 }
 
 func main() {
@@ -142,7 +143,7 @@ func main() {
 
 					heading := ""
 					for _, habit := range harsh.Habits {
-						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(&habit, harsh.FirstRecords[habit], from, to))
+						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(&habit, from, to))
 						if heading != habit.Heading {
 							color.Bold.Printf(habit.Heading + "\n")
 							heading = habit.Heading
@@ -177,8 +178,7 @@ func main() {
 							harsh := newHarsh()
 
 							to := civil.DateOf(time.Now())
-							// from := to.AddDays(-(365 * 5))
-							// firstRecords := harsh.firstRecords(from, to)
+							from := to.AddDays(-(365 * 5))
 							stats := map[string]HabitStats{}
 
 							heading := ""
@@ -190,7 +190,7 @@ func main() {
 									color.Bold.Printf("\n" + habit.Heading + "\n")
 									heading = habit.Heading
 								}
-								stats[habit.Name] = harsh.buildStats(&habit, harsh.FirstRecords[habit], to)
+								stats[habit.Name] = harsh.buildStats(&habit, from, to)
 								fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
 								color.FgGreen.Printf("Streaks ")
 								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
@@ -260,7 +260,7 @@ func main() {
 							fmt.Print(strings.Join(calline, ""))
 							fmt.Printf("\n")
 
-							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, harsh.FirstRecords[check], from, to))
+							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, from, to))
 
 							fmt.Printf("%*v", harsh.MaxHabitNameLength, check.Name+"  ")
 							fmt.Print(strings.Join(consistency[check.Name], ""))
@@ -288,12 +288,8 @@ func newHarsh() *Harsh {
 	config := findConfigFiles()
 	habits, maxHabitNameLength := loadHabitsConfig(config)
 	entries := loadLog(config)
-	to := civil.DateOf(time.Now())
-	from := to.AddDays(-100)
-	firstRecords := entries.firstRecords(from, to, habits)
 
-
-	return &Harsh{habits, maxHabitNameLength, entries, firstRecords}
+	return &Harsh{habits, maxHabitNameLength, entries}
 }
 
 // Ask function prompts
@@ -309,7 +305,7 @@ func (h *Harsh) askHabits() {
 	if len(*h.Entries) == 0 {
 		checkBackDays = onboard()
 		for _, habit := range h.Habits {
-			h.FirstRecords[habit] = to.AddDays(-(checkBackDays + 1))
+			habit.FirstRecord = to.AddDays(-(checkBackDays + 1))
 		}
 	}
 
@@ -325,14 +321,14 @@ func (h *Harsh) askHabits() {
 			heading := ""
 			for _, habit := range h.Habits {
 				for _, dh := range dayhabit {
-					if habit.Name == dh.Name && dt.After(h.FirstRecords[habit]) {
+					if habit.Name == dh.Name && dt.After(habit.FirstRecord) {
 						if heading != dh.Heading {
 							color.Bold.Printf("\n" + habit.Heading + "\n")
 							heading = habit.Heading
 						}
 						for {
 							fmt.Printf("%*v", h.MaxHabitNameLength, habit.Name+"  ")
-							fmt.Print(h.buildGraph(&habit, h.FirstRecords[habit], from, to))
+							fmt.Print(h.buildGraph(&habit, from, to))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -397,16 +393,14 @@ func (h *Harsh) askHabits() {
 	}
 }
 
-func (e *Entries) firstRecords(from civil.Date, to civil.Date, habits []Habit) map[Habit]civil.Date {
-	firstRecords := map[Habit]civil.Date{}
+func (e *Entries) firstRecords(from civil.Date, to civil.Date, habits *[]Habit) {
 	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
-		for _, habit := range habits {
+		for _, habit := range *habits {
 			if _, ok := (*e)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
-				firstRecords[habit] = dt
+				habit.FirstRecord = dt
 			}
 		}
 	}
-	return firstRecords
 }
 
 func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]Habit {
@@ -424,7 +418,7 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]Habit {
 			if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				delete(dayHabits, habit)
 			}
-			if dt.Before(h.FirstRecords[habit]) {
+			if dt.Before(habit.FirstRecord) {
 				delete(dayHabits, habit)
 			}
 		}
@@ -466,7 +460,7 @@ func (h *Harsh) buildSpark(from civil.Date, to civil.Date) ([]string, []string) 
 	return sparkline, calline
 }
 
-func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date, to civil.Date) string {
+func (h *Harsh) buildGraph(habit *Habit, from civil.Date, to civil.Date) string {
 	var graphDay string
 	var consistency []string
 
@@ -487,7 +481,7 @@ func (h *Harsh) buildGraph(habit *Habit, firstRecord civil.Date, from civil.Date
 				graphDay = " "
 			}
 		} else {
-			if warning(d, habit, *h.Entries, firstRecord) && (to.DaysSince(d) < 14) {
+			if warning(d, habit, *h.Entries, habit.FirstRecord) && (to.DaysSince(d) < 14) {
 				// warning: sigils max out at 2 weeks (~90 day habit in formula)
 				graphDay = "!"
 			} else {
@@ -559,8 +553,8 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 	return false
 }
 
-func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date) bool {
-	if habit.Frequency < 1 {
+func warning(d civil.Date, habit *Habit, entries Entries) bool {
+	if habit.Target <= 0 {
 		return false
 	}
 
@@ -576,7 +570,7 @@ func warning(d civil.Date, habit *Habit, entries Entries, firstRecord civil.Date
 				return false
 			}
 		}
-		if dt.Before(firstRecord) {
+		if dt.Before(habit.FirstRecord) {
 			return false
 		}
 	}
@@ -589,7 +583,7 @@ func (h *Harsh) score(d civil.Date) float64 {
 	scorableHabits := 0.0
 
 	for _, habit := range h.Habits {
-		if habit.Frequency > 0 && !d.Before(h.FirstRecords[habit]) {
+		if habit.Frequency > 0 && !d.Before(habit.FirstRecord) {
 			scorableHabits++
 			if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 
@@ -640,21 +634,18 @@ func loadHabitsConfig(configDir string) ([]Habit, int) {
 				heading = result[1]
 			} else if scanner.Text()[0] != '#' {
 				result := strings.Split(scanner.Text(), ": ")
-				r1, _ := strconv.Atoi(result[1])
-				h := Habit{Heading: heading, Name: result[0], Frequency: Days(r1)}
+				h := Habit{Heading: heading, Name: result[0], Frequency: result[1]}
 				habits = append(habits, h)
 			}
 		}
 	}
 
 	maxHabitNameLength := 0
-  CountsInRecur := map[Habit]int{}
-  ReecurrenceDates := map[Habit][]civil.Date
-	for _, h := range habits {
-		if len(h.Name) > maxHabitNameLength {
-			maxHabitNameLength = len(h.Name)
+	for _, habit := range habits {
+		if len(habit.Name) > maxHabitNameLength {
+			maxHabitNameLength = len(habit.Name)
 		}
-    CountsInRecur[h.Name], ReecurrenceDates[h.Name] = parseHabitFrequency(h.Name, h.Frequency)
+		parseHabitFrequency(&habit)
 	}
 
 	return habits, maxHabitNameLength + 10
@@ -706,70 +697,73 @@ func loadLog(configDir string) *Entries {
 	return &entries
 }
 
-func parseHabitFrequency(name string, frequency string) (map[string]int, map[string][]time.Time) {
-  freq := strings.Split(frequency, "/")
-  target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
-  if err != nil {
-    fmt.Println("Error: A frequency in your habit file has non-number before the period.")
-    os.Exit(1)
-  }
-  
-  var c, duration string
-  for i, e := range freq[1] {
-    if unicode.IsLetter(e) {
-      c = freq[1][:i]
-      duration = freq[1][i:]
-    }
-  }
+func parseHabitFrequency(habit *Habit) {
+	freq := strings.Split(habit.Frequency, "/")
+	target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
+	if err != nil {
+		fmt.Println("Error: A frequency in your habit file has non-number before the period.")
+		os.Exit(1)
+	}
 
-  count := 1
-  count, err = strconv.Atoi(c)
-  if err != nil {
-    fmt.Println("Error: A frequency in your habit file has a non-parseable duration.")
-    os.Exit(1)
-  }
+	var c, duration string
+	for i, e := range freq[1] {
+		if unicode.IsLetter(e) {
+			c = freq[1][:i]
+			duration = freq[1][i:]
+		}
+	}
 
-  var period rrule.Frequency
-  var interval int
-  switch duration {
-  case "d":
-    period = rrule.DAILY
-    interval = 1 * count
-  case "w":
-    period = rrule.WEEKLY
-    interval = 1
-  // case "wd":
-  //   freq = "rrule.DAILY"
-  //   days = "(0,1,2,3,4)"  
-  // case "we":
-  //   freq = "rrule.DAILY"
-  //   days = "(5,6)"
-  case "m":
-    period = rrule.MONTHLY
-  case "q":
-    period = rrule.MONTHLY
-    interval = 3
-  default:
-    period = rrule.DAILY
-  }
+	count := 1
+	count, err = strconv.Atoi(c)
+	if err != nil {
+		fmt.Println("Error: A frequency in your habit file has a non-parsable duration.")
+		os.Exit(1)
+	}
 
-  start_date := civil.DateOf(time.Now()).AddDays(-100)
-  dtstart := start_date.In(time.UTC)
+	var period rrule.Frequency
+	var interval int
+	switch duration {
+	case "d":
+		period = rrule.DAILY
+		interval = 1 * count
+	case "w":
+		period = rrule.WEEKLY
+		interval = 1
+	// case "wd":
+	//   freq = "rrule.DAILY"
+	//   days = "(0,1,2,3,4)"
+	// case "we":
+	//   freq = "rrule.DAILY"
+	//   days = "(5,6)"
+	case "m":
+		period = rrule.MONTHLY
+	case "q":
+		period = rrule.MONTHLY
+		interval = 3
+	default:
+		period = rrule.DAILY
+	}
 
-  dates, _ := rrule.NewRRule(rrule.ROption{
+	start_date := civil.DateOf(time.Now()).AddDays(-100)
+	dtstart := start_date.In(time.UTC)
+
+	rruledates, _ := rrule.NewRRule(rrule.ROption{
 		Freq:    period,
 		Count:   interval,
-    Dtstart: dtstart,
-  })
+		Dtstart: dtstart,
+	})
 
-  d := dates.All()
+	dates := rruledates.All()
+	cds := []civil.Date{}
+	for _, d := range dates {
+		cd := civil.DateOf(d)
+		cds = append(cds, cd)
+	}
 
-  fmt.Println(dates.String())
-  
-  return map[name]target, map[name]d 
+	fmt.Println(cds)
+	habit.Target = target
+	habit.DueDates = cds
 }
-
-
 
 // writeHabitLog writes the log entry for a habit to file
 func writeHabitLog(d civil.Date, habit string, result string, comment string, amount string) {
