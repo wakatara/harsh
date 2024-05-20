@@ -504,8 +504,8 @@ func (h *Harsh) buildStats(habit *Habit) HabitStats {
 				skips += 1
 			// look at cases of "n" being entered but
 			// within bounds of the habit every x days
-			// case satisfied(d, habit, *h.Entries):
-			// 	streaks += 1
+			case satisfied(d, habit, *h.Entries):
+				streaks += 1
 			case skipified(d, habit, *h.Entries):
 				skips += 1
 			case outcome.Result == "n":
@@ -595,7 +595,7 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 }
 
 func warning(d civil.Date, habit *Habit, entries Entries) bool {
-	if habit.Target <= 1 {
+	if habit.Target == 1 && habit.Interval > 1 {
 		return false
 	}
 
