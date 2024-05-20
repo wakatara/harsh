@@ -283,10 +283,6 @@ func newHarsh() *Harsh {
 	from := to.AddDays(-365 * 5)
 	entries.firstRecords(from, to, habits)
 
-	for _, habit := range habits {
-		fmt.Print(habit.FirstRecord)
-	}
-
 	return &Harsh{habits, maxHabitNameLength, entries}
 }
 
