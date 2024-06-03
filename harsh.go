@@ -151,6 +151,7 @@ func main() {
 						}
 						fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
 						fmt.Print(strings.Join(consistency[habit.Name], ""))
+						fmt.Print(habit.DueDates)
 						fmt.Printf("\n")
 					}
 
@@ -518,33 +519,35 @@ func (h *Harsh) buildStats(habit *Habit) HabitStats {
 }
 
 func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
-	if habit.Target < 1 || habit.Interval == 1 {
+
+	if habit.Target < 1 {
 		return false
 	}
 
-	if habit.Target == 1 && habit.Interval > 1 {
-		from := d
-		to := d.AddDays(-int(habit.Interval))
-		for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
-			if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
-				if v.Result == "y" {
-					return true
-				}
-			}
+	// if habit.Target == 1 && habit.Interval == 1 {
+	// 	from := d
+	// 	to := d.AddDays(-int(habit.Interval))
+	// 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
+	// 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+	// 			if v.Result == "y" {
+	// 				return true
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// Figure out the DueDate bracket
+	var from, to civil.Date
+	for i := 0; i < len(habit.DueDates)-1; i++ {
+		start := habit.DueDates[i]
+		end := habit.DueDates[i+1]
+		if (start.Before(d) || start == d) && (end.After(d) || end == d) {
+			from = start
+			to = end
 		}
 	}
 
-	due_date_index := 1
-	for i, date := range habit.DueDates {
-		if d.After(date) {
-			due_date_index = i
-		}
-	}
-
-	from := habit.DueDates[due_date_index]
-	to := habit.DueDates[due_date_index+1]
 	target_counter := 0
-
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			if v.Result == "y" {
@@ -582,7 +585,7 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 	from := habit.DueDates[due_date_index]
 	to := habit.DueDates[due_date_index+1]
 
-	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
+	for dt := from; !dt.After(to); dt = dt.AddDays(habit.Interval) {
 		if d.After(dt) {
 			if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 				if v.Result == "s" {
@@ -595,24 +598,48 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 }
 
 func warning(d civil.Date, habit *Habit, entries Entries) bool {
-	if habit.Target == 1 && habit.Interval > 1 {
+	if habit.Target < 1 {
 		return false
 	}
 
-	warningDays := int(habit.Target)/7 + 1
-	to := d
-	from := d.AddDays(-int(habit.Target) + warningDays)
-	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
-		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
-			switch v.Result {
-			case "y":
-				return false
-			case "s":
-				return false
-			}
+	if habit.Target == 1 && habit.Interval == 1 {
+		return true
+	}
+
+	dateRange := habit.DueDates[1].DaysSince(habit.DueDates[0])
+	target := habit.Target
+	warningDays := int(dateRange/7) + 4
+
+	due_date_index := 1
+	for i, date := range habit.DueDates {
+		if d.After(date) {
+			due_date_index = i
 		}
+	}
+
+	from := habit.DueDates[due_date_index]
+	to := habit.DueDates[due_date_index+1]
+
+	target_count := 0
+	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
+		// Check to see if before FirstRecord before normal checks
 		if dt.Before(habit.FirstRecord) {
 			return false
+		}
+		if d.After(dt) {
+			if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+				switch v.Result {
+				case "y":
+					target_count += 1
+					if target_count < target && dt.DaysSince(to) <= warningDays {
+						return true
+					} else {
+						return false
+					}
+				case "s":
+					return false
+				}
+			}
 		}
 	}
 	return true
