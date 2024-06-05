@@ -68,7 +68,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.0",
+		Version:     "0.10.1",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
