@@ -154,6 +154,8 @@ You'll see an example file like this:
     # This is your habits file.
     # It tells harsh what to track and how frequently in days.
     # 1 means daily, 7 means weekly, 14 every two weeks.
+    # You can also track targets within a set number of days
+    # For example, Gym 3 times a week would translate to 3/7
     # 0 is for tracking a habit. 0 frequency habits will not warn or score.
     # Examples:
 
@@ -162,7 +164,7 @@ You'll see an example file like this:
     Bed by midnight: 1
 
     ! Weeklies
-    Cleaned House: 7
+    Gymmed: 3/7
     Called Mom: 7
 
     ! Monthly+
@@ -174,29 +176,55 @@ You'll see an example file like this:
     Used harsh: 0
 ```
 
-For each habit, pick an integer number of days that you want to be repeating that habit in. If it's not obvious, habits can have any character that is not a `:` as that delimits the period. We also use `:` as the separator in log files as well for easy parsing.
+A big change starting in version `0.10.0`, harsh now allows you to pick a simply
+integer number of days that you want to repeating a habit in (which makes the
+system backwards compatible to previous versions), but also allows you to track
+the number of times (a target value) you may want to track a habit over
+a period.
 
-Headings are denoted by a "!" at the start of a line and allow you to categorize habits visually (useful if you have a lot of them).
+So, for example, wanting to make it to the gym 3 times a week (ie. 7 days) would
+translate into a line in the habit file like:
+
+```
+    Gymmed: 3/7
+```
+
+_Note that this uses a rolling window of days than actual week delimiters (mostly
+because having hard start of week, month, and quarter breaks broke the point of
+consistency graphs when I implemented it. This is much nicer. Trust me.)._
+
+If it's not obvious from the example file, habits can have any character that is
+not a `:` as that delimits the period. We also use `:` as the separator in log
+files as well for easy parsing.
+
+Headings are denoted by a "!" at the start of a line and allow you to categorize
+habits visually (useful if you have a lot of them).
 
 Comments can go in the habits file by starting a line with "#" and are not parsed by the program.
 
-The real trick of tracking is figuring out what habits you want to track building or breaking. Too many, you'll fail. Too few, and the app loses its edge. Too short-term, you feel good but fail on longer-term objectives.
+The real trick of tracking is figuring out what habits you want to track
+building or breaking. Too many, you'll fail. Too few, and the app loses its
+edge. Too short-term, you feel good but fail on longer-term objectives.
 
-If you're getting started, try 5-8 and mix short term and long term and see how you go. Tracking your habits is _strangely_ also a habit you need to build. There're no right answers, but if this is new, [focus on foundational keystone habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/) that will feed future ones. If you're coming into this cold, I'd also recommend a good read of James Clear's Atomic Habits.
+If you're getting started, try 5-8 and mix short term and long term and see how
+you go. Tracking your habits is _strangely_ also a habit you need to build.
+There're no right answers, but if this is new, [focus on foundational keystone
+habits](https://daryl.wakatara.com/resolution-keystone-habits-and-foundational-hacks/)
+that will feed future ones. If you're coming into this cold, I'd also recommend
+a good read of James Clear's Atomic Habits.
 
 Here are some ideas of what to track:
 
 - Went to bed on time
 - Got X hours of sleep
-- Inbox zeroed
-- Practiced language Y
-- Journalled
+- Inbox zero
+- Practiced Italian
+- Morning Pages
 - Blogged
-- Studied genomics
+- Studied astrophysics
 - Socialized
 - Stuck to budget
-- Did open source
-- Cleaned house
+- Coded
 - 2 coffees only
 - Thanked someone
 - Went for a walk
@@ -204,18 +232,24 @@ Here are some ideas of what to track:
 
 ## Usage and Commands
 
-Simply run `harsh ask` regularly, specify whether you did the habit from the prompt on a particular day (or needed to skip the habit for some reason - eg. could not clean apartment because you were away for week), and get pretty graphs!
+Simply run `harsh ask` regularly, specify whether you did the habit from the
+prompt on a particular day (or needed to skip the habit for some reason - eg.
+could not clean apartment because you were away for week), and get pretty
+graphs!
 
-`harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't answer right now. CTRL-c breaks you out of the ask cycle at any point and returns you to your prompt.
+`harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't
+answer right now. CTRL-c breaks you out of the ask cycle at any point and
+returns you to your prompt.
 
 As of version `0.9.0`, to support longer term pattern tracking (and fallible
-memories), you can follow any of the `y | n | s` options with
-an optional typed `@` symbol to then denote a quantity you want to track for the daily habit
-(example: number of words written, km's run, pullups performed etc), and/or an optional
-typed `#` symbol for a comment. Primarily for analysis at a later date.
+memories), you can follow any of the `y | n | s` options with an optional typed
+`@` symbol to then denote a quantity you want to track for the daily habit
+(example: number of words written, km's run, pullups performed etc), and/or an
+optional typed `#` symbol for a comment. Primarily for analysis at a later date.
 
-The `log stats` subcommand will also now total up any amounts you've entered for a habit
-and show you the total along with your streaks, skips, breaks, and days tracked.
+The `log stats` subcommand will also now total up any amounts you've entered for
+a habit and show you the total along with your streaks, skips, breaks, and days
+tracked.
 
 An example of how to use this for a habit like PullUps might be:
 
@@ -343,19 +377,33 @@ sleep (or going to bed too late) and me hitting all my daily habits.
 
 A done habit gives you a nice bright `━` on the consistency graph line. It's done.
 
-Additionally, the app checks in future days if you are still within the "every x days" period of performing the habit by drawing a dimmer `─` after the done marker to let you know you've satisfied the requirement for that habit.
+Additionally, the app checks in future days if you are still within the "every
+x days" period of performing the habit by drawing a dimmer `─` after the done
+marker to let you know you've satisfied the requirement for that habit.
 
 ### Skips
 
-Sometimes, it's impossible to exercise a habit cause life happens. If cleaning the house is a habit you want to exercise, but you happen to be away on a business trip, that is an impossibility. And sometimes, you decide to skip and push the habit to the next period (or a simple day or so). Skips being selected (s in the prompt) allows this to happen. A skip is denoted by a bright `•`.
+Sometimes, it's impossible to exercise a habit cause life happens. If cleaning
+the house is a habit you want to exercise, but you happen to be away on
+a business trip, that is an impossibility. And sometimes, you decide to skip and
+push the habit to the next period (or a simple day or so). Skips being selected
+(s in the prompt) allows this to happen. A skip is denoted by a bright `•`.
 
-Much like satisfied habits where you've performed them once in the period, "skipified" habits let you know you're still withing the grace period of the skip with a lighter dot `·`.
+Much like satisfied habits where you've performed them once in the period,
+"skipified" habits let you know you're still withing the calculated grace period
+of the skip with a lighter dot `·`.
 
 ### Warnings
 
-harsh also has a warnings feature to help flag to you when you're in danger of breaking your consistency graph. Harsh will give you a warning by showing a "!" symbol in your upcoming habits.
+harsh also has a warnings feature to help flag to you when you're in danger of
+breaking your consistency graph. Harsh will give you a warning by showing a "!"
+symbol in your upcoming habits.
 
-For habits of every less than 7 days period, you get a warning sigil on the day the chain will break if you do not perform the habit. For a week or longer, you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so, 2 weeks' warning would get you the sigil 3 days ahead of breaking the chain etc.).
+For habits of every less than 7 days period, you get a warning sigil on the day
+the chain will break if you do not perform the habit. For a week or longer,
+you'll start to see a warning sigil of `1 + days/7` rounded down (eg. so,
+2 weeks' warning would get you the sigil 3 days ahead of breaking the chain
+etc.).
 
 ## Halps
 
@@ -370,7 +418,7 @@ Enter `harsh help` if you're lost:
     harsh [global options] command [command options] [arguments...]
 
     VERSION:
-    0.8.10
+    0.10.0
 
     DESCRIPTION:
     A simple, minimalist CLI for tracking and understanding habits.
@@ -389,9 +437,14 @@ Enter `harsh help` if you're lost:
 
 ## Quality of Life Usage Improvement
 
-As you increasingly use `harsh` for tracking, you'll inevitably end up making small errors in your log file or will want to edit your config file. While people have suggested adding a `harsh config` command to the app, this feels like overkill for the intended audience (geeks) but you can get the same effect through using aliases.
+As you increasingly use `harsh` for tracking, you'll inevitably end up making
+small errors in your log file or will want to edit your config file. While
+people have suggested adding a `harsh config` command to the app, this feels
+like overkill for the intended audience (geeks) but you can get the same effect
+through using aliases.
 
-As a simple quality of life improvement, add the following to your `bash`, `zsh`, `fish` (what I use), or shell of choice:
+As a simple quality of life improvement, add the following to your `bash`,
+`zsh`, `fish` (what I use), or shell of choice:
 
 ```bash
 alias h="harsh"
@@ -399,17 +452,28 @@ alias hc="nvim ~/.config/harsh/habits"
 alias hl="nvim ~/.config/harsh/log"
 ```
 
-For me, this equates to me ending up typing `h log` for the graph, `h ask` etc etc. When I need to edit the log file because I was a bit too itchy with my trigger finger (or decide I should add a note), `hl` is my friend.
+For me, this equates to me ending up typing `h log` for the graph, `h ask` etc
+etc. When I need to edit the log file because I was a bit too itchy with my
+trigger finger (or decide I should add a note), `hl` is my friend.
 
 ## No Colour option
 
-New from 0.8.22: if you are logging the output of `harsh log stat` and other features which contains colour codes, you can instead use `--no-color` flag via `harsh --no-color [command]` (or `harsh -n [command]`) to suppress colourized output. This is also very helpful in n/vim with the `:.! harsh -n log stats` command stanza to record harsh's output to n/vim's buffer to augment your weekly, monthly, or daily tracking (learned that vim snippet from the feature requester!).
+New from 0.8.22: if you are logging the output of `harsh log stat` and other
+features which contains colour codes, you can instead use `--no-color` flag via
+`harsh --no-color [command]` (or `harsh -n [command]`) to suppress colourized
+output. This is also very helpful in n/vim with the `:.! harsh -n log stats`
+command stanza to record harsh's output to n/vim's buffer to augment your
+weekly, monthly, or daily tracking (learned that vim snippet from the feature
+requester!).
 
-Much like the above feature of accessing config and log files, you can alias `harsh -n` in your shell if you prefer to suppress all colour output coming from all harsh commands.
+Much like the above feature of accessing config and log files, you can alias
+`harsh -n` in your shell if you prefer to suppress all colour output coming from
+all harsh commands.
 
 ## License: MIT License
 
-_harsh_ is free software. You can redistribute it and/or modify it under the terms of the [MIT License](LICENSE).
+_harsh_ is free software. You can redistribute it and/or modify it under the
+terms of the [MIT License](LICENSE).
 
 ## Contributing
 

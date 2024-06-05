@@ -716,6 +716,11 @@ func (habit *Habit) parseHabitFrequency() {
 			os.Exit(1)
 		}
 	}
+	if target > interval {
+		fmt.Println("Error: A frequency in your habit file has a target value greater than the interval period.")
+		fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
+		os.Exit(1)
+	}
 	habit.Target = target
 	habit.Interval = interval
 }
@@ -824,9 +829,11 @@ func createExampleHabitsFile(configDir string) {
 		f.WriteString("# This is your habits file.\n")
 		f.WriteString("# It tells harsh what to track and how frequently.\n")
 		f.WriteString("# 1 means daily, 7 means weekly, 14 every two weeks.\n")
+		f.WriteString("# You can also track targets within a set number of days.\n")
+		f.WriteString("# For example, Gym 3 times a week would translate to 3/7.\n")
 		f.WriteString("# 0 is for tracking a habit. 0 frequency habits will not warn or score.\n")
 		f.WriteString("# Examples:\n\n")
-		f.WriteString("Gymmed: 2\n")
+		f.WriteString("Gymmed: 3/7\n")
 		f.WriteString("Bed by midnight: 1\n")
 		f.WriteString("Cleaned House: 7\n")
 		f.WriteString("Called Mom: 7\n")
