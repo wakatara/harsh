@@ -15,8 +15,6 @@ import (
 
 	"cloud.google.com/go/civil"
 	"github.com/gookit/color"
-
-	// "github.com/teambition/rrule-go"
 	"github.com/urfave/cli/v2"
 )
 
@@ -541,7 +539,7 @@ func skipified(d civil.Date, habit *Habit, entries Entries) bool {
 	}
 
 	from := d
-	to := d.AddDays(-int(habit.Interval / habit.Target))
+	to := d.AddDays(-int(math.Ceil(float64(habit.Interval) / float64(habit.Target))))
 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			if v.Result == "s" {
@@ -641,15 +639,12 @@ func loadHabitsConfig(configDir string) ([]*Habit, int) {
 	}
 
 	maxHabitNameLength := 0
-	// fmt.Println(habits)
 	for _, habit := range habits {
 		if len(habit.Name) > maxHabitNameLength {
 			maxHabitNameLength = len(habit.Name)
 		}
 	}
 
-	// fmt.Println("Printing habits post updates")
-	// fmt.Println(habits)
 	return habits, maxHabitNameLength + 10
 }
 
@@ -704,7 +699,7 @@ func (habit *Habit) parseHabitFrequency() {
 	freq := strings.Split(habit.Frequency, "/")
 	target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
 	if err != nil {
-		fmt.Println("Error: A frequency in your habit file has a non-integer before the slash in the target.")
+		fmt.Println("Error: A frequency in your habit file has a non-integer before the slash.")
 		fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
 		os.Exit(1)
 	}
@@ -715,8 +710,8 @@ func (habit *Habit) parseHabitFrequency() {
 		target = 1
 	} else {
 		interval, err = strconv.Atoi(strings.TrimSpace(freq[1]))
-		if err != nil {
-			fmt.Println("Error: A frequency in your habit file has a non-integer after the slash in the interval.")
+		if err != nil || interval == 0 {
+			fmt.Println("Error: A frequency in your habit file has a non-integer or zero after the slash.")
 			fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
 			os.Exit(1)
 		}
