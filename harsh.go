@@ -313,7 +313,7 @@ func (h *Harsh) askHabits() {
 			for _, habit := range h.Habits {
 				for _, dh := range dayhabit {
 					if habit.Name == dh && dt.After(habit.FirstRecord) {
-						if heading != dh {
+						if heading != habit.Heading {
 							color.Bold.Printf("\n" + habit.Heading + "\n")
 							heading = habit.Heading
 						}
