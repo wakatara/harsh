@@ -17,23 +17,24 @@ quantified individual tracking is exhaustive, important habits get lost in the
 data deluge, so this provides deliberate, explicit, habits to track and progress.
 
 It's written in Go and adds features and fixes on top of habitctl (its
-inspiration) such as skips, streak break warnings, and stats. If you're a geek,
+inspiration) such as skips, streak break warnings, stats, quantities, and as of
+`0.10.0` targets over intervals (like 3 times in a week). If you're a geek,
 I think you'll like it. Despite trying an exhaustive number of habit trackers,
 this was what worked for me. YMMV. If you're interested in why I wrote it,
 there's a [launch post about my motivations on my
 blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
 My biggest hope that it helps you get done what you're trying to get done in
-your life.
+your life and live a better one.
 
 ## Installation
 
-harsh is available on OSX (as a homebrew too), Linux (also as a Snap and
+harsh is available on OSX (and via homebrew), Linux (also as a Snap and
 homebrew), FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake
-and adoption of a portable, command line, text-based approach. We have also
-updated harsh to support ARM architectures for OSX (M1 and M2 chipped Macs) and
-Linux as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available as of
-0.8.23.
+and adoption of a portable, command line, text-based approach to habit tracking.
+harsh also supports ARM architectures for OSX (M1, M2, and M3 chipped Macs and
+Linux and BSDs) as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available
+as of 0.8.23.
 
 ### Install via package manager
 
@@ -176,11 +177,10 @@ You'll see an example file like this:
     Used harsh: 0
 ```
 
-A big change starting in version `0.10.0`, harsh now allows you to pick a simply
-integer number of days that you want to repeating a habit in (which makes the
-system backwards compatible to previous versions), but also allows you to track
-the number of times (a target value) you may want to track a habit over
-a period.
+A big change starting in version `0.10.0`, harsh now allows you to pick a target
+number of times you want to perform a habit over a set interval of time (in
+days). Examples would be `3/7` for 3 times a week, `2/30` for twice a month etc
+etc.
 
 So, for example, wanting to make it to the gym 3 times a week (ie. 7 days) would
 translate into a line in the habit file like:
@@ -188,6 +188,9 @@ translate into a line in the habit file like:
 ```
     Gymmed: 3/7
 ```
+
+You can also simply pick a number of days you want to repeat a habit (also, for
+backwards compatability with older habit files).
 
 _Note that this uses a rolling window of days than actual week delimiters (mostly
 because having hard start of week, month, and quarter breaks broke the point of
