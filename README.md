@@ -190,7 +190,7 @@ translate into a line in the habit file like:
 ```
 
 You can also simply pick a number of days you want to repeat a habit (also, for
-backwards compatability with older habit files).
+backwards compatibility with older habit files).
 
 _Note that this uses a rolling window of days than actual week delimiters (mostly
 because having hard start of week, month, and quarter breaks broke the point of
