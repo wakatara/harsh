@@ -16,6 +16,7 @@ import (
 	"cloud.google.com/go/civil"
 	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/term"
 )
 
 var configDir string
@@ -60,6 +61,7 @@ type Entries map[DailyHabit]Outcome
 type Harsh struct {
 	Habits             []*Habit
 	MaxHabitNameLength int
+	CountBack          int
 	Entries            *Entries
 }
 
@@ -68,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.1",
+		Version:     "0.10.3",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -127,7 +129,7 @@ func main() {
 					harsh := newHarsh()
 
 					to := civil.DateOf(time.Now())
-					from := to.AddDays(-100)
+					from := to.AddDays(-harsh.CountBack)
 					consistency := map[string][]string{}
 					undone := harsh.getTodos(to, 0)
 
@@ -141,7 +143,7 @@ func main() {
 
 					heading := ""
 					for _, habit := range harsh.Habits {
-						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(habit))
+						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(habit, false))
 						if heading != habit.Heading {
 							color.Bold.Printf(habit.Heading + "\n")
 							heading = habit.Heading
@@ -237,7 +239,7 @@ func main() {
 							}
 
 							to := civil.DateOf(time.Now())
-							from := to.AddDays(-100)
+							from := to.AddDays(-harsh.CountBack)
 							consistency := map[string][]string{}
 
 							sparkline, calline := harsh.buildSpark(from, to)
@@ -248,13 +250,12 @@ func main() {
 							fmt.Print(strings.Join(calline, ""))
 							fmt.Printf("\n")
 
-							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check))
+							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, false))
 
 							fmt.Printf("%*v", harsh.MaxHabitNameLength, check.Name+"  ")
 							fmt.Print(strings.Join(consistency[check.Name], ""))
 							fmt.Printf("\n")
 
-							fmt.Println(habit_fragment)
 							return nil
 						},
 					},
@@ -279,15 +280,24 @@ func newHarsh() *Harsh {
 	to := civil.DateOf(time.Now())
 	from := to.AddDays(-365 * 5)
 	entries.firstRecords(from, to, habits)
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	countBack := 100
+	if width < 100+maxHabitNameLength {
+		// Remove 2 for the habitName and graph padding
+		countBack = width - maxHabitNameLength - 2
+	}
 
-	return &Harsh{habits, maxHabitNameLength, entries}
+	return &Harsh{habits, maxHabitNameLength, countBack, entries}
 }
 
 // Ask function prompts
 func (h *Harsh) askHabits() {
 
 	to := civil.DateOf(time.Now())
-	from := to.AddDays(-60)
+	from := to.AddDays(-h.CountBack - 40)
 
 	// Goes back 8 days to check unresolved entries
 	checkBackDays := 10
@@ -319,7 +329,7 @@ func (h *Harsh) askHabits() {
 						}
 						for {
 							fmt.Printf("%*v", h.MaxHabitNameLength, habit.Name+"  ")
-							fmt.Print(h.buildGraph(habit))
+							fmt.Print(h.buildGraph(habit, true))
 							fmt.Printf(" [y/n/s/⏎] ")
 
 							reader := bufio.NewReader(os.Stdin)
@@ -451,12 +461,16 @@ func (h *Harsh) buildSpark(from civil.Date, to civil.Date) ([]string, []string) 
 	return sparkline, calline
 }
 
-func (h *Harsh) buildGraph(habit *Habit) string {
+func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
 	var graphDay string
 	var consistency []string
 
-	from := civil.DateOf(time.Now()).AddDays(-100)
 	to := civil.DateOf(time.Now())
+	from := to.AddDays(-h.CountBack)
+	if ask {
+		from = to.AddDays(-h.CountBack + 12)
+	}
+
 	for d := from; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
