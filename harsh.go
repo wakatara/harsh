@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.3",
+		Version:     "0.10.4",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -720,8 +720,12 @@ func (habit *Habit) parseHabitFrequency() {
 
 	var interval int
 	if len(freq) == 1 {
-		interval = target
-		target = 1
+		if target == 0 {
+			interval = 1
+		} else {
+			interval = target
+			target = 1
+		}
 	} else {
 		interval, err = strconv.Atoi(strings.TrimSpace(freq[1]))
 		if err != nil || interval == 0 {
