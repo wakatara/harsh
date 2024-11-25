@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.4",
+		Version:     "0.10.5",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -295,7 +295,6 @@ func newHarsh() *Harsh {
 
 // Ask function prompts
 func (h *Harsh) askHabits() {
-
 	to := civil.DateOf(time.Now())
 	from := to.AddDays(-h.CountBack - 40)
 
@@ -388,7 +387,6 @@ func (h *Harsh) askHabits() {
 						}
 					}
 				}
-
 			}
 		}
 	}
@@ -433,7 +431,6 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]string {
 
 // Consistency graph, sparkline, and scoring functions
 func (h *Harsh) buildSpark(from civil.Date, to civil.Date) ([]string, []string) {
-
 	sparkline := []string{}
 	calline := []string{}
 	sparks := []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
@@ -528,7 +525,6 @@ func (h *Harsh) buildStats(habit *Habit) HabitStats {
 }
 
 func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
-
 	if habit.Target <= 1 && habit.Interval == 1 {
 		return false
 	}
@@ -597,7 +593,6 @@ func (h *Harsh) score(d civil.Date) float64 {
 		if habit.Target > 0 && !d.Before(habit.FirstRecord) {
 			scorableHabits++
 			if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
-
 				switch {
 				case outcome.Result == "y":
 					scored++
@@ -627,7 +622,6 @@ func (h *Harsh) score(d civil.Date) float64 {
 
 // loadHabitsConfig loads habits in config file ordered slice
 func loadHabitsConfig(configDir string) ([]*Habit, int) {
-
 	file, err := os.Open(filepath.Join(configDir, "/habits"))
 	if err != nil {
 		log.Fatal(err)
@@ -673,7 +667,9 @@ func loadLog(configDir string) *Entries {
 	scanner := bufio.NewScanner(file)
 
 	entries := Entries{}
+	line_count := 0
 	for scanner.Scan() {
+		line_count++
 		if len(scanner.Text()) > 0 {
 			if scanner.Text()[0] != '#' {
 				// Discards comments from read record read as result[3]
@@ -689,7 +685,7 @@ func loadLog(configDir string) *Entries {
 					}
 					amount, err := strconv.ParseFloat(result[4], 64)
 					if err != nil {
-						fmt.Println("Error: there is a non-number in your log file where we expect a number.")
+						fmt.Printf("Error: there is a non-number in your log file at line %d where we expect a number.\n", line_count)
 					}
 					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: amount}
 				case 4:
@@ -709,7 +705,6 @@ func loadLog(configDir string) *Entries {
 }
 
 func (habit *Habit) parseHabitFrequency() {
-
 	freq := strings.Split(habit.Frequency, "/")
 	target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
 	if err != nil {
@@ -763,7 +758,6 @@ func writeHabitLog(d civil.Date, habit string, result string, comment string, am
 // findConfigFile checks os relevant habits and log file exist, returns path
 // If they do not exist, calls writeNewHabits and writeNewLog
 func findConfigFiles() string {
-
 	configDir = os.Getenv("HARSHPATH")
 
 	if len(configDir) == 0 {
