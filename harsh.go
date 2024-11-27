@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.5",
+		Version:     "0.10.6",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -95,8 +95,8 @@ func main() {
 				Usage:   "Shows undone habits for today.",
 				Action: func(_ *cli.Context) error {
 					harsh := newHarsh()
-					to := civil.DateOf(time.Now())
-					undone := harsh.getTodos(to, 0)
+					now := civil.DateOf(time.Now())
+					undone := harsh.getTodos(now, 0)
 
 					heading := ""
 					if len(undone) == 0 {
@@ -128,7 +128,8 @@ func main() {
 				Action: func(_ *cli.Context) error {
 					harsh := newHarsh()
 
-					to := civil.DateOf(time.Now())
+					now := civil.DateOf(time.Now())
+					to := now
 					from := to.AddDays(-harsh.CountBack)
 					consistency := map[string][]string{}
 					undone := harsh.getTodos(to, 0)
@@ -155,7 +156,7 @@ func main() {
 
 					undone_num := strconv.Itoa(len(undone[to.String()]))
 
-					scoring := fmt.Sprintf("%.1f", harsh.score(civil.DateOf(time.Now()).AddDays(-1)))
+					scoring := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
 					fmt.Printf("\n" + "Yesterday's Score: ")
 					fmt.Printf("%9v", scoring)
 					fmt.Printf("%%\n")
@@ -277,7 +278,8 @@ func newHarsh() *Harsh {
 	config := findConfigFiles()
 	habits, maxHabitNameLength := loadHabitsConfig(config)
 	entries := loadLog(config)
-	to := civil.DateOf(time.Now())
+	now := civil.DateOf(time.Now())
+	to := now
 	from := to.AddDays(-365 * 5)
 	entries.firstRecords(from, to, habits)
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
@@ -295,7 +297,8 @@ func newHarsh() *Harsh {
 
 // Ask function prompts
 func (h *Harsh) askHabits() {
-	to := civil.DateOf(time.Now())
+	now := civil.DateOf(time.Now())
+	to := now
 	from := to.AddDays(-h.CountBack - 40)
 
 	// Goes back 8 days to check unresolved entries
@@ -459,14 +462,16 @@ func (h *Harsh) buildSpark(from civil.Date, to civil.Date) ([]string, []string) 
 }
 
 func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
+	graphLen := h.CountBack
 	var graphDay string
-	var consistency []string
+	var consistency strings.Builder
 
 	to := civil.DateOf(time.Now())
 	from := to.AddDays(-h.CountBack)
 	if ask {
-		from = to.AddDays(-h.CountBack + 12)
+		graphLen = h.CountBack + 12
 	}
+	consistency.Grow(graphLen)
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
@@ -492,15 +497,17 @@ func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
 				graphDay = " "
 			}
 		}
-		consistency = append(consistency, graphDay)
+		consistency.WriteString(graphDay)
 	}
-	return strings.Join(consistency, "")
+
+	return consistency.String()
 }
 
 func (h *Harsh) buildStats(habit *Habit) HabitStats {
 	var streaks, breaks, skips int
 	var total float64
-	to := civil.DateOf(time.Now())
+	now := civil.DateOf(time.Now())
+	to := now
 
 	for d := habit.FirstRecord; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*h.Entries)[DailyHabit{Day: d, Habit: habit.Name}]; ok {
@@ -739,20 +746,22 @@ func (habit *Habit) parseHabitFrequency() {
 }
 
 // writeHabitLog writes the log entry for a habit to file
-func writeHabitLog(d civil.Date, habit string, result string, comment string, amount string) {
+func writeHabitLog(d civil.Date, habit string, result string, comment string, amount string) error {
 	fileName := filepath.Join(configDir, "/log")
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("opening log file: %w", err)
 	}
+	defer f.Close()
 
 	if _, err := f.Write([]byte(d.String() + " : " + habit + " : " + result + " : " + comment + " : " + amount + "\n")); err != nil {
 		f.Close() // ignore error; Write error takes precedence
-		log.Fatal(err)
+		return fmt.Errorf("writing log file: %w", err)
 	}
 	if err := f.Close(); err != nil {
 		log.Fatal(err)
 	}
+	return nil
 }
 
 // findConfigFile checks os relevant habits and log file exist, returns path
