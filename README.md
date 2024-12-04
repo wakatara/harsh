@@ -27,6 +27,34 @@ blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 My biggest hope that it helps you get done what you're trying to get done in
 your life and live a better one.
 
+## How It Works
+
+Harsh lets you see your habits in a consistency graph (aka Seinfeld chain) from
+left to right over the time you've been doing the habit. The interface shows
+the last 100 days (but dynamically adapts to a smaller day length if your
+terminal window is too small.).
+
+For each day, you enter a yes/no/skip on whether you did the habit in question,
+and the horizontal line for ach habit is like an x-axis time graph showing you
+how your habits have fared. There's a sparkline graph at the top of the
+interface to show how you are doing percentage wise each day over the 100 days,
+and some interface hintint with a M(onday), W(ednesday), F(riday) label below
+that to jelp you figure out which day goes with what (very helpful if you find
+particular days are where your habits falldown consistently since you can then
+fix whatever that is in that day that messes things up.).
+
+Consistency graphs are also known as the "Seinfield Method" due to an
+apocryphal story about getting better at writing jokes, which I think is
+attributed to Brad Isaac in a (possibly never happened) piece of advice he got
+from the comedian Jerry Seinfeld. Basically, the idea was he had a big year
+long calendar with a day for every year. Every day he wrote jokes, he put an X
+down. He could see how consistent he was being. The idea is never to bfreak the
+chain. Harsh works the same way. The idea is turning something into a
+consistent habit makes you good -- eventually. The original place I saw it
+(Lifehacker) has killed the original post (largely I think because Seinfeld
+repudiated it) - but [you can see
+here](https://lifehacker.com/jerry-seinfelds-productivity-secret-281626)
+
 ## Installation
 
 harsh is available on OSX (and via homebrew), Linux (also as a Snap and
@@ -40,16 +68,16 @@ as of 0.8.23.
 
 **Homebrew tap** (Mac and Linux):
 
-```
-$ brew install wakatara/tap/harsh
+```sh
+brew install wakatara/tap/harsh
 ```
 
 (this will also nicely alert you of updates when you `brew update`)
 
 **Snap** (Linux only):
 
-```
-$ sudo snap install harsh
+```sh
+sudo snap install harsh
 ```
 
 (you'll also get alerted when there are updates)
@@ -93,27 +121,27 @@ steps:
 
 **Clone:**
 
-```
-$ git clone https://github.com/wakatara/harsh
-$ cd harsh
+```sh
+git clone https://github.com/wakatara/harsh
+cd harsh
 ```
 
 **Get the dependencies:**
 
-```
-$ go get ./...
+```sh
+go get ./...
 ```
 
 **Build:**
 
-```
-$ go build -o harsh .
+```sh
+go build -o harsh .
 ```
 
 **Verify it works:**
 
-```
-$ ./harsh --version
+```sh
+./harsh --version
 ```
 
 You can then move the file to the desired location in your `$PATH`.
@@ -122,7 +150,7 @@ You can then move the file to the desired location in your `$PATH`.
 
 When you run `harsh ask` for the first time, it will set up the required files:
 
-```
+```sh
     $ harsh ask
     Welcome to harsh!
 
@@ -151,7 +179,8 @@ Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublim
 
 You'll see an example file like this:
 
-```harsh
+```sh
+  harsh
     # This is your habits file.
     # It tells harsh what to track and how frequently in days.
     # 1 means daily, 7 means weekly, 14 every two weeks.
@@ -185,7 +214,7 @@ etc.
 So, for example, wanting to make it to the gym 3 times a week (ie. 7 days) would
 translate into a line in the habit file like:
 
-```
+```sh
     Gymmed: 3/7
 ```
 
@@ -256,7 +285,7 @@ tracked.
 
 An example of how to use this for a habit like PullUps might be:
 
-```
+```sh
     $ harsh ask
     2024-01-05:
     Dailies
@@ -283,7 +312,7 @@ or may not have succeeded.
 
 `harsh log` The consistency graph shows your last 100 days.
 
-```
+```sh
     $ harsh ask
     2020-01-05:
     Dailies
@@ -300,7 +329,7 @@ or may not have succeeded.
 
 (Some weeks later)
 
-```
+```sh
     $ harsh log
                               ▄▃▃▄▄▃▄▆▆▆▅▆▆▇▆▄▃▄▆▃▆▃▆▂▅▄▃▄▅▆▅▃▃▃▆▂▄▅▄▅▅▅▆▄▄▆▇▆▅▅▄▃▅▆▄▆▃▃▂▅▆
                     Meditated ━       ━ ━  ━━         ━    ━   ━ ━   ━━━━━━━━━━━   ━ ━   ━━
@@ -332,7 +361,7 @@ length of the consistency graph), you can get summary stats for your entire log
 (tbh, I did not think this was useful until I implemented it. I was wrong.).
 This can be surprisingly useful to see longer trends quantified.
 
-```
+```sh
                Slept 7h+  Streaks 173 days      Breaks 147 days Skips  1 days   Tracked 320 days
            Morning Pages  Streaks 310 days      Breaks 9 days   Skips  2 days   Tracked 320 days
              Share daily  Streaks 320 days      Breaks 0 days   Skips  1 days   Tracked 320 days
@@ -365,7 +394,7 @@ a habit around getting to bed on time and getting a solid 7 I call `Bed by
 11+Slept 7h+`. I can just use the handy `bed` as a short match term for the habit
 and get the result.
 
-```
+```sh
     $ harsh log check bed
 
                              █▇▇▇▇▇▇▇▇▇▇▇▇▇▇█▇▇▇▇▇▇█████▇██▇▇████████▇███████▇█████████████
@@ -449,7 +478,7 @@ through using aliases.
 As a simple quality of life improvement, add the following to your `bash`,
 `zsh`, `fish` (what I use), or shell of choice:
 
-```bash
+```fish
 alias h="harsh"
 alias hc="nvim ~/.config/harsh/habits"
 alias hl="nvim ~/.config/harsh/log"
