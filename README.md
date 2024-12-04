@@ -7,7 +7,13 @@ Succinctly: it's quick and gets out of your way. And gives you excellent
 visibility on your habits.
 
 There're 3 commands: `ask`, `log`, and `todo`.
-(and two subcommands `log stats` and `log check <match term>`)
+(and one subcommand `log stats`)
+
+As of `v0.10.6``)`ask`or`log`about a particular habit if you
+want to fill in just a single habit outcome or drill down on a single habit.
+Use`harsh ask <habit substring>`and`harsh log <habit substring>`.`harsh
+log`without a string shows you your full consistency graph.`harsh ask`
+withouy a string asks you about all your listed habits.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files
 for tracking that are human-grokable and editable in your favourite text editor.
@@ -232,7 +238,8 @@ files as well for easy parsing.
 Headings are denoted by a "!" at the start of a line and allow you to categorize
 habits visually (useful if you have a lot of them).
 
-Comments can go in the habits file by starting a line with "#" and are not parsed by the program.
+Comments can go in the habits file by starting a line with "#" and are not
+parsed by the program.
 
 The real trick of tracking is figuring out what habits you want to track
 building or breaking. Too many, you'll fail. Too few, and the app loses its
@@ -268,6 +275,13 @@ Simply run `harsh ask` regularly, specify whether you did the habit from the
 prompt on a particular day (or needed to skip the habit for some reason - eg.
 could not clean apartment because you were away for week), and get pretty
 graphs!
+
+As of `v0.10.6` you can also add a fragment of a habit after `harsh ask` which
+will then only ask you about that the outcomes for that single habit.
+Taking the example of the `Pullups` habit below, if you had `Pullups: 5/7`
+in your habit file, typing `harsh ask pul` (or any variations of the habit
+name's string) will ask you only about the outcome for the unanswered todos
+for that habit (an oft-requested feature).
 
 `harsh ask` allows you to pick between `[y/n/s/⏎]` which is yes/no/skip/don't
 answer right now. CTRL-c breaks you out of the ask cycle at any point and
@@ -305,12 +319,22 @@ The annotating features are primarily for analysis at a later date to help
 uncover patterns between events, reasons you may have written a comment, and
 good or bad knock-on effects.
 
-Personally, I use comments sparingly and to denote why you had to skip, broke
-a consistency chain with an `n`, or for when you're trying to figure out
+Personally, I use comments sparingly and to denote why you had to skip, broke a
+consistency chain with an `n`, or for when you're trying to figure out
 something notable on a day so when you look back you can see why habit _X_ may
 or may not have succeeded.
 
-`harsh log` The consistency graph shows your last 100 days.
+As of `v0.10.6`, `harsh log` supports the same fragment querying `harsh ask`
+does. You can add a fragment of a habit after `harsh log` which will then only
+show you the consistency graph outcomes for that single habit. This supercedes
+the `harsh log check <habit substring>` subcommand (which is not deprecated).
+
+Taking the example of the `Pullups` habit mentioned above, if you typed `harsh
+log pul` (or any variations of the habit name's string) you'll see just the
+consistency graph for that single habit along along with the sparkline for all
+habits and usual log command metrics.
+
+`harsh log` by itself shows your consistency graph for the last 100 days.
 
 ```sh
     $ harsh ask
@@ -342,6 +366,12 @@ or may not have succeeded.
 ```
 
 The sparkline at the top give a graphical representation of each day's score.
+The M W F stands for M(onday), W(ednesday), and F(riday) to provide visual
+hinting as to which days are which and possibly help diagnoze whether
+particular days are villains or heros in building your habits (How is this
+ueful? As an example, because of then way I had meetings structured on Tuesday,
+I often fell off the truck on certain habits on Tuesdays. Seeing this clearly
+in the graphs let me restructure my Tuesday work days to get me back on track.)
 
 The score at the bottom specifies how many of your habits you met that previous
 day of total possible and removes any you may have skipped from the calculation.
@@ -381,24 +411,24 @@ set up or I'm doing them (running, blogging etc.). The point is not how terrible
 I am, but that looking into the numbers revealed patterns (sleep, affects
 workouts, running, and TIL - today I learned - rather terribly). YMMV.
 
-Run `harsh log check <search term>` gives a slightly more in depth analysis of
+Run `harsh log <habit search term>` gives a slightly more in depth analysis of
 individual habits in conjunction with your topline aparkline. The idea here is
 that you can examine individual habits graphically against your topline to see
 if there are patterns of correlation between the variation in an individual
 habit and your overall daily score over time.
 
 Say you expect there's a close correlation between you not getting good sleep
-and your habits generally falling from a state of grace. It's easy to check with
-a `log check` and any string you type from your habits. In my case, I have
-a habit around getting to bed on time and getting a solid 7 I call `Bed by
-11+Slept 7h+`. I can just use the handy `bed` as a short match term for the habit
-and get the result.
+and your habits generally falling from a state of grace. It's easy to check
+with a `log <habit substring>` and any string you type from your habits. In my
+case, I have a habit around getting to bed on time and getting a solid 7 I call
+`Bed by 12+Slept 7h+`. I can just use the handy `bed` as a short match term for
+the habit and get the result.
 
 ```sh
-    $ harsh log check bed
+    $ harsh log bed
 
                              █▇▇▇▇▇▇▇▇▇▇▇▇▇▇█▇▇▇▇▇▇█████▇██▇▇████████▇███████▇█████████████
-        Bed by 11+Slept 7h+      ━ ━    ━ ━━━━    ━━━    ━━    ━ ━━━  ━• ━━━━━━━━ ━━━━ ━━━━
+        Bed by 12+Slept 7h+      ━ ━    ━ ━━━━    ━━━    ━━    ━ ━━━  ━• ━━━━━━━━ ━━━━ ━━━━
 
 ```
 
