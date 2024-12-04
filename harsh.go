@@ -83,9 +83,11 @@ func main() {
 				Name:    "ask",
 				Aliases: []string{"a"},
 				Usage:   "Asks and records your undone habits",
-				Action: func(_ *cli.Context) error {
+				Action: func(c *cli.Context) error {
 					harsh := newHarsh()
-					harsh.askHabits()
+					habit_fragment := c.Args().First()
+
+					harsh.askHabits(habit_fragment)
 					return nil
 				},
 			},
@@ -125,8 +127,21 @@ func main() {
 				Name:    "log",
 				Aliases: []string{"l"},
 				Usage:   "Shows graph of logged habits",
-				Action: func(_ *cli.Context) error {
+				Action: func(c *cli.Context) error {
 					harsh := newHarsh()
+					habit_fragment := c.Args().First()
+
+					// Checks for any fragment argument sent along only only asks for it, otherwise all
+					habits := []*Habit{}
+					if len(strings.TrimSpace(habit_fragment)) > 0 {
+						for _, habit := range harsh.Habits {
+							if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(habit_fragment)) {
+								habits = append(habits, habit)
+							}
+						}
+					} else {
+						habits = harsh.Habits
+					}
 
 					now := civil.DateOf(time.Now())
 					to := now
@@ -143,7 +158,7 @@ func main() {
 					fmt.Printf("\n")
 
 					heading := ""
-					for _, habit := range harsh.Habits {
+					for _, habit := range habits {
 						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(habit, false))
 						if heading != habit.Heading {
 							color.Bold.Printf(habit.Heading + "\n")
@@ -223,43 +238,6 @@ func main() {
 							return nil
 						},
 					},
-
-					{
-						Name:    "check",
-						Aliases: []string{"c"},
-						Usage:   "Checks and compares a matched habit against overall sparklines and scoring.",
-						Action: func(cCtx *cli.Context) error {
-							harsh := newHarsh()
-							habit_fragment := cCtx.Args().First()
-
-							check := Habit{}
-							for _, habit := range harsh.Habits {
-								if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(habit_fragment)) {
-									check = *habit
-								}
-							}
-
-							to := civil.DateOf(time.Now())
-							from := to.AddDays(-harsh.CountBack)
-							consistency := map[string][]string{}
-
-							sparkline, calline := harsh.buildSpark(from, to)
-							fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
-							fmt.Print(strings.Join(sparkline, ""))
-							fmt.Printf("\n")
-							fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
-							fmt.Print(strings.Join(calline, ""))
-							fmt.Printf("\n")
-
-							consistency[check.Name] = append(consistency[check.Name], harsh.buildGraph(&check, false))
-
-							fmt.Printf("%*v", harsh.MaxHabitNameLength, check.Name+"  ")
-							fmt.Print(strings.Join(consistency[check.Name], ""))
-							fmt.Printf("\n")
-
-							return nil
-						},
-					},
 				},
 			},
 		},
@@ -296,7 +274,7 @@ func newHarsh() *Harsh {
 }
 
 // Ask function prompts
-func (h *Harsh) askHabits() {
+func (h *Harsh) askHabits(check string) {
 	now := civil.DateOf(time.Now())
 	to := now
 	from := to.AddDays(-h.CountBack - 40)
@@ -312,6 +290,18 @@ func (h *Harsh) askHabits() {
 		}
 	}
 
+	// Checks for any fragment argument sent along only only asks for it, otherwise all
+	habits := []*Habit{}
+	if len(strings.TrimSpace(check)) > 0 {
+		for _, habit := range h.Habits {
+			if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(check)) {
+				habits = append(habits, habit)
+			}
+		}
+	} else {
+		habits = h.Habits
+	}
+
 	dayHabits := h.getTodos(to, checkBackDays)
 
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
@@ -322,7 +312,7 @@ func (h *Harsh) askHabits() {
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
 			heading := ""
-			for _, habit := range h.Habits {
+			for _, habit := range habits {
 				for _, dh := range dayhabit {
 					if habit.Name == dh && dt.After(habit.FirstRecord) {
 						if heading != habit.Heading {
