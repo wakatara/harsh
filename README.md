@@ -9,10 +9,10 @@ visibility on your habits.
 There're 3 commands: `ask`, `log`, and `todo`.
 (and one subcommand `log stats`)
 
-As of `v0.10.6``)`ask`or`log`about a particular habit if you
-want to fill in just a single habit outcome or drill down on a single habit.
-Use`harsh ask <habit substring>`and`harsh log <habit substring>`.`harsh
-log`without a string shows you your full consistency graph.`harsh ask`
+As of `v0.10.6`, You can `harsh ask` or `harsh log`about a single habit if you
+want to fill in the outcome or view results on a single habit.
+Use `harsh ask <habit substring>` and `harsh log <habit substring>`. `harsh
+log`without a string shows you your full consistency graph. `harsh ask`
 withouy a string asks you about all your listed habits.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files
