@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.6",
+		Version:     "0.10.7",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -606,7 +606,13 @@ func (h *Harsh) score(d civil.Date) float64 {
 		}
 	}
 
-	score := 100.0 // deal with scorable habits - skipped == 0 causing divide by zero issue
+	var score float64
+	// Edge case on if there is nothing to score and the scorable vs skipped issue
+	if scorableHabits == 0 {
+		score = 0.0
+	} else {
+		score = 100.0 // deal with scorable habits - skipped == 0 causing divide by zero issue
+	}
 	if scorableHabits-skipped != 0 {
 		score = (scored / (scorableHabits - skipped)) * 100
 	}
