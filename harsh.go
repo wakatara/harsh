@@ -286,7 +286,7 @@ func (h *Harsh) askHabits(check string) {
 	if len(*h.Entries) == 0 {
 		checkBackDays = onboard()
 		for _, habit := range h.Habits {
-			habit.FirstRecord = to.AddDays(-(checkBackDays + 1))
+			habit.FirstRecord = to.AddDays(-checkBackDays)
 		}
 	}
 
@@ -314,7 +314,7 @@ func (h *Harsh) askHabits(check string) {
 			heading := ""
 			for _, habit := range habits {
 				for _, dh := range dayhabit {
-					if habit.Name == dh && dt.After(habit.FirstRecord) {
+					if habit.Name == dh && (dt.After(habit.FirstRecord) || dt == habit.FirstRecord) {
 						if heading != habit.Heading {
 							color.Bold.Printf("\n" + habit.Heading + "\n")
 							heading = habit.Heading
@@ -399,24 +399,41 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]string {
 	tasksUndone := map[string][]string{}
 	dayHabits := map[string]bool{}
 	from := to.AddDays(-daysBack)
-	for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
-		// build map of habit array to make deletions cleaner
-		// +more efficient than linear search array deletes
+	noFirstRecord := civil.Date{0, 0, 0}
+	// Put in conditional for onboarding starting at 0 days or normal lookback
+	if daysBack == 0 {
 		for _, habit := range h.Habits {
 			dayHabits[habit.Name] = true
 		}
-
-		for _, habit := range h.Habits {
-			if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
-				delete(dayHabits, habit.Name)
-			}
-			if dt.Before(habit.FirstRecord) {
-				delete(dayHabits, habit.Name)
-			}
-		}
-
 		for habit := range dayHabits {
-			tasksUndone[dt.String()] = append(tasksUndone[dt.String()], habit)
+			tasksUndone[from.String()] = append(tasksUndone[from.String()], habit)
+		}
+	} else {
+		for dt := to; !dt.Before(from); dt = dt.AddDays(-1) {
+			// build map of habit array to make deletions cleaner
+			// +more efficient than linear search array deletes
+			for _, habit := range h.Habits {
+				dayHabits[habit.Name] = true
+			}
+
+			for _, habit := range h.Habits {
+
+				if _, ok := (*h.Entries)[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+					delete(dayHabits, habit.Name)
+				}
+				// Edge case for 0 day lookback onboard onboards and does not complete at onboard time
+				if habit.FirstRecord == noFirstRecord && dt != to {
+					delete(dayHabits, habit.Name)
+				}
+				// Remove days before the first observed outcome of habit
+				if dt.Before(habit.FirstRecord) {
+					delete(dayHabits, habit.Name)
+				}
+			}
+
+			for habit := range dayHabits {
+				tasksUndone[dt.String()] = append(tasksUndone[dt.String()], habit)
+			}
 		}
 	}
 	return tasksUndone
@@ -565,6 +582,7 @@ func warning(d civil.Date, habit *Habit, entries Entries) bool {
 	warningDays := int(habit.Interval)/7 + 1
 	to := d
 	from := d.AddDays(-int(habit.Interval) + warningDays)
+	noFirstRecord := civil.Date{0, 0, 0}
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			switch v.Result {
@@ -573,6 +591,10 @@ func warning(d civil.Date, habit *Habit, entries Entries) bool {
 			case "s":
 				return false
 			}
+		}
+		// Edge case for 0 day onboard and later completes null entry habits
+		if habit.FirstRecord == noFirstRecord {
+			return false
 		}
 		if dt.Before(habit.FirstRecord) {
 			return false
