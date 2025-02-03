@@ -98,7 +98,7 @@ func main() {
 				Action: func(_ *cli.Context) error {
 					harsh := newHarsh()
 					now := civil.DateOf(time.Now())
-					undone := harsh.getTodos(now, 0)
+					undone := harsh.getTodos(now, 8)
 
 					heading := ""
 					if len(undone) == 0 {
@@ -422,7 +422,7 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]string {
 					delete(dayHabits, habit.Name)
 				}
 				// Edge case for 0 day lookback onboard onboards and does not complete at onboard time
-				if habit.FirstRecord == noFirstRecord && dt != to {
+				if habit.FirstRecord == noFirstRecord {
 					delete(dayHabits, habit.Name)
 				}
 				// Remove days before the first observed outcome of habit
