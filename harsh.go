@@ -147,7 +147,7 @@ func main() {
 					to := now
 					from := to.AddDays(-harsh.CountBack)
 					consistency := map[string][]string{}
-					undone := harsh.getTodos(to, 0)
+					undone := harsh.getTodos(to, 7)
 
 					sparkline, calline := harsh.buildSpark(from, to)
 					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
@@ -169,17 +169,21 @@ func main() {
 						fmt.Printf("\n")
 					}
 
-					undone_num := strconv.Itoa(len(undone[to.String()]))
+					fmt.Println(undone)
+					var undone_count int
+					for _, v := range undone {
+						undone_count += len(v)
+					}
 
 					scoring := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
 					fmt.Printf("\n" + "Yesterday's Score: ")
 					fmt.Printf("%9v", scoring)
 					fmt.Printf("%%\n")
-					if undone_num == "0" {
-						fmt.Printf("All todos logged for today.")
+					if undone_count == 0 {
+						fmt.Printf("All todos logged up to today.")
 					} else {
-						fmt.Printf("Today's unlogged todos: ")
-						fmt.Printf("%2v", undone_num)
+						fmt.Printf("Total unlogged todos: ")
+						fmt.Printf("%2v", undone_count)
 					}
 					fmt.Printf("\n")
 
