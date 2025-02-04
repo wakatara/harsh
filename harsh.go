@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.7",
+		Version:     "0.10.10",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -169,7 +169,6 @@ func main() {
 						fmt.Printf("\n")
 					}
 
-					fmt.Println(undone)
 					var undone_count int
 					for _, v := range undone {
 						undone_count += len(v)
