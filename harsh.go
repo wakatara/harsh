@@ -176,12 +176,12 @@ func main() {
 
 					scoring := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
 					fmt.Printf("\n" + "Yesterday's Score: ")
-					fmt.Printf("%7v", scoring)
+					fmt.Printf("%8v", scoring)
 					fmt.Printf("%%\n")
 					if undone_count == 0 {
-						fmt.Printf("All todos logged up to today.")
+						fmt.Printf("All habits logged up to today.")
 					} else {
-						fmt.Printf("Total unlogged todos: ")
+						fmt.Printf("Total unlogged habits: ")
 						fmt.Printf("%2v", undone_count)
 					}
 					fmt.Printf("\n")
