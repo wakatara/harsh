@@ -105,7 +105,11 @@ func main() {
 						fmt.Println("All todos logged up to today.")
 					} else {
 						for date, todos := range undone {
-							color.Bold.Println(date + ":")
+							t, _ := time.Parse(time.RFC3339, date+"T00:00:00Z")
+
+							dayOfWeek := t.Weekday().String()[:3]
+
+							color.Bold.Println(date + " " + dayOfWeek + ":")
 							for _, habit := range harsh.Habits {
 								for _, todo := range todos {
 									if heading != habit.Heading && habit.Heading == todo {
@@ -310,7 +314,10 @@ func (h *Harsh) askHabits(check string) {
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if dayhabit, ok := dayHabits[dt.String()]; ok {
 
-			color.Bold.Println(dt.String() + ":")
+			day, _ := time.Parse(time.RFC3339, dt.String()+"T00:00:00Z")
+			dayOfWeek := day.Weekday().String()[:3]
+
+			color.Bold.Println(dt.String() + " " + dayOfWeek + ":")
 
 			// Go through habit file ordered habits,
 			// Check if in returned todos for day and prompt
