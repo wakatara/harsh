@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.11",
+		Version:     "0.10.12",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -296,13 +296,24 @@ func (h *Harsh) askHabits(check string) {
 			habit.FirstRecord = to.AddDays(-checkBackDays)
 		}
 	}
-
 	// Checks for any fragment argument sent along only only asks for it, otherwise all
 	habits := []*Habit{}
 	if len(strings.TrimSpace(check)) > 0 {
-		for _, habit := range h.Habits {
-			if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(check)) {
-				habits = append(habits, habit)
+		ask_date, err := civil.ParseDate(check)
+		if err == nil {
+			from = ask_date
+			to = from.AddDays(0)
+			habits = h.Habits
+		}
+		if check == "yday" || check == "yd" {
+			from = to.AddDays(-1)
+			to = from.AddDays(0)
+			habits = h.Habits
+		} else {
+			for _, habit := range h.Habits {
+				if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(check)) {
+					habits = append(habits, habit)
+				}
 			}
 		}
 	} else {
@@ -311,82 +322,86 @@ func (h *Harsh) askHabits(check string) {
 
 	dayHabits := h.getTodos(to, checkBackDays)
 
-	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
-		if dayhabit, ok := dayHabits[dt.String()]; ok {
+	if len(habits) == 0 {
+		fmt.Println("You have no habits that contain that string")
+	} else {
+		for dt := from; !dt.After(to); dt = dt.AddDays(1) {
+			if dayhabit, ok := dayHabits[dt.String()]; ok {
 
-			day, _ := time.Parse(time.RFC3339, dt.String()+"T00:00:00Z")
-			dayOfWeek := day.Weekday().String()[:3]
+				day, _ := time.Parse(time.RFC3339, dt.String()+"T00:00:00Z")
+				dayOfWeek := day.Weekday().String()[:3]
 
-			color.Bold.Println(dt.String() + " " + dayOfWeek + ":")
+				color.Bold.Println(dt.String() + " " + dayOfWeek + ":")
 
-			// Go through habit file ordered habits,
-			// Check if in returned todos for day and prompt
-			heading := ""
-			for _, habit := range habits {
-				for _, dh := range dayhabit {
-					if habit.Name == dh && (dt.After(habit.FirstRecord) || dt == habit.FirstRecord) {
-						if heading != habit.Heading {
-							color.Bold.Printf("\n" + habit.Heading + "\n")
-							heading = habit.Heading
-						}
-						for {
-							fmt.Printf("%*v", h.MaxHabitNameLength, habit.Name+"  ")
-							fmt.Print(h.buildGraph(habit, true))
-							fmt.Printf(" [y/n/s/⏎] ")
-
-							reader := bufio.NewReader(os.Stdin)
-							habitResultInput, err := reader.ReadString('\n')
-							if err != nil {
-								fmt.Fprintln(os.Stderr, err)
+				// Go through habit file ordered habits,
+				// Check if in returned todos for day and prompt
+				heading := ""
+				for _, habit := range habits {
+					for _, dh := range dayhabit {
+						if habit.Name == dh && (dt.After(habit.FirstRecord) || dt == habit.FirstRecord) {
+							if heading != habit.Heading {
+								color.Bold.Printf("\n" + habit.Heading + "\n")
+								heading = habit.Heading
 							}
+							for {
+								fmt.Printf("%*v", h.MaxHabitNameLength, habit.Name+"  ")
+								fmt.Print(h.buildGraph(habit, true))
+								fmt.Printf(" [y/n/s/⏎] ")
 
-							// No input
-							if len(habitResultInput) == 1 {
-								break
-							}
+								reader := bufio.NewReader(os.Stdin)
+								habitResultInput, err := reader.ReadString('\n')
+								if err != nil {
+									fmt.Fprintln(os.Stderr, err)
+								}
 
-							// Sanitize : colons out of string for log files
-							habitResultInput = strings.ReplaceAll(habitResultInput, ":", "")
+								// No input
+								if len(habitResultInput) == 1 {
+									break
+								}
 
-							var result, amount, comment string
-							atIndex := strings.Index(habitResultInput, "@")
-							hashIndex := strings.Index(habitResultInput, "#")
+								// Sanitize : colons out of string for log files
+								habitResultInput = strings.ReplaceAll(habitResultInput, ":", "")
 
-							if atIndex > 0 && hashIndex > 0 && atIndex < hashIndex {
-								parts := strings.SplitN(habitResultInput, "@", 2)
-								secondParts := strings.SplitN(parts[1], "#", 2)
-								result = strings.TrimSpace(parts[0])
-								amount = strings.TrimSpace(secondParts[0])
-								comment = strings.TrimSpace(secondParts[1])
-							}
-							// only has an @ Amount
-							if hashIndex == -1 && atIndex > 0 {
-								parts := strings.SplitN(habitResultInput, "@", 2)
-								result = strings.TrimSpace(parts[0])
-								amount = strings.TrimSpace(parts[1])
-								comment = ""
-							}
-							// only has a # comment
-							if atIndex == -1 && hashIndex > 0 {
-								parts := strings.SplitN(habitResultInput, "#", 2)
-								result = strings.TrimSpace(parts[0])
-								amount = ""
-								comment = strings.TrimSpace(parts[1])
-							}
-							if atIndex == -1 && hashIndex == -1 {
-								result = strings.TrimSpace(habitResultInput)
-							}
+								var result, amount, comment string
+								atIndex := strings.Index(habitResultInput, "@")
+								hashIndex := strings.Index(habitResultInput, "#")
 
-							if strings.ContainsAny(result, "yns") && len(result) == 1 {
-								writeHabitLog(dt, habit.Name, result, comment, amount)
-								// Updates the Entries map to get updated buildGraph across days
-								famount, _ := strconv.ParseFloat(amount, 64)
-								(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome{Result: result, Amount: famount, Comment: comment}
-								break
-							}
+								if atIndex > 0 && hashIndex > 0 && atIndex < hashIndex {
+									parts := strings.SplitN(habitResultInput, "@", 2)
+									secondParts := strings.SplitN(parts[1], "#", 2)
+									result = strings.TrimSpace(parts[0])
+									amount = strings.TrimSpace(secondParts[0])
+									comment = strings.TrimSpace(secondParts[1])
+								}
+								// only has an @ Amount
+								if hashIndex == -1 && atIndex > 0 {
+									parts := strings.SplitN(habitResultInput, "@", 2)
+									result = strings.TrimSpace(parts[0])
+									amount = strings.TrimSpace(parts[1])
+									comment = ""
+								}
+								// only has a # comment
+								if atIndex == -1 && hashIndex > 0 {
+									parts := strings.SplitN(habitResultInput, "#", 2)
+									result = strings.TrimSpace(parts[0])
+									amount = ""
+									comment = strings.TrimSpace(parts[1])
+								}
+								if atIndex == -1 && hashIndex == -1 {
+									result = strings.TrimSpace(habitResultInput)
+								}
 
-							color.FgRed.Printf("%*v", h.MaxHabitNameLength+22, "Sorry! Please choose from")
-							color.FgRed.Printf(" [y/n/s/⏎] " + "(+ optional @ amounts then # comments)" + "\n")
+								if strings.ContainsAny(result, "yns") && len(result) == 1 {
+									writeHabitLog(dt, habit.Name, result, comment, amount)
+									// Updates the Entries map to get updated buildGraph across days
+									famount, _ := strconv.ParseFloat(amount, 64)
+									(*h.Entries)[DailyHabit{dt, habit.Name}] = Outcome{Result: result, Amount: famount, Comment: comment}
+									break
+								}
+
+								color.FgRed.Printf("%*v", h.MaxHabitNameLength+22, "Sorry! Please choose from")
+								color.FgRed.Printf(" [y/n/s/⏎] " + "(+ optional @ amounts then # comments)" + "\n")
+							}
 						}
 					}
 				}

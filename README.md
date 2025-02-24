@@ -3,17 +3,10 @@
 harsh is habit tracking for geeks. A minimalist, command line tool for tracking
 and understanding your habits.
 
-Succinctly: it's quick and gets out of your way. And gives you excellent
+Succinctly: it's quick, simple, and gets out of your way. And gives you excellent
 visibility on your habits.
 
-There're 3 commands: `ask`, `log`, and `todo`.
-(and one subcommand `log stats`)
-
-As of `v0.10.6`, You can `harsh ask` or `harsh log`about a single habit if you
-want to fill in the outcome or view results on a single habit.
-Use `harsh ask <habit substring>` and `harsh log <habit substring>`. `harsh
-log`without a string shows you your full consistency graph. `harsh ask`
-withouy a string asks you about all your listed habits.
+There are only 3 commands: `log`, `ask`, and `todo`.
 
 Designed for simplicity, visibility, and longevity, harsh uses simple text files
 for tracking that are human-grokable and editable in your favourite text editor.
@@ -60,6 +53,29 @@ consistent habit makes you good -- eventually. The original place I saw it
 (Lifehacker) has killed the original post (largely I think because Seinfeld
 repudiated it) - but [you can see
 here](https://lifehacker.com/jerry-seinfelds-productivity-secret-281626)
+
+## Commands
+
+There're 3 commands: `ask`, `log`, and `todo`.
+(and one subcommand `log stats`).
+
+`harsh ask` asks you about all your unanaswered habits.  
+`harsh log` shows your full consistency graph across all habits.  
+`harsh todo` shows your unanswered habits across all days.
+
+You can also use `harsh ask <habit substring>` and `harsh log <habit
+substring>`to narrow down to answering just a single habit or to see the
+consistency graph for a single habit ( _ie. For the habit "Ship Every Day"
+typing `harsh ask ship` narrows your outcome responses to the unanswered days
+for that habit. Likewise, `harsh log ship` would show you only the consistency
+graph log for that habit._)
+
+`harsh ask` also allows you to use an ISO date as a substring (ie.
+`2025-02-20`) to answer just _that_ day's unanswered habit outcomes and the
+shortcut `harsh ask yday` or `harsh ask yd` to answer just yesterday's prompts.
+
+`harsh log stats` will provide summary tracking statistics of habits done,
+skipped, and chains broken.
 
 ## Installation
 
@@ -293,18 +309,13 @@ memories), you can follow any of the `y | n | s` options with an optional typed
 (example: number of words written, km's run, pullups performed etc), and/or an
 optional typed `#` symbol for a comment. Primarily for analysis at a later date.
 
+As of `v0.10.12` we added date options to `harsh ask`. You can use an ISO Date (ie. `2025-02-14`) to answer _just_ that day's habits if you prefer narrowing your responses to specific days. The convenience functions `yday` and `yd` also work for yesterday. So, as examples, you can use `harsh ask 2025-02-14` and see the open habits for that day and `harsh ask yday` or `harsh ask yd` to answer just yesterday's habits.
+
 The `log stats` subcommand will also now total up any amounts you've entered for
 a habit and show you the total along with your streaks, skips, breaks, and days
 tracked.
 
-An example of how to use this for a habit like PullUps might be:
-
-```sh
-    $ harsh ask
-    2024-01-05:
-    Dailies
-                PullUps ━  ━ ━  ━━  ━ ━   ━ ━ ━━━━━━━━━━━  ━ ━ ━[y/n/s/⏎] y @ 15 # Crushed workout today!
-```
+An example of how to use this for a habit like PullUps with `harsh ask pull` might be:
 
 This will, besides adding y to the log file, also record "15" and the comment
 "Crushed workout today" to your log file. The feature is backwards compatible
@@ -324,7 +335,24 @@ consistency chain with an `n`, or for when you're trying to figure out
 something notable on a day so when you look back you can see why habit _X_ may
 or may not have succeeded.
 
-As of `v0.10.6`, `harsh log` supports the same fragment querying `harsh ask`
+```sh
+    $ harsh ask pull
+    2024-01-05:
+    Dailies
+                PullUps ━  ━ ━  ━━  ━ ━   ━ ━ ━━━━━━━━━━━  ━ ━ ━[y/n/s/⏎] y @ 15 # Crushed workout today!
+```
+
+This would also be what `harsh ask 2024-01-05` would look like (ok, slightly cheating on examples, but...)
+
+````sh
+    $ harsh ask 2024-01-05
+    2024-01-05:
+    Dailies
+                PullUps ━  ━ ━  ━━  ━ ━   ━ ━ ━━━━━━━━━━━  ━ ━ ━[y/n/s/⏎] y @ 15 # Crushed workout today!
+
+
+
+Also, `harsh log` supports the same fragment querying `harsh ask`
 does. You can add a fragment of a habit after `harsh log` which will then only
 show you the consistency graph outcomes for that single habit. This supercedes
 the `harsh log check <habit substring>` subcommand (which is not deprecated).
@@ -334,7 +362,9 @@ log pul` (or any variations of the habit name's string) you'll see just the
 consistency graph for that single habit along along with the sparkline for all
 habits and usual log command metrics.
 
+
 `harsh log` by itself shows your consistency graph for the last 100 days.
+
 
 ```sh
     $ harsh ask
@@ -349,7 +379,7 @@ habits and usual log command metrics.
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
                                              ... some habits omitted ...
-```
+````
 
 (Some weeks later)
 
