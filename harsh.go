@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.12",
+		Version:     "0.10.13",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -447,7 +447,7 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]string {
 					delete(dayHabits, habit.Name)
 				}
 				// Edge case for 0 day lookback onboard onboards and does not complete at onboard time
-				if habit.FirstRecord == noFirstRecord {
+				if habit.FirstRecord == noFirstRecord && dt != to {
 					delete(dayHabits, habit.Name)
 				}
 				// Remove days before the first observed outcome of habit
@@ -461,6 +461,7 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]string {
 			}
 		}
 	}
+	fmt.Println(tasksUndone)
 	return tasksUndone
 }
 
