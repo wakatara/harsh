@@ -113,7 +113,7 @@ func main() {
 							for _, habit := range harsh.Habits {
 								for _, todo := range todos {
 									if heading != habit.Heading && habit.Heading == todo {
-										color.Bold.Printf("\n" + habit.Heading + "\n")
+										color.Bold.Printf("\n%s\n", habit.Heading)
 										heading = habit.Heading
 									}
 									if habit.Name == todo {
@@ -165,7 +165,7 @@ func main() {
 					for _, habit := range habits {
 						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(habit, false))
 						if heading != habit.Heading {
-							color.Bold.Printf(habit.Heading + "\n")
+							color.Bold.Printf("%s\n", habit.Heading)
 							heading = habit.Heading
 						}
 						fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
@@ -210,7 +210,7 @@ func main() {
 									color.Disable()
 								}
 								if heading != habit.Heading {
-									color.Bold.Printf("\n" + habit.Heading + "\n")
+									color.Bold.Printf("\n%s\n", habit.Heading)
 									heading = habit.Heading
 								}
 								stats[habit.Name] = harsh.buildStats(habit)
@@ -340,7 +340,7 @@ func (h *Harsh) askHabits(check string) {
 					for _, dh := range dayhabit {
 						if habit.Name == dh && (dt.After(habit.FirstRecord) || dt == habit.FirstRecord) {
 							if heading != habit.Heading {
-								color.Bold.Printf("\n" + habit.Heading + "\n")
+								color.Bold.Printf("\n%s\n", habit.Heading)
 								heading = habit.Heading
 							}
 							for {
@@ -424,7 +424,7 @@ func (h *Harsh) getTodos(to civil.Date, daysBack int) map[string][]string {
 	tasksUndone := map[string][]string{}
 	dayHabits := map[string]bool{}
 	from := to.AddDays(-daysBack)
-	noFirstRecord := civil.Date{0, 0, 0}
+	noFirstRecord := civil.Date{Year: 0, Month: 0, Day: 0}
 	// Put in conditional for onboarding starting at 0 days or normal lookback
 	if daysBack == 0 {
 		for _, habit := range h.Habits {
@@ -607,7 +607,7 @@ func warning(d civil.Date, habit *Habit, entries Entries) bool {
 	warningDays := int(habit.Interval)/7 + 1
 	to := d
 	from := d.AddDays(-int(habit.Interval) + warningDays)
-	noFirstRecord := civil.Date{0, 0, 0}
+	noFirstRecord := civil.Date{Year: 0, Month: 0, Day: 0}
 	for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			switch v.Result {
