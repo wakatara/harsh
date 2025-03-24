@@ -3,10 +3,10 @@ module github.com/wakatara/harsh
 go 1.24.1
 
 require (
-	cloud.google.com/go v0.118.3
+	cloud.google.com/go v0.120.0
 	github.com/gookit/color v1.5.4
 	github.com/urfave/cli/v2 v2.27.6
-	golang.org/x/term v0.29.0
+	golang.org/x/term v0.30.0
 )
 
 require (
