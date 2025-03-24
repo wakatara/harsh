@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.14",
+		Version:     "0.10.15",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -548,8 +548,8 @@ func (h *Harsh) buildStats(habit *Habit) HabitStats {
 				streaks += 1
 			case outcome.Result == "s":
 				skips += 1
-			// look at cases of "n" being entered but
-			// within bounds of the habit every x days
+			// look at cases of "n" being entered but streak within
+			// bounds of a sliding window of the habit every x days
 			case satisfied(d, habit, *h.Entries):
 				streaks += 1
 			case skipified(d, habit, *h.Entries):
@@ -568,18 +568,44 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 		return false
 	}
 
-	// Look back from date, interval days and see if target count satisfied
-	target_counter := 0
-	from := d
-	to := d.AddDays(-int(habit.Interval))
-	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
-		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok {
-			if v.Result == "y" {
-				target_counter++
-			}
+	// Define the sliding window bounds
+	start := d.AddDays(-habit.Interval)
+	end := d.AddDays(habit.Interval)
+
+	// Collect all "y" occurrences
+	var dates []civil.Date
+	for dt := start; !dt.After(end); dt = dt.AddDays(1) {
+		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
+			dates = append(dates, dt)
 		}
 	}
-	return target_counter >= habit.Target
+
+	// Debugging output
+	// fmt.Println("Collected dates:", dates)
+
+	// Sliding window
+	for winStart := start; !winStart.After(end); winStart = winStart.AddDays(1) {
+		winEnd := winStart.AddDays(habit.Interval) // Define end of window
+
+		count := 0
+
+		// Count "y" results in the current window
+		for _, date := range dates {
+			if !date.Before(winStart) && !date.After(winEnd) {
+				count++
+			}
+		}
+
+		// fmt.Printf("Window %v to %v: Count = %d, Needed = %d\n", winStart, winEnd, count, habit.Target)
+
+		if count >= habit.Target {
+			// fmt.Println("Satisfied!")
+			return true
+		}
+	}
+
+	// fmt.Println("Not satisfied.")
+	return false
 }
 
 func skipified(d civil.Date, habit *Habit, entries Entries) bool {
