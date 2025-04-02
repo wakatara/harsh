@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.15",
+		Version:     "0.10.16",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -525,6 +525,9 @@ func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
 			if warning(d, habit, *h.Entries) && (to.DaysSince(d) < 14) {
 				// warning: sigils max out at 2 weeks (~90 day habit in formula)
 				graphDay = "!"
+			} else if d.After(habit.FirstRecord) {
+				// For people who miss days but then put in later ones
+				graphDay = "◌"
 			} else {
 				graphDay = " "
 			}
@@ -568,43 +571,33 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 		return false
 	}
 
-	// Define the sliding window bounds
-	start := d.AddDays(-habit.Interval)
-	end := d.AddDays(habit.Interval)
-
-	// Collect all "y" occurrences
-	var dates []civil.Date
-	for dt := start; !dt.After(end); dt = dt.AddDays(1) {
-		if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
-			dates = append(dates, dt)
-		}
+	// Define the sliding window bounds (looking back and forward)
+	start := d.AddDays(-habit.Interval + 1)
+	if start.Before(habit.FirstRecord) {
+		start = habit.FirstRecord
 	}
+	end := d
 
-	// Debugging output
-	// fmt.Println("Collected dates:", dates)
+	previousStreakBreak := false
 
-	// Sliding window
+	// Slide the window one day at a time
 	for winStart := start; !winStart.After(end); winStart = winStart.AddDays(1) {
-		winEnd := winStart.AddDays(habit.Interval) // Define end of window
+		winEnd := winStart.AddDays(habit.Interval - 1)
 
 		count := 0
-
-		// Count "y" results in the current window
-		for _, date := range dates {
-			if !date.Before(winStart) && !date.After(winEnd) {
+		for dt := winStart; !dt.After(winEnd); dt = dt.AddDays(1) {
+			if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
 				count++
 			}
 		}
 
-		// fmt.Printf("Window %v to %v: Count = %d, Needed = %d\n", winStart, winEnd, count, habit.Target)
-
 		if count >= habit.Target {
-			// fmt.Println("Satisfied!")
-			return true
+			return !previousStreakBreak
+		} else {
+			previousStreakBreak = true // Mark that a previous interval failed
 		}
 	}
 
-	// fmt.Println("Not satisfied.")
 	return false
 }
 

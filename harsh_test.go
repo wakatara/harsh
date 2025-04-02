@@ -63,14 +63,14 @@ func TestSatisfied(t *testing.T) {
 			want: true,
 		},
 		{
-			name:  "Target = 2, Interval = 7 (meets target)",
+			name:  "Target = 2, Interval = 7 (does not meet target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 27},
 			habit: Habit{Name: "Bike 10k", Target: 2, Interval: 7},
 			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 25}, Habit: "Bike 10k"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 28}, Habit: "Bike 10k"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Bike 10k"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 30}, Habit: "Bike 10k"}: {Result: "y"},
 			},
-			want: true,
+			want: false,
 		},
 		{
 			name:  "Target = 4, Interval = 7 (does not meet target)",
@@ -102,7 +102,6 @@ func TestSatisfied(t *testing.T) {
 			d:     civil.Date{Year: 2025, Month: 3, Day: 24},
 			habit: Habit{Name: "Yoga", Target: 10, Interval: 14},
 			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Yoga"}: {Result: "y"},
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Yoga"}: {Result: "y"},
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Yoga"}: {Result: "y"},
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Yoga"}: {Result: "y"},
@@ -112,6 +111,7 @@ func TestSatisfied(t *testing.T) {
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 17}, Habit: "Yoga"}: {Result: "y"},
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 18}, Habit: "Yoga"}: {Result: "y"},
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 19}, Habit: "Yoga"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 22}, Habit: "Yoga"}: {Result: "y"},
 			},
 			want: true,
 		},
