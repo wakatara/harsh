@@ -53,6 +53,38 @@ func TestSatisfied(t *testing.T) {
 			want: false,
 		},
 		{
+			name:  "Target = 1, Interval = 7 (meets target - valid streak)",
+			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			habit: Habit{Name: "Habit", Target: 1, Interval: 7},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Habit"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 21}, Habit: "Habit"}: {Result: "y"},
+			},
+			want: true, // Habit satisfied in the last 7 days (14 → 21)
+		},
+		{
+			name:  "Target = 1, Interval = 7 (streak is broken, does not meet target)",
+			d:     civil.Date{Year: 2025, Month: 3, Day: 23},
+			habit: Habit{Name: "Habit", Target: 1, Interval: 7},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Habit"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Habit"}: {Result: "y"},
+			},
+			want: true, // Streak was broken (March 16) before the last valid "y" (March 24)
+		},
+		{
+			name:  "Target = 1, Interval = 7 (no streak at all)",
+			d:     civil.Date{Year: 2025, Month: 2, Day: 21},
+			habit: Habit{Name: "Habit", Target: 1, Interval: 7},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 9}, Habit: "Habit"}:  {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 17}, Habit: "Habit"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 25}, Habit: "Habit"}: {Result: "y"},
+			},
+			want: true, // No "y" in the last 7 days before Feb 21, and previous streak is broken
+		},
+
+		{
 			name:  "Target = 2, Interval = 7 (meets target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 26},
 			habit: Habit{Name: "Bike 10k", Target: 2, Interval: 7},
@@ -67,7 +99,7 @@ func TestSatisfied(t *testing.T) {
 			d:     civil.Date{Year: 2025, Month: 3, Day: 27},
 			habit: Habit{Name: "Bike 10k", Target: 2, Interval: 7},
 			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Bike 10k"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 23}, Habit: "Bike 10k"}: {Result: "y"},
 				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 30}, Habit: "Bike 10k"}: {Result: "y"},
 			},
 			want: false,

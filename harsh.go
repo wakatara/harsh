@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.17",
+		Version:     "0.10.18",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -576,16 +576,16 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 	}
 
 	// Define the sliding window bounds (looking back and forward)
-	start := d.AddDays(-habit.Interval + 1)
+	start := d.AddDays(-habit.Interval)
 	if start.Before(habit.FirstRecord) {
 		start = habit.FirstRecord
 	}
 	end := d
 
-	previousStreakBreak := false
+	// previousStreakBreak := false
 
 	// Slide the window one day at a time
-	for winStart := start; !winStart.After(end); winStart = winStart.AddDays(1) {
+	for winStart := start; !winStart.After(end.AddDays(habit.Interval - 2)); winStart = winStart.AddDays(1) {
 		winEnd := winStart.AddDays(habit.Interval - 1)
 
 		count := 0
@@ -595,10 +595,11 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 			}
 		}
 
+		if habit.Target == 1 && count == 2 {
+			return true
+		}
 		if count >= habit.Target {
-			return !previousStreakBreak
-		} else {
-			previousStreakBreak = true // Mark that a previous interval failed
+			return true
 		}
 	}
 
