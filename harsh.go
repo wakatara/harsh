@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.16",
+		Version:     "0.10.17",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -178,9 +178,13 @@ func main() {
 						undone_count += len(v)
 					}
 
-					scoring := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
+					yscore := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
+					tscore := fmt.Sprintf("%.1f", harsh.score(now))
 					fmt.Printf("\n" + "Yesterday's Score: ")
-					fmt.Printf("%8v", scoring)
+					fmt.Printf("%8v", yscore)
+					fmt.Printf("%%\n")
+					fmt.Printf("Today's Score: ")
+					fmt.Printf("%12v", tscore)
 					fmt.Printf("%%\n")
 					if undone_count == 0 {
 						fmt.Printf("All habits logged up to today.")
