@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.18",
+		Version:     "0.10.19",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -586,7 +586,7 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 
 	// Slide the window one day at a time
 	for winStart := start; !winStart.After(end.AddDays(habit.Interval - 2)); winStart = winStart.AddDays(1) {
-		winEnd := winStart.AddDays(habit.Interval - 1)
+		winEnd := winStart.AddDays(habit.Interval - 2)
 
 		count := 0
 		for dt := winStart; !dt.After(winEnd); dt = dt.AddDays(1) {
