@@ -70,7 +70,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.18",
+		Version:     "0.10.19",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -275,12 +275,7 @@ func newHarsh() *Harsh {
 	if err != nil {
 		log.Fatal(err)
 	}
-	countBack := 100
-	if width < 100+maxHabitNameLength {
-		// Remove 2 for the habitName and graph padding
-		countBack = width - maxHabitNameLength - 2
-	}
-
+	countBack := max(1, min(width - maxHabitNameLength - 2, 100))
 	return &Harsh{habits, maxHabitNameLength, countBack, entries}
 }
 
@@ -499,14 +494,14 @@ func (h *Harsh) buildSpark(from civil.Date, to civil.Date) ([]string, []string) 
 
 func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
 	graphLen := h.CountBack
+	if ask {
+		graphLen = max(1, graphLen - 12)
+	}
 	var graphDay string
 	var consistency strings.Builder
 
 	to := civil.DateOf(time.Now())
-	from := to.AddDays(-h.CountBack)
-	if ask {
-		graphLen = h.CountBack + 12
-	}
+	from := to.AddDays(-graphLen)
 	consistency.Grow(graphLen)
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
