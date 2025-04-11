@@ -580,6 +580,7 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 ## Contributors
 
 - [Daryl Manning](https://daryl.wakatara.com) - creator, maintainer, and evil mastermind
+- [JamesD](https://github.com/jnd-au) - fix for small terminal width panic.
 - [Aisling](https://github.com/ais) - improved configuration discovery.
 - [vchslv13](https://github.com/vchslv13) - improved shell installation script.
 - [manu-cyber](https://github.com/manu-cyber) - documentation fixes.
