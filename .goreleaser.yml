@@ -17,7 +17,6 @@ builds:
       - arm
     goarm:
       - 6
-      - 7
     # ignore:
     # - goos: openbsd
     #   goarch: arm
