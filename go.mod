@@ -1,9 +1,9 @@
 module github.com/wakatara/harsh
 
-go 1.24.3
+go 1.24.4
 
 require (
-	cloud.google.com/go v0.121.0
+	cloud.google.com/go v0.121.2
 	github.com/gookit/color v1.5.4
 	github.com/urfave/cli/v2 v2.27.6
 	golang.org/x/term v0.32.0
