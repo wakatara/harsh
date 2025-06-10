@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/civil"
@@ -55,6 +56,13 @@ type HabitStats struct {
 	Skips       int
 }
 
+// HabitGraphResult holds the result of building a graph for a single habit
+type HabitGraphResult struct {
+	HabitName string
+	Graph     string
+	Error     error
+}
+
 // Entries maps DailyHabit{ISO date + habit}: Outcome and log format
 type Entries map[DailyHabit]Outcome
 
@@ -70,7 +78,7 @@ func main() {
 		Name:        "Harsh",
 		Usage:       "habit tracking for geeks",
 		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.21",
+		Version:     "0.10.22",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "no-color",
@@ -161,9 +169,12 @@ func main() {
 					fmt.Print(strings.Join(calline, ""))
 					fmt.Printf("\n")
 
+					// Build graphs in parallel
+					graphResults := harsh.buildGraphsParallel(habits, false)
+
 					heading := ""
 					for _, habit := range habits {
-						consistency[habit.Name] = append(consistency[habit.Name], harsh.buildGraph(habit, false))
+						consistency[habit.Name] = append(consistency[habit.Name], graphResults[habit.Name])
 						if heading != habit.Heading {
 							color.Bold.Printf("%s\n", habit.Heading)
 							heading = habit.Heading
@@ -537,6 +548,61 @@ func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
 	return consistency.String()
 }
 
+// buildGraphsParallel builds graphs for multiple habits concurrently
+func (h *Harsh) buildGraphsParallel(habits []*Habit, ask bool) map[string]string {
+	// Determine optimal number of workers
+	numWorkers := runtime.NumCPU()
+	if len(habits) < numWorkers {
+		numWorkers = len(habits)
+	}
+
+	// Create channels for work distribution
+	habitChan := make(chan *Habit, len(habits))
+	resultChan := make(chan HabitGraphResult, len(habits))
+
+	var wg sync.WaitGroup
+
+	// Start worker goroutines
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for habit := range habitChan {
+				graph := h.buildGraph(habit, ask)
+				resultChan <- HabitGraphResult{
+					HabitName: habit.Name,
+					Graph:     graph,
+					Error:     nil,
+				}
+			}
+		}()
+	}
+
+	// Send habits to workers
+	go func() {
+		for _, habit := range habits {
+			habitChan <- habit
+		}
+		close(habitChan)
+	}()
+
+	// Close result channel when all workers are done
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Collect results
+	results := make(map[string]string, len(habits))
+	for result := range resultChan {
+		if result.Error == nil {
+			results[result.HabitName] = result.Graph
+		}
+	}
+
+	return results
+}
+
 func (h *Harsh) buildStats(habit *Habit) HabitStats {
 	var streaks, breaks, skips int
 	var total float64
@@ -577,22 +643,26 @@ func satisfied(d civil.Date, habit *Habit, entries Entries) bool {
 	}
 	end := d
 
-	// previousStreakBreak := false
+	// Calculate the maximum window start to avoid redundant iterations
+	maxWinStart := end.AddDays(habit.Interval - 2)
 
 	// Slide the window one day at a time
-	for winStart := start; !winStart.After(end.AddDays(habit.Interval - 2)); winStart = winStart.AddDays(1) {
+	for winStart := start; !winStart.After(maxWinStart); winStart = winStart.AddDays(1) {
 		winEnd := winStart.AddDays(habit.Interval - 2)
 
 		count := 0
-		for dt := winStart; !dt.After(winEnd); dt = dt.AddDays(1) {
+		// Early termination: stop counting once we exceed target
+		for dt := winStart; !dt.After(winEnd) && count < habit.Target+1; dt = dt.AddDays(1) {
 			if v, ok := entries[DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
 				count++
+				// Early exit optimization for Target=1 special case
+				if habit.Target == 1 && count == 2 {
+					return true
+				}
 			}
 		}
 
-		if habit.Target == 1 && count == 2 {
-			return true
-		}
+		// Check if target is met for this window
 		if count >= habit.Target {
 			return true
 		}
