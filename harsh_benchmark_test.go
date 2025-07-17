@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/civil"
 )
 
-// BenchmarkSequentialGraphBuilding benchmarks the original sequential approach
+// BenchmarkSequentialGraphBuilding benchmarks original sequential approach
 func BenchmarkSequentialGraphBuilding(b *testing.B) {
 	harsh := createTestHarsh()
 	habits := createManyTestHabits(10)
@@ -21,7 +21,7 @@ func BenchmarkSequentialGraphBuilding(b *testing.B) {
 	}
 }
 
-// Benchmark ParallelGraphBuilding -- benchmarks the new parallel approach
+// Benchmark ParallelGraphBuilding -- benchmarks new parallel approach
 func BenchmarkParallelGraphBuilding(b *testing.B) {
 	harsh := createTestHarsh()
 	habits := createManyTestHabits(10)

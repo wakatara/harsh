@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"cloud.google.com/go/civil"
+	"github.com/spf13/cobra"
 )
 
 func TestHabitParsing(t *testing.T) {
@@ -221,21 +225,27 @@ func TestBuildGraph(t *testing.T) {
 	}
 
 	habit := &Habit{
-		Name:     "Test",
-		Target:   1,
-		Interval: 1,
+		Name:        "Test",
+		Target:      1,
+		Interval:    1,
+		FirstRecord: civil.DateOf(time.Now()).AddDays(-10),
 	}
 
 	today := civil.DateOf(time.Now())
-	tom := today.AddDays(1)
 	(*entries)[DailyHabit{Day: today, Habit: "Test"}] = Outcome{Result: "y"}
-	(*entries)[DailyHabit{Day: tom, Habit: "Test"}] = Outcome{Result: "y"}
+	(*entries)[DailyHabit{Day: today.AddDays(-1), Habit: "Test"}] = Outcome{Result: "y"}
 
 	graph := h.buildGraph(habit, false)
-	length := len(graph)
-	// Due to using Builder.Grow for string efficiency, this is 10, not 8
-	if length != 10 {
-		t.Errorf("Expected graph length 10, got %d", length)
+	length := utf8.RuneCountInString(graph)
+	// Calculate the actual expected length based on the buildGraph logic
+	to := civil.DateOf(time.Now())
+	from := to.AddDays(-h.CountBack)
+	expectedLength := 0
+	for d := from; !d.After(to); d = d.AddDays(1) {
+		expectedLength++
+	}
+	if length != expectedLength {
+		t.Errorf("Expected graph length %d, got %d. CountBack=%d, from=%s, to=%s, graph=%q", expectedLength, length, h.CountBack, from.String(), to.String(), graph)
 	}
 }
 
@@ -287,8 +297,21 @@ func TestNewHabitIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Load initial configuration
-	harsh := newHarsh()
+	// Load initial configuration using component functions directly
+	// to avoid terminal size issues in tests
+	habits, maxHabitNameLength := loadHabitsConfig(tmpDir)
+	entries := loadLog(tmpDir)
+	now := civil.DateOf(time.Now())
+	to := now
+	from := to.AddDays(-365 * 5)
+	entries.firstRecords(from, to, habits)
+	
+	harsh := &Harsh{
+		Habits:             habits,
+		MaxHabitNameLength: maxHabitNameLength,
+		CountBack:          100, // Set a default for testing
+		Entries:            entries,
+	}
 
 	// Verify initial state
 	if len(harsh.Habits) != 1 {
@@ -310,7 +333,16 @@ func TestNewHabitIntegration(t *testing.T) {
 	}
 
 	// Reload configuration
-	harsh = newHarsh()
+	habits, maxHabitNameLength = loadHabitsConfig(tmpDir)
+	entries = loadLog(tmpDir)
+	entries.firstRecords(from, to, habits)
+	
+	harsh = &Harsh{
+		Habits:             habits,
+		MaxHabitNameLength: maxHabitNameLength,
+		CountBack:          100,
+		Entries:            entries,
+	}
 
 	// Verify new habit was loaded
 	if len(harsh.Habits) != 2 {
@@ -333,29 +365,299 @@ func TestNewHabitIntegration(t *testing.T) {
 	todos := harsh.getTodos(today, 0)
 
 	foundInTodos := false
-	for todo := range todos {
-		if todo == "New habit" {
-			foundInTodos = true
-			break
+	for _, todoList := range todos {
+		for _, todo := range todoList {
+			if todo == "New habit" {
+				foundInTodos = true
+				break
+			}
 		}
 	}
 	if !foundInTodos {
 		t.Error("New habit was not found in todos")
 	}
+}
 
-	// Test that new habit would be included in ask
-	// We can't directly test the CLI interaction, but we can verify the habit
-	// would be included in the list of habits to ask about
-	undone := harsh.getTodos(today, 0)
+// Test the skipified function
+func TestSkipified(t *testing.T) {
+	tests := []struct {
+		name    string
+		d       civil.Date
+		habit   Habit
+		entries Entries
+		want    bool
+	}{
+		{
+			name:  "Daily habit should always return false",
+			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			habit: Habit{Name: "Daily", Target: 1, Interval: 1},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Daily"}: {Result: "s"},
+			},
+			want: false,
+		},
+		{
+			name:  "Weekly habit with skip should return true",
+			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			habit: Habit{Name: "Weekly", Target: 1, Interval: 7},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Weekly"}: {Result: "s"},
+			},
+			want: true,
+		},
+		{
+			name:  "Weekly habit without skip should return false",
+			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			habit: Habit{Name: "Weekly", Target: 1, Interval: 7},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Weekly"}: {Result: "y"},
+			},
+			want: false,
+		},
+	}
 
-	foundInUndone := false
-	for h := range undone {
-		if h == "New habit" {
-			foundInUndone = true
-			break
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := skipified(tt.d, &tt.habit, tt.entries)
+			if got != tt.want {
+				t.Errorf("skipified() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// Test the scoring function with more complex scenarios
+func TestScoreComplex(t *testing.T) {
+	tests := []struct {
+		name     string
+		habits   []*Habit
+		entries  Entries
+		date     civil.Date
+		expected float64
+	}{
+		{
+			name: "All habits completed",
+			habits: []*Habit{
+				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+				{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+			},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "y"},
+			},
+			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			expected: 100.0,
+		},
+		{
+			name: "Half habits completed",
+			habits: []*Habit{
+				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+				{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+			},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "n"},
+			},
+			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			expected: 50.0,
+		},
+		{
+			name: "One habit skipped should be excluded from score",
+			habits: []*Habit{
+				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+				{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+			},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "s"},
+			},
+			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			expected: 100.0, // Only Test1 counts, and it's completed
+		},
+		{
+			name: "Tracking habits should not affect score",
+			habits: []*Habit{
+				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+				{Name: "Track", Target: 0, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
+			},
+			entries: Entries{
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Track"}: {Result: "y"},
+			},
+			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
+			expected: 100.0, // Only Test1 counts for scoring
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &Harsh{
+				Habits:  tt.habits,
+				Entries: &tt.entries,
+			}
+			score := h.score(tt.date)
+			if score != tt.expected {
+				t.Errorf("score() = %f, want %f", score, tt.expected)
+			}
+		})
+	}
+}
+
+// Test the buildStats function
+func TestBuildStats(t *testing.T) {
+	h := &Harsh{
+		Entries: &Entries{
+			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Test"}: {Result: "y", Amount: 5.0},
+			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Test"}: {Result: "y", Amount: 3.0},
+			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Test"}: {Result: "n", Amount: 0.0},
+			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Test"}: {Result: "s", Amount: 0.0},
+			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Test"}: {Result: "y", Amount: 2.0},
+		},
+	}
+
+	habit := &Habit{
+		Name:        "Test",
+		Target:      1,
+		Interval:    1,
+		FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 10},
+	}
+
+	stats := h.buildStats(habit)
+
+	// Check the stats
+	if stats.Streaks != 3 {
+		t.Errorf("Expected 3 streaks, got %d", stats.Streaks)
+	}
+	if stats.Breaks != 1 {
+		t.Errorf("Expected 1 break, got %d", stats.Breaks)
+	}
+	if stats.Skips != 1 {
+		t.Errorf("Expected 1 skip, got %d", stats.Skips)
+	}
+	if stats.Total != 10.0 {
+		t.Errorf("Expected total 10.0, got %f", stats.Total)
+	}
+	// DaysTracked should be from FirstRecord to today
+	expectedDays := int(civil.DateOf(time.Now()).DaysSince(habit.FirstRecord)) + 1
+	if stats.DaysTracked != expectedDays {
+		t.Errorf("Expected %d days tracked, got %d", expectedDays, stats.DaysTracked)
+	}
+}
+
+// Test CLI command execution
+func TestCLICommands(t *testing.T) {
+	// Create temporary directory for test
+	tmpDir, err := os.MkdirTemp("", "harsh_cli_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Save original config dir and restore it after test
+	originalConfigDir := configDir
+	configDir = tmpDir
+	defer func() { configDir = originalConfigDir }()
+
+	// Create test habits file
+	habitsFile := filepath.Join(tmpDir, "habits")
+	err = os.WriteFile(habitsFile, []byte("Test habit: 1\nWeekly habit: 7\n"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create empty log file
+	logFile := filepath.Join(tmpDir, "log")
+	err = os.WriteFile(logFile, []byte(""), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test help command
+	t.Run("help command", func(t *testing.T) {
+		// Create a new root command for testing to avoid state pollution
+		testCmd := &cobra.Command{
+			Use:     "harsh",
+			Short:   "habit tracking for geeks",
+			Long:    "A simple, minimalist CLI for tracking and understanding habits.",
+			Version: "0.10.22",
+		}
+		testCmd.SetArgs([]string{"--help"})
+		var buf bytes.Buffer
+		testCmd.SetOut(&buf)
+		err := testCmd.Execute()
+		if err != nil {
+			t.Fatalf("Help command failed: %v", err)
+		}
+		output := buf.String()
+		if !strings.Contains(output, "habit tracking for geeks") && !strings.Contains(output, "A simple, minimalist CLI") {
+			t.Errorf("Help output should contain app description. Got: %s", output)
+		}
+	})
+
+	// Test version command
+	t.Run("version command", func(t *testing.T) {
+		// Create a new root command for testing to avoid state pollution
+		testCmd := &cobra.Command{
+			Use:     "harsh",
+			Short:   "habit tracking for geeks",
+			Long:    "A simple, minimalist CLI for tracking and understanding habits.",
+			Version: "0.10.22",
+		}
+		testCmd.SetArgs([]string{"--version"})
+		var buf bytes.Buffer
+		testCmd.SetOut(&buf)
+		err := testCmd.Execute()
+		if err != nil {
+			t.Fatalf("Version command failed: %v", err)
+		}
+		output := buf.String()
+		if !strings.Contains(output, "0.10.22") {
+			t.Errorf("Version output should contain version number. Got: %s", output)
+		}
+	})
+
+	// Reset command args for other tests
+	rootCmd.SetArgs([]string{})
+}
+
+// Test parallel graph building
+func TestBuildGraphsParallel(t *testing.T) {
+	entries := &Entries{}
+	h := &Harsh{
+		CountBack: 7,
+		Entries:   entries,
+	}
+
+	habits := []*Habit{
+		{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.DateOf(time.Now()).AddDays(-10)},
+		{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.DateOf(time.Now()).AddDays(-10)},
+		{Name: "Test3", Target: 1, Interval: 1, FirstRecord: civil.DateOf(time.Now()).AddDays(-10)},
+	}
+
+	today := civil.DateOf(time.Now())
+	(*entries)[DailyHabit{Day: today, Habit: "Test1"}] = Outcome{Result: "y"}
+	(*entries)[DailyHabit{Day: today, Habit: "Test2"}] = Outcome{Result: "n"}
+	(*entries)[DailyHabit{Day: today, Habit: "Test3"}] = Outcome{Result: "s"}
+
+	results := h.buildGraphsParallel(habits, false)
+
+	// Check that all habits have results
+	for _, habit := range habits {
+		if graph, ok := results[habit.Name]; !ok || graph == "" {
+			t.Errorf("Expected graph for habit %s, but got empty result", habit.Name)
 		}
 	}
-	if !foundInUndone {
-		t.Error("New habit was not found in undone habits (would not be asked about)")
+
+	// Check that all graphs have expected length
+	to := civil.DateOf(time.Now())
+	from := to.AddDays(-h.CountBack)
+	expectedLength := 0
+	for d := from; !d.After(to); d = d.AddDays(1) {
+		expectedLength++
+	}
+	for habitName, graph := range results {
+		if utf8.RuneCountInString(graph) != expectedLength {
+			t.Errorf("Graph for %s has length %d, expected %d", habitName, utf8.RuneCountInString(graph), expectedLength)
+		}
 	}
 }

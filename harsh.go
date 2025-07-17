@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,7 +15,7 @@ import (
 
 	"cloud.google.com/go/civil"
 	"github.com/gookit/color"
-	"github.com/urfave/cli/v2"
+	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
 
@@ -73,205 +72,216 @@ type Harsh struct {
 	Entries            *Entries
 }
 
-func main() {
-	app := &cli.App{
-		Name:        "Harsh",
-		Usage:       "habit tracking for geeks",
-		Description: "A simple, minimalist CLI for tracking and understanding habits.",
-		Version:     "0.10.22",
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:    "no-color",
-				Aliases: []string{"n"},
-				Usage:   "no colors in output",
-			},
-		},
-		Commands: []*cli.Command{
-			{
-				Name:    "ask",
-				Aliases: []string{"a"},
-				Usage:   "Asks and records your undone habits",
-				Action: func(c *cli.Context) error {
-					harsh := newHarsh()
-					habit_fragment := c.Args().First()
-
-					harsh.askHabits(habit_fragment)
-					return nil
-				},
-			},
-			{
-				Name:    "todo",
-				Aliases: []string{"t"},
-				Usage:   "Shows undone habits for today.",
-				Action: func(_ *cli.Context) error {
-					harsh := newHarsh()
-					now := civil.DateOf(time.Now())
-					undone := harsh.getTodos(now, 8)
-
-					heading := ""
-					if len(undone) == 0 {
-						fmt.Println("All todos logged up to today.")
-					} else {
-						for date, todos := range undone {
-							t, _ := time.Parse(time.RFC3339, date+"T00:00:00Z")
-
-							dayOfWeek := t.Weekday().String()[:3]
-
-							color.Bold.Println(date + " " + dayOfWeek + ":")
-							for _, habit := range harsh.Habits {
-								for _, todo := range todos {
-									if heading != habit.Heading && habit.Heading == todo {
-										color.Bold.Printf("\n%s\n", habit.Heading)
-										heading = habit.Heading
-									}
-									if habit.Name == todo {
-										fmt.Printf("%*v", harsh.MaxHabitNameLength, todo+"\n")
-									}
-								}
-							}
-						}
-					}
-
-					return nil
-				},
-			},
-			{
-				Name:    "log",
-				Aliases: []string{"l"},
-				Usage:   "Shows graph of logged habits",
-				Action: func(c *cli.Context) error {
-					harsh := newHarsh()
-					habit_fragment := c.Args().First()
-
-					// Checks for any fragment argument sent along only only asks for it, otherwise all
-					habits := []*Habit{}
-					if len(strings.TrimSpace(habit_fragment)) > 0 {
-						for _, habit := range harsh.Habits {
-							if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(habit_fragment)) {
-								habits = append(habits, habit)
-							}
-						}
-					} else {
-						habits = harsh.Habits
-					}
-
-					now := civil.DateOf(time.Now())
-					to := now
-					from := to.AddDays(-harsh.CountBack)
-					consistency := map[string][]string{}
-					undone := harsh.getTodos(to, 7)
-
-					sparkline, calline := harsh.buildSpark(from, to)
-					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
-					fmt.Print(strings.Join(sparkline, ""))
-					fmt.Printf("\n")
-					fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
-					fmt.Print(strings.Join(calline, ""))
-					fmt.Printf("\n")
-
-					// Build graphs in parallel
-					graphResults := harsh.buildGraphsParallel(habits, false)
-
-					heading := ""
-					for _, habit := range habits {
-						consistency[habit.Name] = append(consistency[habit.Name], graphResults[habit.Name])
-						if heading != habit.Heading {
-							color.Bold.Printf("%s\n", habit.Heading)
-							heading = habit.Heading
-						}
-						fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
-						fmt.Print(strings.Join(consistency[habit.Name], ""))
-						fmt.Printf("\n")
-					}
-
-					var undone_count int
-					for _, v := range undone {
-						undone_count += len(v)
-					}
-
-					yscore := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
-					tscore := fmt.Sprintf("%.1f", harsh.score(now))
-					fmt.Printf("\n" + "Yesterday's Score: ")
-					fmt.Printf("%8v", yscore)
-					fmt.Printf("%%\n")
-					fmt.Printf("Today's Score: ")
-					fmt.Printf("%12v", tscore)
-					fmt.Printf("%%\n")
-					if undone_count == 0 {
-						fmt.Printf("All habits logged up to today.")
-					} else {
-						fmt.Printf("Total unlogged habits: ")
-						fmt.Printf("%2v", undone_count)
-					}
-					fmt.Printf("\n")
-
-					return nil
-				},
-				Subcommands: []*cli.Command{
-					{
-						Name:    "stats",
-						Aliases: []string{"s"},
-						Usage:   "Shows habit stats for entire log file",
-						Action: func(c *cli.Context) error {
-							harsh := newHarsh()
-
-							// to := civil.DateOf(time.Now())
-							// from := to.AddDays(-(365 * 5))
-							stats := map[string]HabitStats{}
-
-							heading := ""
-							for _, habit := range harsh.Habits {
-								if c.Bool("no-color") {
-									color.Disable()
-								}
-								if heading != habit.Heading {
-									color.Bold.Printf("\n%s\n", habit.Heading)
-									heading = habit.Heading
-								}
-								stats[habit.Name] = harsh.buildStats(habit)
-								fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
-								color.FgGreen.Printf("Streaks ")
-								color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
-								color.FgGreen.Printf(" days")
-								fmt.Printf("%4v", "")
-								color.FgRed.Printf("Breaks ")
-								color.FgRed.Printf("%4v", strconv.Itoa(stats[habit.Name].Breaks))
-								color.FgRed.Printf(" days")
-								fmt.Printf("%4v", "")
-								color.FgYellow.Printf("Skips ")
-								color.FgYellow.Printf("%4v", strconv.Itoa(stats[habit.Name].Skips))
-								color.FgYellow.Printf(" days")
-								fmt.Printf("%4v", "")
-								fmt.Printf("Tracked ")
-								fmt.Printf("%4v", strconv.Itoa(stats[habit.Name].DaysTracked))
-								fmt.Printf(" days")
-								if stats[habit.Name].Total == 0 {
-									fmt.Printf("%4v", "")
-									fmt.Printf("      ")
-									fmt.Printf("%5v", "")
-									fmt.Printf("     \n")
-								} else {
-									fmt.Printf("%4v", "")
-									color.FgBlue.Printf("Total ")
-									color.FgBlue.Printf("%5v", (stats[habit.Name].Total))
-									color.FgBlue.Printf("     \n")
-								}
-							}
-							return nil
-						},
-					},
-				},
-			},
-		},
+var (
+	noColor bool
+	rootCmd = &cobra.Command{
+		Use:     "harsh",
+		Short:   "habit tracking for geeks",
+		Long:    "A simple, minimalist CLI for tracking and understanding habits.",
+		Version: "0.11.0",
 	}
+)
 
-	sort.Sort(cli.FlagsByName(app.Flags))
-	sort.Sort(cli.CommandsByName(app.Commands))
+func init() {
+	rootCmd.PersistentFlags().BoolVarP(&noColor, "no-color", "n", false, "no colors in output")
+	rootCmd.AddCommand(askCmd)
+	rootCmd.AddCommand(todoCmd)
+	rootCmd.AddCommand(logCmd)
 
-	err := app.Run(os.Args)
-	if err != nil {
+	// Add stats as subcommand of log
+	logCmd.AddCommand(statsCmd)
+
+	// Set color disable based on flag
+	cobra.OnInitialize(func() {
+		if noColor {
+			color.Disable()
+		}
+	})
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+var askCmd = &cobra.Command{
+	Use:     "ask [habit-fragment|date|yday]",
+	Short:   "Ask and record your undone habits",
+	Long:    "Asks and records your undone habits. Can filter by habit fragment, specific date (YYYY-MM-DD), or 'yday' for yesterday.",
+	Aliases: []string{"a"},
+	Args:    cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		harsh := newHarsh()
+		var habitFragment string
+		if len(args) > 0 {
+			habitFragment = args[0]
+		}
+		harsh.askHabits(habitFragment)
+		return nil
+	},
+}
+
+var todoCmd = &cobra.Command{
+	Use:     "todo",
+	Short:   "Show undone habits for today",
+	Long:    "Shows undone habits for today and recent days.",
+	Aliases: []string{"t"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		harsh := newHarsh()
+		now := civil.DateOf(time.Now())
+		undone := harsh.getTodos(now, 8)
+
+		heading := ""
+		if len(undone) == 0 {
+			fmt.Println("All todos logged up to today.")
+		} else {
+			for date, todos := range undone {
+				t, _ := time.Parse(time.RFC3339, date+"T00:00:00Z")
+				dayOfWeek := t.Weekday().String()[:3]
+				color.Bold.Println(date + " " + dayOfWeek + ":")
+				for _, habit := range harsh.Habits {
+					for _, todo := range todos {
+						if heading != habit.Heading && habit.Heading == todo {
+							color.Bold.Printf("\n%s\n", habit.Heading)
+							heading = habit.Heading
+						}
+						if habit.Name == todo {
+							fmt.Printf("%*v", harsh.MaxHabitNameLength, todo+"\n")
+						}
+					}
+				}
+			}
+		}
+		return nil
+	},
+}
+
+var logCmd = &cobra.Command{
+	Use:     "log [habit-fragment]",
+	Short:   "Show graph of logged habits",
+	Long:    "Shows consistency graph of logged habits. Can filter by habit fragment.",
+	Aliases: []string{"l"},
+	Args:    cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		harsh := newHarsh()
+		var habitFragment string
+		if len(args) > 0 {
+			habitFragment = args[0]
+		}
+
+		// Filter habits by fragment if provided
+		habits := []*Habit{}
+		if len(strings.TrimSpace(habitFragment)) > 0 {
+			for _, habit := range harsh.Habits {
+				if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(habitFragment)) {
+					habits = append(habits, habit)
+				}
+			}
+		} else {
+			habits = harsh.Habits
+		}
+
+		now := civil.DateOf(time.Now())
+		to := now
+		from := to.AddDays(-harsh.CountBack)
+		consistency := map[string][]string{}
+		undone := harsh.getTodos(to, 7)
+
+		sparkline, calline := harsh.buildSpark(from, to)
+		fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
+		fmt.Print(strings.Join(sparkline, ""))
+		fmt.Printf("\n")
+		fmt.Printf("%*v", harsh.MaxHabitNameLength, "")
+		fmt.Print(strings.Join(calline, ""))
+		fmt.Printf("\n")
+
+		// Build graphs in parallel
+		graphResults := harsh.buildGraphsParallel(habits, false)
+
+		heading := ""
+		for _, habit := range habits {
+			consistency[habit.Name] = append(consistency[habit.Name], graphResults[habit.Name])
+			if heading != habit.Heading {
+				color.Bold.Printf("%s\n", habit.Heading)
+				heading = habit.Heading
+			}
+			fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
+			fmt.Print(strings.Join(consistency[habit.Name], ""))
+			fmt.Printf("\n")
+		}
+
+		var undoneCount int
+		for _, v := range undone {
+			undoneCount += len(v)
+		}
+
+		yscore := fmt.Sprintf("%.1f", harsh.score(now.AddDays(-1)))
+		tscore := fmt.Sprintf("%.1f", harsh.score(now))
+		fmt.Printf("\n" + "Yesterday's Score: ")
+		fmt.Printf("%8v", yscore)
+		fmt.Printf("%%\n")
+		fmt.Printf("Today's Score: ")
+		fmt.Printf("%12v", tscore)
+		fmt.Printf("%%\n")
+		if undoneCount == 0 {
+			fmt.Printf("All habits logged up to today.")
+		} else {
+			fmt.Printf("Total unlogged habits: ")
+			fmt.Printf("%2v", undoneCount)
+		}
+		fmt.Printf("\n")
+
+		return nil
+	},
+}
+
+var statsCmd = &cobra.Command{
+	Use:     "stats",
+	Short:   "Show habit stats for entire log file",
+	Long:    "Shows statistics for all habits including streaks, breaks, skips, and totals.",
+	Aliases: []string{"s"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		harsh := newHarsh()
+		stats := map[string]HabitStats{}
+
+		heading := ""
+		for _, habit := range harsh.Habits {
+			if heading != habit.Heading {
+				color.Bold.Printf("\n%s\n", habit.Heading)
+				heading = habit.Heading
+			}
+			stats[habit.Name] = harsh.buildStats(habit)
+			fmt.Printf("%*v", harsh.MaxHabitNameLength, habit.Name+"  ")
+			color.FgGreen.Printf("Streaks ")
+			color.FgGreen.Printf("%4v", strconv.Itoa(stats[habit.Name].Streaks))
+			color.FgGreen.Printf(" days")
+			fmt.Printf("%4v", "")
+			color.FgRed.Printf("Breaks ")
+			color.FgRed.Printf("%4v", strconv.Itoa(stats[habit.Name].Breaks))
+			color.FgRed.Printf(" days")
+			fmt.Printf("%4v", "")
+			color.FgYellow.Printf("Skips ")
+			color.FgYellow.Printf("%4v", strconv.Itoa(stats[habit.Name].Skips))
+			color.FgYellow.Printf(" days")
+			fmt.Printf("%4v", "")
+			fmt.Printf("Tracked ")
+			fmt.Printf("%4v", strconv.Itoa(stats[habit.Name].DaysTracked))
+			fmt.Printf(" days")
+			if stats[habit.Name].Total == 0 {
+				fmt.Printf("%4v", "")
+				fmt.Printf("      ")
+				fmt.Printf("%5v", "")
+				fmt.Printf("     \n")
+			} else {
+				fmt.Printf("%4v", "")
+				color.FgBlue.Printf("Total ")
+				color.FgBlue.Printf("%5v", (stats[habit.Name].Total))
+				color.FgBlue.Printf("     \n")
+			}
+		}
+		return nil
+	},
 }
 
 func newHarsh() *Harsh {
@@ -309,9 +319,9 @@ func (h *Harsh) askHabits(check string) {
 	// Checks for any fragment argument sent along only only asks for it, otherwise all
 	habits := []*Habit{}
 	if len(strings.TrimSpace(check)) > 0 {
-		ask_date, err := civil.ParseDate(check)
+		askDate, err := civil.ParseDate(check)
 		if err == nil {
-			from = ask_date
+			from = askDate
 			to = from.AddDays(0)
 			habits = h.Habits
 		}
@@ -551,10 +561,7 @@ func (h *Harsh) buildGraph(habit *Habit, ask bool) string {
 // buildGraphsParallel builds graphs for multiple habits concurrently
 func (h *Harsh) buildGraphsParallel(habits []*Habit, ask bool) map[string]string {
 	// Determine optimal number of workers
-	numWorkers := runtime.NumCPU()
-	if len(habits) < numWorkers {
-		numWorkers = len(habits)
-	}
+	numWorkers := min(len(habits), runtime.NumCPU())
 
 	// Create channels for work distribution
 	habitChan := make(chan *Habit, len(habits))
@@ -563,7 +570,7 @@ func (h *Harsh) buildGraphsParallel(habits []*Habit, ask bool) map[string]string
 	var wg sync.WaitGroup
 
 	// Start worker goroutines
-	for i := 0; i < numWorkers; i++ {
+	for range numWorkers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -806,9 +813,9 @@ func loadLog(configDir string) *Entries {
 	scanner := bufio.NewScanner(file)
 
 	entries := Entries{}
-	line_count := 0
+	lineCount := 0
 	for scanner.Scan() {
-		line_count++
+		lineCount++
 		if len(scanner.Text()) > 0 {
 			if scanner.Text()[0] != '#' {
 				// Discards comments from read record read as result[3]
@@ -824,7 +831,7 @@ func loadLog(configDir string) *Entries {
 					}
 					amount, err := strconv.ParseFloat(result[4], 64)
 					if err != nil {
-						fmt.Printf("Error: there is a non-number in your log file at line %d where we expect a number.\n", line_count)
+						fmt.Printf("Error: there is a non-number in your log file at line %d where we expect a number.\n", lineCount)
 					}
 					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: amount}
 				case 4:

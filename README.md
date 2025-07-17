@@ -57,15 +57,15 @@ here](https://lifehacker.com/jerry-seinfelds-productivity-secret-281626)
 ## Commands
 
 There're 3 commands: `ask`, `log`, and `todo`.
-(and one subcommand `log stats`).
+(and one subcommand, `log stats`).
 
 `harsh ask` asks you about all your unanaswered habits.  
 `harsh log` shows your full consistency graph across all habits.  
 `harsh todo` shows your unanswered habits across all days.
 
 You can also use `harsh ask <habit substring>` and `harsh log <habit
-substring>`to narrow down to answering just a single habit or to see the
-consistency graph for a single habit ( _ie. For the habit "Ship Every Day"
+substring>` to narrow down to answering just a single habit or to see the
+consistency graph for a single habit ( _eg. For the habit "Ship Every Day"
 typing `harsh ask ship` narrows your outcome responses to the unanswered days
 for that habit. Likewise, `harsh log ship` would show you only the consistency
 graph log for that habit._)
@@ -74,14 +74,14 @@ graph log for that habit._)
 `2025-02-20`) to answer just _that_ day's unanswered habit outcomes and the
 shortcut `harsh ask yday` or `harsh ask yd` to answer just yesterday's prompts.
 
-`harsh log stats` will provide summary tracking statistics of habits done,
-skipped, and chains broken.
+`harsh log stats` provides summary statistics for your entire log file of habits
+done, skipped, and chains broken.
 
 ## Installation
 
-harsh is available on OSX (and via homebrew), Linux (also as a Snap and
-homebrew), FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake
-and adoption of a portable, command line, text-based approach to habit tracking.
+harsh is available on OSX (also, via homebrew), Linux (as homebrew and snap),
+FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake and
+adoption of a portable, command line, text-based approach to habit tracking.
 harsh also supports ARM architectures for OSX (M1, M2, and M3 chipped Macs and
 Linux and BSDs) as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available
 as of 0.8.23.
@@ -195,7 +195,7 @@ Alternatively, you can set a different directory using the `HARSHPATH` environme
 
 | :warning: **WARNING**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ubuntu's snap overrides (sensible) defaults and forcibly places harsh's config _and_ log files in `~/snap/harsh/current/`. If you `snap remove` the harsh app, snap's uninstaller will nuke your config _and_ log files with the sandbox and you may lose your config and log data if it's not backed up (please _always_ exercise a good backup regime). For this reason, we _highly_ recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and move config and log files there right after installing to protect them. Or _never_ uninstall harsh. :grin: |
+| Ubuntu's snap overrides (sensible) defaults and forcibly places harsh's config _and_ log files in `~/snap/harsh/current/`. If you `snap remove` the harsh app, snap's uninstaller will **nuke** your config _and_ log files with the sandbox and you may lose your config and log data if it's not backed up (please _always_ exercise a good backup regime). For this reason, we _highly_ recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and move config and log files there right after installing to protect them. Or _never_ uninstall harsh. :grin: |
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs).
 
