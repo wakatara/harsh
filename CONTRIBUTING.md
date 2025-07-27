@@ -2,11 +2,18 @@
 
 ## Contributing to Harsh
 
-You're here to help? Awesome! Welcome! Thanks for offering. Please read the following sections to get a feel for the lay of the land, know how to ask questions, and how to work on something.
+You're here to help? Awesome! Welcome! Thanks for offering. Please read the
+following sections to get a feel for the lay of the land, know how to ask
+questions, and how to work on something.
 
-All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please make sure you are welcome and friendly. Be kind. Be respectful. (BKBR). Be nice. It's a tough world out there.
+All contributors are expected to follow our [Code of
+Conduct](CODE_OF_CONDUCT.md). Please make sure you are welcome and friendly. Be
+kind. Be respectful. (BKBR). Be nice. It's a tough world out there.
 
-I'm pretty much happy for any contribution though since the idea is to keep the applicaiton minimalist new feature requests will be deliberated before addiiton. Code improvements, bug fixes, tests, documentation, translations, and any sort of unambiguous improvement is most welcome. Please [submit a PR](#pull-requests)
+I'm pretty much happy for any contribution though since the idea is to keep the
+applicaiton minimalist new feature requests will be deliberated before addiiton.
+Code improvements, bug fixes, tests, documentation, translations, and any sort
+of unambiguous improvement is most welcome. Please [submit a PR](#pull-requests)
 
 ## Get in touch
 
@@ -16,9 +23,8 @@ I'm pretty much happy for any contribution though since the idea is to keep the 
 
 ## Using the issue tracker
 
-The issue tracker is the preferred channel for [bug reports](#bugs),
-[features requests](#features) and [submitting pull
-requests](#pull-requests).
+The Github issue tracker is the preferred channel for [bug reports](#bugs),
+[features requests](#features) and [submitting pull requests](#pull-requests).
 
 ### Bug reports
 
@@ -41,7 +47,8 @@ your environment? What steps will reproduce the issue? What OS experiences the
 problem? What would you expect to be the outcome? All these details will help
 people to fix any potential bugs.
 
-There's a template that should help you out for reporting, but basically think along these lines.
+There's a template that should help you out for reporting, but basically think
+along these lines.
 
 Example:
 
@@ -64,7 +71,7 @@ Example:
 ### Feature requests
 
 Feature requests are welcome. But take a moment to find out whether your idea
-fits with the scope and aims of Harsh. It's up to *you* to make a strong
+fits with the scope and aims of Harsh. It's up to _you_ to make a strong
 case to convince the project's developer(s) of the merits of this feature. Please
 provide as much detail and context as possible.
 
@@ -78,6 +85,3 @@ commits.
 implementing features, refactoring code), otherwise you risk spending a lot of
 time working on something that the project's developers might not want to merge
 into the project.
-
-
-

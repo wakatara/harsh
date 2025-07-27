@@ -1,7 +1,7 @@
 # Harsh Taskmaster
 
-harsh is habit tracking for geeks. A minimalist, command line tool for tracking
-and understanding your habits.
+harsh is habit tracking for geeks. A minimalist, command line tool for tracking,
+understanding, and forging habits.
 
 Succinctly: it's quick, simple, and gets out of your way. And gives you excellent
 visibility on your habits.
@@ -12,51 +12,58 @@ Designed for simplicity, visibility, and longevity, harsh uses simple text files
 for tracking that are human-grokable and editable in your favourite text editor.
 It's simpler, less messy, and more portable than commercial or mobile
 applications and less fussy to manage than emacs habit tracking (imho). While
-quantified individual tracking is exhaustive, important habits get lost in the
-data deluge, so this provides deliberate, explicit, habits to track and progress.
+quantified individual tracking is exhaustive (and exhausting), important habits
+get lost in the data deluge, so this provides deliberate and explicit habits to
+track and progress.
 
 It's written in Go and adds features and fixes on top of habitctl (its
-inspiration) such as skips, streak break warnings, stats, quantities, and as of
-`0.10.0` targets over intervals (like 3 times in a week). If you're a geek,
-I think you'll like it. Despite trying an exhaustive number of habit trackers,
-this was what worked for me. YMMV. If you're interested in why I wrote it,
-there's a [launch post about my motivations on my
+inspiration) such as skips, streak break warnings, stats, quantities, and targets
+over intervals (eg. 3 times in a week).
+
+If you're a geek, I think you'll like it. Despite trying an exhaustive number of
+habit trackers, this was what worked for me. YMMV. If you're interested in why I
+wrote it, there's a [launch post about my motivations on my
 blog](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
-My biggest hope that it helps you get done what you're trying to get done in
+My hope is that it helps you get done what you're trying to get done in
 your life and live a better one.
+
+As a major update, in `0.11.0` we ported to [cobra](https://cobra.dev),
+refactored heavily for efficiency (~60% performance gains) and better structure,
+and wrote exhaustive tests.
 
 ## How It Works
 
-Harsh lets you see your habits in a consistency graph (aka Seinfeld chain) from
-left to right over the time you've been doing the habit. The interface shows
-the last 100 days (but dynamically adapts to a smaller day length if your
-terminal window is too small.).
+Harsh lets you see your habits in a consistency graph (aka Seinfeld Chain) from
+left to right over the time you've been doing the habit. The interface shows the
+last 100 days (but dynamically adapts to a smaller period if your terminal
+window won't support 100 days.).
 
 For each day, you enter a yes/no/skip on whether you did the habit in question,
-and the horizontal line for ach habit is like an x-axis time graph showing you
+and the horizontal line for each habit is like an x-axis time graph showing you
 how your habits have fared. There's a sparkline graph at the top of the
 interface to show how you are doing percentage wise each day over the 100 days,
-and some interface hintint with a M(onday), W(ednesday), F(riday) label below
-that to jelp you figure out which day goes with what (very helpful if you find
-particular days are where your habits falldown consistently since you can then
+and some interface hints with a M(onday), W(ednesday), F(riday) label below
+that to help you figure out which days goes with what (very helpful if you find
+particular days are where your habits fall down consistently since you can then
 fix whatever that is in that day that messes things up.).
 
-Consistency graphs are also known as the "Seinfield Method" due to an
-apocryphal story about getting better at writing jokes, which I think is
-attributed to Brad Isaac in a (possibly never happened) piece of advice he got
-from the comedian Jerry Seinfeld. Basically, the idea was he had a big year
-long calendar with a day for every year. Every day he wrote jokes, he put an X
-down. He could see how consistent he was being. The idea is never to bfreak the
-chain. Harsh works the same way. The idea is turning something into a
-consistent habit makes you good -- eventually. The original place I saw it
-(Lifehacker) has killed the original post (largely I think because Seinfeld
-repudiated it) - but [you can see
+Consistency graphs are also known as the "Seinfield Method" due to an apocryphal
+story about a habit method about getting better at writing jokes attributed to
+Jerry Seinfeld. Basically, the idea was he had a big year long calendar with a
+day for every year. Every day he wrote jokes, he put an X down. He could see how
+consistent he was being. The idea is never to bfreak the chain.
+
+Harsh works the same way.
+
+The idea is that turning something into a consistent habit makes you good —
+eventually. The original place I saw it (Lifehacker) has killed the original
+post (largely I think because Seinfeld repudiated it) - but [you can see
 here](https://lifehacker.com/jerry-seinfelds-productivity-secret-281626)
 
 ## Commands
 
-There're 3 commands: `ask`, `log`, and `todo`.
+There are 3 commands: `ask`, `log`, and `todo`.
 (and one subcommand, `log stats`).
 
 `harsh ask` asks you about all your unanaswered habits.  
@@ -74,6 +81,8 @@ graph log for that habit._)
 `2025-02-20`) to answer just _that_ day's unanswered habit outcomes and the
 shortcut `harsh ask yday` or `harsh ask yd` to answer just yesterday's prompts.
 
+There is one subcommand:
+
 `harsh log stats` provides summary statistics for your entire log file of habits
 done, skipped, and chains broken.
 
@@ -81,7 +90,10 @@ done, skipped, and chains broken.
 
 harsh is available on OSX (also, via homebrew), Linux (as homebrew and snap),
 FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake and
-adoption of a portable, command line, text-based approach to habit tracking.
+adoption of a portable, command line, text-based approach to habit tracking (and
+that didn't require a subscription, service, or hoops to jump through to use
+your own data).
+
 harsh also supports ARM architectures for OSX (M1, M2, and M3 chipped Macs and
 Linux and BSDs) as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available
 as of 0.8.23.
@@ -138,39 +150,18 @@ making sure it's in your `$PATH`.
 
 ### Compiling from source
 
-If you want to build from source cause you like that sort of thing, follow these
-steps:
-
-**Clone:**
+If you want to build from source cause you like, harsh is open source and
+can be git cloned from:
 
 ```sh
 git clone https://github.com/wakatara/harsh
-cd harsh
 ```
 
-**Get the dependencies:**
-
-```sh
-go get ./...
-```
-
-**Build:**
-
-```sh
-go build -o harsh .
-```
-
-**Verify it works:**
-
-```sh
-./harsh --version
-```
-
-You can then move the file to the desired location in your `$PATH`.
+You can build and then move the file to the desired location in your `$PATH`.
 
 ## Getting Started
 
-When you run `harsh ask` for the first time, it will set up the required files:
+The first time you run `harsh ask`, it will set up your required files:
 
 ```sh
     $ harsh ask
@@ -193,8 +184,8 @@ On OSX and Linux based systems, the `habits` and `log` files will be under
 
 Alternatively, you can set a different directory using the `HARSHPATH` environment variable.
 
-| :warning: **WARNING**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| :warning: **WARNING**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Ubuntu's snap overrides (sensible) defaults and forcibly places harsh's config _and_ log files in `~/snap/harsh/current/`. If you `snap remove` the harsh app, snap's uninstaller will **nuke** your config _and_ log files with the sandbox and you may lose your config and log data if it's not backed up (please _always_ exercise a good backup regime). For this reason, we _highly_ recommend snap users set the `HARSHPATH` env variable to `~/.config/harsh/` and move config and log files there right after installing to protect them. Or _never_ uninstall harsh. :grin: |
 
 Open the `habits` file in your text editor of choice (nano, vim, VS Code, Sublime, or emacs).
