@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"bytes"
@@ -11,6 +11,11 @@ import (
 
 	"cloud.google.com/go/civil"
 	"github.com/spf13/cobra"
+	"github.com/wakatara/harsh/cmd"
+	"github.com/wakatara/harsh/internal"
+	"github.com/wakatara/harsh/internal/storage"
+	"github.com/wakatara/harsh/internal/graph"
+	"github.com/wakatara/harsh/internal/ui"
 )
 
 func TestHabitParsing(t *testing.T) {
@@ -29,8 +34,8 @@ func TestHabitParsing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Habit{Name: "Test", Frequency: tt.freq}
-			h.parseHabitFrequency()
+			h := &storage.Habit{Name: "Test", Frequency: tt.freq}
+			h.ParseHabitFrequency()
 			if h.Target != tt.target || h.Interval != tt.interval {
 				t.Errorf("got target=%d interval=%d, want target=%d interval=%d",
 					h.Target, h.Interval, tt.target, tt.interval)
@@ -43,47 +48,47 @@ func TestSatisfied(t *testing.T) {
 	tests := []struct {
 		name    string
 		d       civil.Date
-		habit   Habit
-		entries Entries
+		habit   storage.Habit
+		entries storage.Entries
 		want    bool
 	}{
 		{
 			name:  "Target = 1, Interval = 1 (should always fail)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 24},
-			habit: Habit{Name: "Daily Walk", Target: 1, Interval: 1},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Daily Walk"}: {Result: "y"},
+			habit: storage.Habit{Name: "Daily Walk", Target: 1, Interval: 1},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Daily Walk"}: {Result: "y"},
 			},
 			want: false,
 		},
 		{
 			name:  "Target = 1, Interval = 7 (meets target - valid streak)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
-			habit: Habit{Name: "Habit", Target: 1, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Habit"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 21}, Habit: "Habit"}: {Result: "y"},
+			habit: storage.Habit{Name: "Habit", Target: 1, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Habit"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 21}, Habit: "Habit"}: {Result: "y"},
 			},
 			want: true, // Habit satisfied in the last 7 days (14 → 21)
 		},
 		{
 			name:  "Target = 1, Interval = 7 (streak is broken, does not meet target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 23},
-			habit: Habit{Name: "Habit", Target: 1, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Habit"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Habit"}: {Result: "y"},
+			habit: storage.Habit{Name: "Habit", Target: 1, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Habit"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Habit"}: {Result: "y"},
 			},
 			want: true, // Streak was broken (March 16) before the last valid "y" (March 24)
 		},
 		{
 			name:  "Target = 1, Interval = 7 (no streak at all)",
 			d:     civil.Date{Year: 2025, Month: 2, Day: 21},
-			habit: Habit{Name: "Habit", Target: 1, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 9}, Habit: "Habit"}:  {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 17}, Habit: "Habit"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 25}, Habit: "Habit"}: {Result: "y"},
+			habit: storage.Habit{Name: "Habit", Target: 1, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 9}, Habit: "Habit"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 17}, Habit: "Habit"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 25}, Habit: "Habit"}: {Result: "y"},
 			},
 			want: true, // No "y" in the last 7 days before Feb 21, and previous streak is broken
 		},
@@ -91,73 +96,73 @@ func TestSatisfied(t *testing.T) {
 		{
 			name:  "Target = 2, Interval = 7 (meets target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 26},
-			habit: Habit{Name: "Bike 10k", Target: 2, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 25}, Habit: "Bike 10k"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 28}, Habit: "Bike 10k"}: {Result: "y"},
+			habit: storage.Habit{Name: "Bike 10k", Target: 2, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 25}, Habit: "Bike 10k"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 28}, Habit: "Bike 10k"}: {Result: "y"},
 			},
 			want: true,
 		},
 		{
 			name:  "Target = 2, Interval = 7 (does not meet target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 27},
-			habit: Habit{Name: "Bike 10k", Target: 2, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 23}, Habit: "Bike 10k"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 30}, Habit: "Bike 10k"}: {Result: "y"},
+			habit: storage.Habit{Name: "Bike 10k", Target: 2, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 23}, Habit: "Bike 10k"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 30}, Habit: "Bike 10k"}: {Result: "y"},
 			},
 			want: false,
 		},
 		{
 			name:  "Target = 4, Interval = 7 (does not meet target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 24},
-			habit: Habit{Name: "Run 5k", Target: 4, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 20}, Habit: "Run 5k"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 22}, Habit: "Run 5k"}: {Result: "y"},
+			habit: storage.Habit{Name: "Run 5k", Target: 4, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 20}, Habit: "Run 5k"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 22}, Habit: "Run 5k"}: {Result: "y"},
 			},
 			want: false,
 		},
 		{
 			name:  "Target = 7, Interval = 10 (meets target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 24},
-			habit: Habit{Name: "Swim", Target: 7, Interval: 10},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Swim"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Swim"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 17}, Habit: "Swim"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 18}, Habit: "Swim"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 19}, Habit: "Swim"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 20}, Habit: "Swim"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 23}, Habit: "Swim"}: {Result: "y"},
+			habit: storage.Habit{Name: "Swim", Target: 7, Interval: 10},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Swim"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Swim"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 17}, Habit: "Swim"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 18}, Habit: "Swim"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 19}, Habit: "Swim"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 20}, Habit: "Swim"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 23}, Habit: "Swim"}: {Result: "y"},
 			},
 			want: true,
 		},
 		{
 			name:  "Target = 10, Interval = 14 (meets target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 24},
-			habit: Habit{Name: "Yoga", Target: 10, Interval: 14},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 17}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 18}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 19}, Habit: "Yoga"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 22}, Habit: "Yoga"}: {Result: "y"},
+			habit: storage.Habit{Name: "Yoga", Target: 10, Interval: 14},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 17}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 18}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 19}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 22}, Habit: "Yoga"}: {Result: "y"},
 			},
 			want: true,
 		},
 		{
 			name:  "Target = 3, Interval = 28 (does not meet target)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 24},
-			habit: Habit{Name: "Strength Training", Target: 3, Interval: 28},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 5}, Habit: "Strength Training"}:  {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Strength Training"}: {Result: "y"},
+			habit: storage.Habit{Name: "Strength Training", Target: 3, Interval: 28},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 5}, Habit: "Strength Training"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Strength Training"}: {Result: "y"},
 			},
 			want: false,
 		},
@@ -165,32 +170,32 @@ func TestSatisfied(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := satisfied(tt.d, &tt.habit, tt.entries)
+			got := graph.Satisfied(tt.d, &tt.habit, tt.entries)
 			if got != tt.want {
-				t.Errorf("satisfied() = %v, want %v", got, tt.want)
+				t.Errorf("graph.Satisfied() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestScore(t *testing.T) {
-	h := &Harsh{
-		Habits: []*Habit{
+	h := &internal.Harsh{
+		Habits: []*storage.Habit{
 			{Name: "Test1", Target: 1, Interval: 1},
 			{Name: "Test2", Target: 1, Interval: 1},
 			{Name: "Test3", Target: 1, Interval: 1},
 			{Name: "Test4", Target: 1, Interval: 1},
 		},
-		Entries: &Entries{},
+		Entries: &storage.Entries{},
 	}
 
 	today := civil.DateOf(time.Now())
-	(*h.Entries)[DailyHabit{Day: today, Habit: "Test1"}] = Outcome{Result: "y"}
-	(*h.Entries)[DailyHabit{Day: today, Habit: "Test2"}] = Outcome{Result: "y"}
-	(*h.Entries)[DailyHabit{Day: today, Habit: "Test3"}] = Outcome{Result: "n"}
-	(*h.Entries)[DailyHabit{Day: today, Habit: "Test4"}] = Outcome{Result: "y"}
+	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test1"}] = storage.Outcome{Result: "y"}
+	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test2"}] = storage.Outcome{Result: "y"}
+	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test3"}] = storage.Outcome{Result: "n"}
+	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test4"}] = storage.Outcome{Result: "y"}
 
-	score := h.score(today)
+	score := graph.Score(today, h.GetHabits(), h.GetEntries())
 	if score != 75.0 {
 		t.Errorf("Expected score 75.0, got %f", score)
 	}
@@ -205,26 +210,26 @@ func TestConfigFileCreation(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Test habits file creation
-	createExampleHabitsFile(tmpDir)
+	storage.CreateExampleHabitsFile(tmpDir)
 	if _, err := os.Stat(filepath.Join(tmpDir, "habits")); os.IsNotExist(err) {
 		t.Error("Habits file was not created")
 	}
 
 	// Test log file creation
-	createNewLogFile(tmpDir)
+	storage.CreateNewLogFile(tmpDir)
 	if _, err := os.Stat(filepath.Join(tmpDir, "log")); os.IsNotExist(err) {
 		t.Error("Log file was not created")
 	}
 }
 
 func TestBuildGraph(t *testing.T) {
-	entries := &Entries{}
-	h := &Harsh{
+	entries := &storage.Entries{}
+	h := &internal.Harsh{
 		CountBack: 7,
 		Entries:   entries,
 	}
 
-	habit := &Habit{
+	habit := &storage.Habit{
 		Name:        "Test",
 		Target:      1,
 		Interval:    1,
@@ -232,11 +237,11 @@ func TestBuildGraph(t *testing.T) {
 	}
 
 	today := civil.DateOf(time.Now())
-	(*entries)[DailyHabit{Day: today, Habit: "Test"}] = Outcome{Result: "y"}
-	(*entries)[DailyHabit{Day: today.AddDays(-1), Habit: "Test"}] = Outcome{Result: "y"}
+	(*entries)[storage.DailyHabit{Day: today, Habit: "Test"}] = storage.Outcome{Result: "y"}
+	(*entries)[storage.DailyHabit{Day: today.AddDays(-1), Habit: "Test"}] = storage.Outcome{Result: "y"}
 
-	graph := h.buildGraph(habit, false)
-	length := utf8.RuneCountInString(graph)
+	graphResult := graph.BuildGraph(habit, h.GetEntries(), h.GetCountBack(), false)
+	length := utf8.RuneCountInString(graphResult)
 	// Calculate the actual expected length based on the buildGraph logic
 	to := civil.DateOf(time.Now())
 	from := to.AddDays(-h.CountBack)
@@ -245,27 +250,27 @@ func TestBuildGraph(t *testing.T) {
 		expectedLength++
 	}
 	if length != expectedLength {
-		t.Errorf("Expected graph length %d, got %d. CountBack=%d, from=%s, to=%s, graph=%q", expectedLength, length, h.CountBack, from.String(), to.String(), graph)
+		t.Errorf("Expected graph length %d, got %d. CountBack=%d, from=%s, to=%s, graph=%q", expectedLength, length, h.GetCountBack(), from.String(), to.String(), graphResult)
 	}
 }
 
 func TestWarning(t *testing.T) {
-	entries := Entries{}
+	entries := storage.Entries{}
 	today := civil.DateOf(time.Now())
 
-	habit := &Habit{
+	habit := &storage.Habit{
 		Name:        "Test",
 		Target:      1,
 		Interval:    7,
 		FirstRecord: today.AddDays(-10),
 	}
 
-	if !warning(today, habit, entries) {
+	if !graph.Warning(today, habit, entries) {
 		t.Error("Expected warning for habit with no entries")
 	}
 
-	entries[DailyHabit{Day: today, Habit: "Test"}] = Outcome{Result: "y"}
-	if warning(today, habit, entries) {
+	entries[storage.DailyHabit{Day: today, Habit: "Test"}] = storage.Outcome{Result: "y"}
+	if graph.Warning(today, habit, entries) {
 		t.Error("Expected no warning after completing habit")
 	}
 }
@@ -279,9 +284,9 @@ func TestNewHabitIntegration(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Save original config dir and restore it after test
-	originalConfigDir := configDir
-	configDir = tmpDir
-	defer func() { configDir = originalConfigDir }()
+	originalConfigDir := tmpDir
+	tmpDir = tmpDir
+	defer func() { tmpDir = originalConfigDir }()
 
 	// Create initial habits file
 	habitsFile := filepath.Join(tmpDir, "habits")
@@ -299,14 +304,14 @@ func TestNewHabitIntegration(t *testing.T) {
 
 	// Load initial configuration using component functions directly
 	// to avoid terminal size issues in tests
-	habits, maxHabitNameLength := loadHabitsConfig(tmpDir)
-	entries := loadLog(tmpDir)
+	habits, maxHabitNameLength := storage.LoadHabitsConfig(tmpDir)
+	entries := storage.LoadLog(tmpDir)
 	now := civil.DateOf(time.Now())
 	to := now
 	from := to.AddDays(-365 * 5)
-	entries.firstRecords(from, to, habits)
+	entries.FirstRecords(from, to, habits)
 	
-	harsh := &Harsh{
+	harsh := &internal.Harsh{
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,
 		CountBack:          100, // Set a default for testing
@@ -333,11 +338,11 @@ func TestNewHabitIntegration(t *testing.T) {
 	}
 
 	// Reload configuration
-	habits, maxHabitNameLength = loadHabitsConfig(tmpDir)
-	entries = loadLog(tmpDir)
-	entries.firstRecords(from, to, habits)
+	habits, maxHabitNameLength = storage.LoadHabitsConfig(tmpDir)
+	entries = storage.LoadLog(tmpDir)
+	entries.FirstRecords(from, to, habits)
 	
-	harsh = &Harsh{
+	harsh = &internal.Harsh{
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,
 		CountBack:          100,
@@ -362,7 +367,7 @@ func TestNewHabitIntegration(t *testing.T) {
 
 	// Test that new habit appears in todos
 	today := civil.DateOf(time.Now())
-	todos := harsh.getTodos(today, 0)
+	todos := ui.GetTodos(harsh.GetHabits(), harsh.GetEntries(), today, 0)
 
 	foundInTodos := false
 	for _, todoList := range todos {
@@ -383,34 +388,34 @@ func TestSkipified(t *testing.T) {
 	tests := []struct {
 		name    string
 		d       civil.Date
-		habit   Habit
-		entries Entries
+		habit   storage.Habit
+		entries storage.Entries
 		want    bool
 	}{
 		{
 			name:  "Daily habit should always return false",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
-			habit: Habit{Name: "Daily", Target: 1, Interval: 1},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Daily"}: {Result: "s"},
+			habit: storage.Habit{Name: "Daily", Target: 1, Interval: 1},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Daily"}: {Result: "s"},
 			},
 			want: false,
 		},
 		{
 			name:  "Weekly habit with skip should return true",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
-			habit: Habit{Name: "Weekly", Target: 1, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Weekly"}: {Result: "s"},
+			habit: storage.Habit{Name: "Weekly", Target: 1, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Weekly"}: {Result: "s"},
 			},
 			want: true,
 		},
 		{
 			name:  "Weekly habit without skip should return false",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 15},
-			habit: Habit{Name: "Weekly", Target: 1, Interval: 7},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Weekly"}: {Result: "y"},
+			habit: storage.Habit{Name: "Weekly", Target: 1, Interval: 7},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Weekly"}: {Result: "y"},
 			},
 			want: false,
 		},
@@ -418,9 +423,9 @@ func TestSkipified(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := skipified(tt.d, &tt.habit, tt.entries)
+			got := graph.Skipified(tt.d, &tt.habit, tt.entries)
 			if got != tt.want {
-				t.Errorf("skipified() = %v, want %v", got, tt.want)
+				t.Errorf("graph.Skipified() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -430,59 +435,59 @@ func TestSkipified(t *testing.T) {
 func TestScoreComplex(t *testing.T) {
 	tests := []struct {
 		name     string
-		habits   []*Habit
-		entries  Entries
+		habits   []*storage.Habit
+		entries  storage.Entries
 		date     civil.Date
 		expected float64
 	}{
 		{
 			name: "All habits completed",
-			habits: []*Habit{
+			habits: []*storage.Habit{
 				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 				{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 			},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "y"},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "y"},
 			},
 			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
 			expected: 100.0,
 		},
 		{
 			name: "Half habits completed",
-			habits: []*Habit{
+			habits: []*storage.Habit{
 				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 				{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 			},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "n"},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "n"},
 			},
 			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
 			expected: 50.0,
 		},
 		{
 			name: "One habit skipped should be excluded from score",
-			habits: []*Habit{
+			habits: []*storage.Habit{
 				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 				{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 			},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "s"},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test2"}: {Result: "s"},
 			},
 			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
 			expected: 100.0, // Only Test1 counts, and it's completed
 		},
 		{
 			name: "Tracking habits should not affect score",
-			habits: []*Habit{
+			habits: []*storage.Habit{
 				{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 				{Name: "Track", Target: 0, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 1}},
 			},
-			entries: Entries{
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
-				DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Track"}: {Result: "y"},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Test1"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Track"}: {Result: "y"},
 			},
 			date:     civil.Date{Year: 2025, Month: 3, Day: 15},
 			expected: 100.0, // Only Test1 counts for scoring
@@ -491,11 +496,7 @@ func TestScoreComplex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Harsh{
-				Habits:  tt.habits,
-				Entries: &tt.entries,
-			}
-			score := h.score(tt.date)
+			score := graph.Score(tt.date, tt.habits, &tt.entries)
 			if score != tt.expected {
 				t.Errorf("score() = %f, want %f", score, tt.expected)
 			}
@@ -505,24 +506,24 @@ func TestScoreComplex(t *testing.T) {
 
 // Test the buildStats function
 func TestBuildStats(t *testing.T) {
-	h := &Harsh{
-		Entries: &Entries{
-			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Test"}: {Result: "y", Amount: 5.0},
-			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Test"}: {Result: "y", Amount: 3.0},
-			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Test"}: {Result: "n", Amount: 0.0},
-			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Test"}: {Result: "s", Amount: 0.0},
-			DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Test"}: {Result: "y", Amount: 2.0},
+	h := &internal.Harsh{
+		Entries: &storage.Entries{
+			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Test"}: {Result: "y", Amount: 5.0},
+			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Test"}: {Result: "y", Amount: 3.0},
+			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Test"}: {Result: "n", Amount: 0.0},
+			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Test"}: {Result: "s", Amount: 0.0},
+			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Test"}: {Result: "y", Amount: 2.0},
 		},
 	}
 
-	habit := &Habit{
+	habit := &storage.Habit{
 		Name:        "Test",
 		Target:      1,
 		Interval:    1,
 		FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 10},
 	}
 
-	stats := h.buildStats(habit)
+	stats := ui.BuildStats(habit, h.GetEntries())
 
 	// Check the stats
 	if stats.Streaks != 3 {
@@ -554,9 +555,9 @@ func TestCLICommands(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Save original config dir and restore it after test
-	originalConfigDir := configDir
-	configDir = tmpDir
-	defer func() { configDir = originalConfigDir }()
+	originalConfigDir := tmpDir
+	tmpDir = tmpDir
+	defer func() { tmpDir = originalConfigDir }()
 
 	// Create test habits file
 	habitsFile := filepath.Join(tmpDir, "habits")
@@ -617,29 +618,29 @@ func TestCLICommands(t *testing.T) {
 	})
 
 	// Reset command args for other tests
-	rootCmd.SetArgs([]string{})
+	cmd.RootCmd.SetArgs([]string{})
 }
 
 // Test parallel graph building
 func TestBuildGraphsParallel(t *testing.T) {
-	entries := &Entries{}
-	h := &Harsh{
+	entries := &storage.Entries{}
+	h := &internal.Harsh{
 		CountBack: 7,
 		Entries:   entries,
 	}
 
-	habits := []*Habit{
+	habits := []*storage.Habit{
 		{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.DateOf(time.Now()).AddDays(-10)},
 		{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.DateOf(time.Now()).AddDays(-10)},
 		{Name: "Test3", Target: 1, Interval: 1, FirstRecord: civil.DateOf(time.Now()).AddDays(-10)},
 	}
 
 	today := civil.DateOf(time.Now())
-	(*entries)[DailyHabit{Day: today, Habit: "Test1"}] = Outcome{Result: "y"}
-	(*entries)[DailyHabit{Day: today, Habit: "Test2"}] = Outcome{Result: "n"}
-	(*entries)[DailyHabit{Day: today, Habit: "Test3"}] = Outcome{Result: "s"}
+	(*entries)[storage.DailyHabit{Day: today, Habit: "Test1"}] = storage.Outcome{Result: "y"}
+	(*entries)[storage.DailyHabit{Day: today, Habit: "Test2"}] = storage.Outcome{Result: "n"}
+	(*entries)[storage.DailyHabit{Day: today, Habit: "Test3"}] = storage.Outcome{Result: "s"}
 
-	results := h.buildGraphsParallel(habits, false)
+	results := graph.BuildGraphsParallel(habits, h.GetEntries(), h.GetCountBack(), false)
 
 	// Check that all habits have results
 	for _, habit := range habits {

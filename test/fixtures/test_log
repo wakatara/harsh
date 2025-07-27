@@ -1,0 +1,22 @@
+# Test log file for fixtures
+2025-01-01 : Daily standup : y : Great meeting : 0
+2025-01-01 : Code review : y : Reviewed 3 PRs : 3
+2025-01-01 : Gym : y : Leg day : 1.5
+2025-01-01 : Running : n : Too tired : 0
+2025-01-01 : Water intake : y : 8 glasses : 8
+2025-01-01 : Sleep tracking : y : Tracked with app : 0
+2025-01-01 : Reading : y : Tech book : 0.5
+2025-01-01 : Meditation : y : 10 minutes : 10
+
+2025-01-02 : Daily standup : y : Quick update : 0
+2025-01-02 : Code review : s : Skipped today : 0
+2025-01-02 : Gym : n : Rest day : 0
+2025-01-02 : Running : y : 5k run : 5
+2025-01-02 : Water intake : n : Forgot to track : 0
+2025-01-02 : Reading : y : Fiction book : 1
+2025-01-02 : Meditation : n : Overslept : 0
+
+2025-01-03 : Daily standup : n : Missed meeting : 0
+2025-01-03 : Water intake : y : Better today : 6
+2025-01-03 : Reading : y : Articles : 0.25
+2025-01-03 : Call family : y : Talked to mom : 0
