@@ -60,9 +60,43 @@ func (habit *Habit) ParseHabitFrequency() {
 
 // LoadHabitsConfig loads habits in config file ordered slice
 func LoadHabitsConfig(configDir string) ([]*Habit, int) {
-	file, err := os.Open(filepath.Join(configDir, "/habits"))
+	habitsPath := filepath.Join(configDir, "/habits")
+	file, err := os.Open(habitsPath)
 	if err != nil {
-		log.Fatal(err)
+		if os.IsNotExist(err) {
+			// Check for common cloud storage scenarios
+			icloudPath := filepath.Join(configDir, ".habits.icloud")
+			if _, err := os.Stat(icloudPath); err == nil {
+				fmt.Println("Error: Your habits file is currently syncing with iCloud.")
+				fmt.Println("The file appears as '.habits.icloud' while syncing.")
+				fmt.Println("Please wait for sync to complete, or disable iCloud for the harsh folder.")
+				os.Exit(1)
+			}
+			
+			// Check if config directory exists but habits file doesn't
+			if _, err := os.Stat(configDir); err == nil {
+				fmt.Printf("Error: Habits file not found at %s\n", habitsPath)
+				fmt.Println("This might be your first time using harsh.")
+				fmt.Println("Run 'harsh' without arguments to create an example habits file.")
+				os.Exit(1)
+			}
+			
+			// Config directory doesn't exist
+			fmt.Printf("Error: Configuration directory not found at %s\n", configDir)
+			fmt.Println("Run 'harsh' without arguments to initialize your configuration.")
+			os.Exit(1)
+		}
+		
+		// For permission errors or other issues, provide context
+		if os.IsPermission(err) {
+			fmt.Printf("Error: Permission denied accessing habits file at %s\n", habitsPath)
+			fmt.Println("Check file permissions or try running with appropriate privileges.")
+			os.Exit(1)
+		}
+		
+		// For other errors, use the original behavior but with more context
+		fmt.Printf("Error opening habits file at %s: %v\n", habitsPath, err)
+		os.Exit(1)
 	}
 	defer file.Close()
 
@@ -70,14 +104,55 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 
 	var heading string
 	var habits []*Habit
+	lineCount := 0
+	
 	for scanner.Scan() {
-		if len(scanner.Text()) > 0 {
-			if scanner.Text()[0] == '!' {
-				result := strings.Split(scanner.Text(), "! ")
-				heading = result[1]
-			} else if scanner.Text()[0] != '#' {
-				result := strings.Split(scanner.Text(), ": ")
-				h := Habit{Heading: heading, Name: result[0], Frequency: result[1]}
+		lineCount++
+		line := scanner.Text()
+		
+		if len(line) > 0 {
+			if line[0] == '!' {
+				// Parse heading line
+				if !strings.Contains(line, "! ") {
+					fmt.Printf("Warning: Malformed heading at line %d: %s\n", lineCount, line)
+					fmt.Println("Expected format: ! Heading Name")
+					continue
+				}
+				result := strings.Split(line, "! ")
+				if len(result) > 1 {
+					heading = result[1]
+				}
+			} else if line[0] != '#' {
+				// Parse habit line
+				if !strings.Contains(line, ": ") {
+					fmt.Printf("Warning: Skipping malformed habit at line %d: %s\n", lineCount, line)
+					fmt.Println("Expected format: Habit Name: frequency")
+					continue
+				}
+				
+				result := strings.Split(line, ": ")
+				if len(result) < 2 {
+					fmt.Printf("Warning: Skipping habit with missing frequency at line %d: %s\n", lineCount, line)
+					continue
+				}
+				
+				habitName := strings.TrimSpace(result[0])
+				frequency := strings.TrimSpace(result[1])
+				
+				if habitName == "" {
+					fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
+					continue
+				}
+				
+				if frequency == "" {
+					fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
+					continue
+				}
+				
+				h := Habit{Heading: heading, Name: habitName, Frequency: frequency}
+				
+				// ParseHabitFrequency may call os.Exit on invalid frequency
+				// This is the intended behavior for invalid config
 				(&h).ParseHabitFrequency()
 				habits = append(habits, &h)
 			}
