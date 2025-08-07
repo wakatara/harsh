@@ -232,10 +232,13 @@ func TestBuildGraph(t *testing.T) {
 	(*entries)[DailyHabit{Day: tom, Habit: "Test"}] = Outcome{Result: "y"}
 
 	graph := h.buildGraph(habit, false)
-	length := len(graph)
-	// Due to using Builder.Grow for string efficiency, this is 10, not 8
-	if length != 10 {
-		t.Errorf("Expected graph length 10, got %d", length)
+	length := 0
+	for range graph {
+		length++
+	}
+	expectedLen := h.CountBack + 1
+	if length != expectedLen {
+		t.Errorf("Expected graph length %d, got %d", expectedLen, length)
 	}
 }
 
