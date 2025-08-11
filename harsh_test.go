@@ -268,10 +268,11 @@ func TestNewHabitIntegration(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Save original config dir and restore it after test
-	originalConfigDir := configDir
-	configDir = tmpDir
-	defer func() { configDir = originalConfigDir }()
+	// Set HARSHPATH to temporary directory for the duration of the test
+	os.Setenv("HARSHPATH", tmpDir)
+	defer func() {
+		os.Unsetenv("HARSHPATH")
+	}()
 
 	// Create initial habits file
 	habitsFile := filepath.Join(tmpDir, "habits")
