@@ -1,12 +1,15 @@
 package main
 
 import (
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/civil"
+	"github.com/gookit/color"
 )
 
 func TestHabitParsing(t *testing.T) {
@@ -344,18 +347,46 @@ func TestNewHabitIntegration(t *testing.T) {
 	}
 
 	// Test that new habit would be included in ask
-	// We can't directly test the CLI interaction, but we can verify the habit
-	// would be included in the list of habits to ask about
-	undone := harsh.getTodos(today, 0)
 
-	foundInUndone := false
-	for h := range undone {
-		if h == "New habit" {
-			foundInUndone = true
-			break
-		}
+	// Capture function output by redirecting Stdout
+	oldStdout := os.Stdout
+	defer func() { os.Stdout = oldStdout }()
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Redirect color output to a discarder
+	defer func() { color.SetOutput(oldStdout) }()
+	color.SetOutput(io.Discard)
+
+	// Simulate user input by redirecting Stdin
+	inputLines := []string{"0", "y", "y"}
+	oldStdin := os.Stdin
+	defer func() { os.Stdin = oldStdin }()
+	stdinReader, stdinWriter, _ := os.Pipe()
+	os.Stdin = stdinReader
+
+	// Call the function in a goroutine to allow input feeding
+	go func() {
+		harsh.askHabits("")
+	}()
+
+	// Send input lines to stdin
+	for _, line := range inputLines {
+		time.Sleep(10 * time.Millisecond)
+		io.WriteString(stdinWriter, line+"\n")
 	}
-	if !foundInUndone {
+	stdinWriter.Close()
+
+	// Read and collect output
+	w.Close()
+	output, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check if "New habit" appears in output
+	outputStr := string(output)
+	if !strings.Contains(outputStr, "New habit") {
 		t.Error("New habit was not found in undone habits (would not be asked about)")
 	}
 }
