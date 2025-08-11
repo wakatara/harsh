@@ -333,7 +333,7 @@ func TestNewHabitIntegration(t *testing.T) {
 	todos := harsh.getTodos(today, 0)
 
 	foundInTodos := false
-	for todo := range todos {
+	for _, todo := range todos[today.String()] {
 		if todo == "New habit" {
 			foundInTodos = true
 			break
@@ -349,7 +349,7 @@ func TestNewHabitIntegration(t *testing.T) {
 	undone := harsh.getTodos(today, 0)
 
 	foundInUndone := false
-	for h := range undone {
+	for _, h := range undone[today.String()] {
 		if h == "New habit" {
 			foundInUndone = true
 			break
