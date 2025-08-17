@@ -23,6 +23,25 @@ type Habit struct {
 	FirstRecord civil.Date
 }
 
+const DEFAULT_HABITS = 
+`# This is your habits file.
+# It tells harsh what to track and how frequently.
+# 1 means daily, 7 means weekly, 14 every two weeks.
+# You can also track targets within a set number of days.
+# For example, Gym 3 times a week would translate to 3/7.
+# 0 is for tracking a habit. 0 frequency habits will not warn or score.
+# Examples:
+
+Gymmed: 3/7
+Bed by midnight: 1
+Cleaned House: 7
+Called Mom: 7
+Tracked Finances: 15
+New Skill: 90
+Too much coffee: 0
+Used harsh: 0
+`
+
 // ParseHabitFrequency parses the frequency string and sets Target and Interval
 func (habit *Habit) ParseHabitFrequency() {
 	freq := strings.Split(habit.Frequency, "/")
@@ -202,22 +221,8 @@ func CreateExampleHabitsFile(configDir string) {
 		if err != nil {
 			log.Fatalf("error opening file: %v", err)
 		}
-		f.WriteString("# This is your habits file.\n")
-		f.WriteString("# It tells harsh what to track and how frequently.\n")
-		f.WriteString("# 1 means daily, 7 means weekly, 14 every two weeks.\n")
-		f.WriteString("# You can also track targets within a set number of days.\n")
-		f.WriteString("# For example, Gym 3 times a week would translate to 3/7.\n")
-		f.WriteString("# 0 is for tracking a habit. 0 frequency habits will not warn or score.\n")
-		f.WriteString("# Examples:\n\n")
-		f.WriteString("Gymmed: 3/7\n")
-		f.WriteString("Bed by midnight: 1\n")
-		f.WriteString("Cleaned House: 7\n")
-		f.WriteString("Called Mom: 7\n")
-		f.WriteString("Tracked Finances: 15\n")
-		f.WriteString("New Skill: 90\n")
-		f.WriteString("Too much coffee: 0\n")
-		f.WriteString("Used harsh: 0\n")
-		f.Close()
+		defer f.Close()
+		f.WriteString(DEFAULT_HABITS)
 	}
 }
 

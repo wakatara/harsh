@@ -146,7 +146,7 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 		fmt.Println("All todos logged up to today.")
 	} else {
 		for date, todos := range undone {
-			t, _ := time.Parse(time.RFC3339, date+"T00:00:00Z")
+			t, _ := time.Parse(time.DateOnly, date)
 			dayOfWeek := t.Weekday().String()[:3]
 			d.colorManager.PrintlnBold(date + " " + dayOfWeek + ":")
 			for _, habit := range habits {
@@ -187,10 +187,20 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 			}
 
 			for _, habit := range habits {
-
-				if _, ok := (*entries)[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
-					delete(dayHabits, habit.Name)
+				// if habit's target is once, remove from todos if is done in past <interval> days
+				if habit.Target == 1 {
+					for days := range habit.Interval {
+						if _, ok := (*entries)[storage.DailyHabit{Day: dt.AddDays(-days), Habit: habit.Name}]; ok {
+							delete(dayHabits, habit.Name);
+							break;
+						}
+					}
+				} else {
+					if _, ok := (*entries)[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+						delete(dayHabits, habit.Name)
+					}
 				}
+
 				// Edge case for 0 day lookback onboard onboards and does not complete at onboard time
 				if habit.FirstRecord == noFirstRecord && dt != to {
 					delete(dayHabits, habit.Name)

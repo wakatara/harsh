@@ -101,7 +101,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 		for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 			if dayhabit, ok := dayHabits[dt.String()]; ok {
 
-				day, _ := time.Parse(time.RFC3339, dt.String()+"T00:00:00Z")
+				day, _ := time.Parse(time.DateOnly, dt.String())
 				dayOfWeek := day.Weekday().String()[:3]
 
 				i.colorManager.PrintlnBold(dt.String() + " " + dayOfWeek + ":")
