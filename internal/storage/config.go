@@ -26,7 +26,7 @@ type Habit struct {
 const DEFAULT_HABITS = 
 `# This is your habits file.
 # It tells harsh what to track and how frequently.
-# 1 means daily, 7 means weekly, 14 every two weeks.
+# 1 means daily, 7 (or 1w) means weekly, 14 every two weeks.
 # You can also track targets within a set number of days.
 # For example, Gym 3 times a week would translate to 3/7.
 # 0 is for tracking a habit. 0 frequency habits will not warn or score.
@@ -35,7 +35,7 @@ const DEFAULT_HABITS =
 Gymmed: 3/7
 Bed by midnight: 1
 Cleaned House: 7
-Called Mom: 7
+Called Mom: 1w
 Tracked Finances: 15
 New Skill: 90
 Too much coffee: 0
@@ -45,7 +45,7 @@ Used harsh: 0
 // ParseHabitFrequency parses the frequency string and sets Target and Interval
 func (habit *Habit) ParseHabitFrequency() {
 	freq := strings.Split(habit.Frequency, "/")
-	target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
+	target, err := parseDay(strings.TrimSpace(freq[0]))
 	if err != nil {
 		fmt.Println("Error: A frequency in your habit file has a non-integer before the slash.")
 		fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
@@ -61,7 +61,7 @@ func (habit *Habit) ParseHabitFrequency() {
 			target = 1
 		}
 	} else {
-		interval, err = strconv.Atoi(strings.TrimSpace(freq[1]))
+		interval, err = parseDay(strings.TrimSpace(freq[1]))
 		if err != nil || interval == 0 {
 			fmt.Println("Error: A frequency in your habit file has a non-integer or zero after the slash.")
 			fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
@@ -75,6 +75,34 @@ func (habit *Habit) ParseHabitFrequency() {
 	}
 	habit.Target = target
 	habit.Interval = interval
+}
+
+func parseDay(input string) (int, error) {
+	// find first index that is not digit
+	index := strings.IndexFunc(input, IsNotDigit)
+	// num is the digit part of the string
+	if index == -1 {
+		index = len(input)
+	}
+	num, err := strconv.Atoi(input[:index])
+	
+	if err != nil {
+		return 0, err
+	}
+	var coefficient int
+	switch input[index:] {
+	case "w":
+		coefficient = 7;
+	case "":
+		coefficient = 1;
+	default:
+		return 0, fmt.Errorf("invalid suffix %s", input[index:])
+	}
+	return coefficient * num, nil
+}
+
+func IsNotDigit(r rune) bool {
+	return r > '9' || r < '0'
 }
 
 // LoadHabitsConfig loads habits in config file ordered slice
