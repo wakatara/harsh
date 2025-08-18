@@ -188,7 +188,7 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 
 			for _, habit := range habits {
 				// if habit's target is once, remove from todos if is done in past <interval> days
-				if habit.Target == 1 {
+				if habit.Target <= 1 {
 					for days := range habit.Interval {
 						if _, ok := (*entries)[storage.DailyHabit{Day: dt.AddDays(-days), Habit: habit.Name}]; ok {
 							delete(dayHabits, habit.Name);
