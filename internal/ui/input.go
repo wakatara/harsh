@@ -78,11 +78,15 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 			to = from.AddDays(0)
 			filteredHabits = habits
 		}
-		if check == "yday" || check == "yd" {
+		switch check {
+		case "yday", "yd", "yesterday":
 			from = to.AddDays(-1)
-			to = from.AddDays(0)
+			to = from
 			filteredHabits = habits
-		} else {
+		case "last-week", "week","w":
+			from = to.AddDays(-7)
+			filteredHabits = habits
+		default:
 			for _, habit := range habits {
 				if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(check)) {
 					filteredHabits = append(filteredHabits, habit)
