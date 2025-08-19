@@ -177,14 +177,13 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 			} else if line[0] != '#' {
 				// Parse habit line
 				var habitName, frequency string
-				if strings.Contains(line, ": ") {
-					result := strings.Split(line, ": ")
-					if len(result) < 2 {
-						fmt.Printf("Warning: Skipping habit with missing frequency at line %d: %s\n", lineCount, line)
-						continue
-					}
-					habitName = strings.TrimSpace(result[0])
-					frequency = strings.TrimSpace(result[1])
+				i := strings.LastIndex(line, ": ")
+				if i == -1 {
+					habitName = line
+					frequency = ""
+				} else {
+					habitName = strings.TrimSpace(line[:i])
+					frequency = strings.TrimSpace(line[i+2:])
 					if habitName == "" {
 						fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
 						continue
@@ -194,9 +193,6 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 						fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
 						continue
 					}
-				} else {
-					habitName = line
-					frequency = ""
 				}
 				h := Habit{Heading: heading, Name: habitName, Frequency: frequency}
 
