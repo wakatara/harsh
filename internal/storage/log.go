@@ -154,13 +154,14 @@ func WriteHabitLog(configDir string, d civil.Date, habit string, result string, 
 		return fmt.Errorf("cannot open log file %s: %w (this might be due to insufficient disk space or file system issues)", fileName, err)
 	}
 	defer f.Close()
-	logEntry := d.String()
-	for _, item := range []string{habit, result, comment, amount} {
-		if item != "" {
-			logEntry += " : " + item
+	fields := []string{d.String(), habit, result, comment, amount}
+	i := len(fields) - 1
+	for ; i >= 0; i-- {
+		if fields[i] != "" {
+			break
 		}
 	}
-	logEntry += "\n"
+	logEntry := strings.Join(fields[:i+1], " : ") + "\n"
 	if _, err := f.Write([]byte(logEntry)); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		// Check for common write failure causes
