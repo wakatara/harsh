@@ -84,10 +84,16 @@ func parseDay(input string) (int, error) {
 	if index == -1 {
 		index = len(input)
 	}
-	num, err := strconv.Atoi(input[:index])
-	
-	if err != nil {
-		return 0, err
+	var num int
+	if input[:index] != "" {
+		var err error
+		num, err = strconv.Atoi(input[:index])
+		
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		num = 1
 	}
 	var coefficient int
 	switch input[index:] {
@@ -171,31 +177,28 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				}
 			} else if line[0] != '#' {
 				// Parse habit line
-				if !strings.Contains(line, ": ") {
-					fmt.Printf("Warning: Skipping malformed habit at line %d: %s\n", lineCount, line)
-					fmt.Println("Expected format: Habit Name: frequency")
-					continue
+				var habitName, frequency string
+				if strings.Contains(line, ": ") {
+					result := strings.Split(line, ": ")
+					if len(result) < 2 {
+						fmt.Printf("Warning: Skipping habit with missing frequency at line %d: %s\n", lineCount, line)
+						continue
+					}
+					habitName = strings.TrimSpace(result[0])
+					frequency = strings.TrimSpace(result[1])
+					if habitName == "" {
+						fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
+						continue
+					}
+					
+					if frequency == "" {
+						fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
+						continue
+					}
+				} else {
+					habitName = line
+					frequency = ""
 				}
-				
-				result := strings.Split(line, ": ")
-				if len(result) < 2 {
-					fmt.Printf("Warning: Skipping habit with missing frequency at line %d: %s\n", lineCount, line)
-					continue
-				}
-				
-				habitName := strings.TrimSpace(result[0])
-				frequency := strings.TrimSpace(result[1])
-				
-				if habitName == "" {
-					fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
-					continue
-				}
-				
-				if frequency == "" {
-					fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
-					continue
-				}
-				
 				h := Habit{Heading: heading, Name: habitName, Frequency: frequency}
 				
 				// ParseHabitFrequency may call os.Exit on invalid frequency
