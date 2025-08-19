@@ -83,7 +83,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 			from = to.AddDays(-1)
 			to = from
 			filteredHabits = habits
-		case "last-week", "week","w":
+		case "last-week", "week", "w":
 			from = to.AddDays(-7)
 			filteredHabits = habits
 		default:

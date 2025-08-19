@@ -49,7 +49,7 @@ func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries
 	now := civil.DateOf(time.Now())
 	to := now
 	from := to.AddDays(-countBack)
-	
+
 	// Build sparkline
 	sparkline, calline := graph.BuildSpark(from, to, habits, entries)
 	fmt.Printf("%*v", maxHabitNameLength, "")
@@ -191,8 +191,8 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 				if habit.Target <= 1 {
 					for days := range habit.Interval {
 						if _, ok := (*entries)[storage.DailyHabit{Day: dt.AddDays(-days), Habit: habit.Name}]; ok {
-							delete(dayHabits, habit.Name);
-							break;
+							delete(dayHabits, habit.Name)
+							break
 						}
 					}
 				} else {

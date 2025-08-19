@@ -23,8 +23,7 @@ type Habit struct {
 	FirstRecord civil.Date
 }
 
-const DEFAULT_HABITS = 
-`# This is your habits file.
+const DEFAULT_HABITS = `# This is your habits file.
 # It tells harsh what to track and how frequently.
 # 1 means daily, 7 (or 1w) means weekly, 14 every two weeks.
 # You can also track targets within a set number of days.
@@ -88,7 +87,7 @@ func parseDay(input string) (int, error) {
 	if input[:index] != "" {
 		var err error
 		num, err = strconv.Atoi(input[:index])
-		
+
 		if err != nil {
 			return 0, err
 		}
@@ -98,9 +97,9 @@ func parseDay(input string) (int, error) {
 	var coefficient int
 	switch input[index:] {
 	case "w":
-		coefficient = 7;
+		coefficient = 7
 	case "":
-		coefficient = 1;
+		coefficient = 1
 	default:
 		return 0, fmt.Errorf("invalid suffix %s", input[index:])
 	}
@@ -125,7 +124,7 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				fmt.Println("Please wait for sync to complete, or disable iCloud for the harsh folder.")
 				os.Exit(1)
 			}
-			
+
 			// Check if config directory exists but habits file doesn't
 			if _, err := os.Stat(configDir); err == nil {
 				fmt.Printf("Error: Habits file not found at %s\n", habitsPath)
@@ -133,20 +132,20 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				fmt.Println("Run 'harsh' without arguments to create an example habits file.")
 				os.Exit(1)
 			}
-			
+
 			// Config directory doesn't exist
 			fmt.Printf("Error: Configuration directory not found at %s\n", configDir)
 			fmt.Println("Run 'harsh' without arguments to initialize your configuration.")
 			os.Exit(1)
 		}
-		
+
 		// For permission errors or other issues, provide context
 		if os.IsPermission(err) {
 			fmt.Printf("Error: Permission denied accessing habits file at %s\n", habitsPath)
 			fmt.Println("Check file permissions or try running with appropriate privileges.")
 			os.Exit(1)
 		}
-		
+
 		// For other errors, use the original behavior but with more context
 		fmt.Printf("Error opening habits file at %s: %v\n", habitsPath, err)
 		os.Exit(1)
@@ -158,11 +157,11 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 	var heading string
 	var habits []*Habit
 	lineCount := 0
-	
+
 	for scanner.Scan() {
 		lineCount++
 		line := scanner.Text()
-		
+
 		if len(line) > 0 {
 			if line[0] == '!' {
 				// Parse heading line
@@ -190,7 +189,7 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 						fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
 						continue
 					}
-					
+
 					if frequency == "" {
 						fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
 						continue
@@ -200,7 +199,7 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 					frequency = ""
 				}
 				h := Habit{Heading: heading, Name: habitName, Frequency: frequency}
-				
+
 				// ParseHabitFrequency may call os.Exit on invalid frequency
 				// This is the intended behavior for invalid config
 				(&h).ParseHabitFrequency()

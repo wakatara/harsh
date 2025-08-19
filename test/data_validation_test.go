@@ -11,9 +11,9 @@ import (
 )
 
 func TestHabitFrequencyValidation(t *testing.T) {
-	// Note: ParseHabitFrequency calls os.Exit on invalid input, 
+	// Note: ParseHabitFrequency calls os.Exit on invalid input,
 	// so we test through LoadHabitsConfig instead
-	
+
 	// Create temporary directory for test
 	tmpDir, err := os.MkdirTemp("", "harsh_freq_validation_test")
 	if err != nil {
@@ -35,15 +35,15 @@ func TestHabitFrequencyValidation(t *testing.T) {
 		{"Valid tracking", "0", true, "Tracking only habit", 0, 1},
 		{"Valid fraction", "3/7", true, "Three times per week", 3, 7},
 		{"Valid monthly", "30", true, "Once per month", 1, 30},
-		
+
 		// Test edge cases that should still work
 		{"Valid max interval", "1/365", true, "Once per year", 1, 365},
 		{"Valid high frequency", "10/10", true, "Ten times in ten days", 10, 10},
-		
+
 		// Note: Invalid cases would cause os.Exit, so we can't test them directly
 		// The existing code properly validates and exits on:
 		// - Non-numeric values (a/b)
-		// - Zero interval (3/0) 
+		// - Zero interval (3/0)
 		// - Negative values (-1/7)
 		// - Decimal values (3.5/7)
 		// - Missing values (/7, 3/)
@@ -66,7 +66,7 @@ func TestHabitFrequencyValidation(t *testing.T) {
 
 			// Load and parse
 			habits, _ := storage.LoadHabitsConfig(tmpDir)
-			
+
 			if len(habits) != 1 {
 				t.Fatalf("Expected 1 habit, got %d", len(habits))
 			}
@@ -87,14 +87,14 @@ func TestHabitFrequencyValidation(t *testing.T) {
 		// This documents what the code validates:
 		validations := []string{
 			"Non-numeric values cause exit: 'a/b'",
-			"Zero interval causes exit: '3/0'", 
+			"Zero interval causes exit: '3/0'",
 			"Negative target causes exit: '-1/7'",
 			"Negative interval causes exit: '3/-7'",
 			"Target > interval causes exit: '8/7'",
 			"Empty frequency causes exit: ''",
 			"Decimal values cause exit: '3.5/7'",
 		}
-		
+
 		for _, v := range validations {
 			t.Logf("✓ Validation enforced: %s", v)
 		}
@@ -123,7 +123,7 @@ func TestSpecialCharactersInHabitNames(t *testing.T) {
 		{"Mixed emoji", "🏃‍♂️ Run 5k 🎯", "Hit target 🎉", true, "Multiple emojis"},
 		{"Japanese", "日本語の勉強", "よくできました", true, "Japanese characters"},
 		{"Arabic", "قراءة الكتاب", "ممتاز", true, "Right-to-left text"},
-		
+
 		// Potentially problematic characters that should still work
 		{"Colon in name", "Meeting: Team Sync", "Good discussion", true, "Colon delimiter in name"},
 		{"Quotes", `Read "War and Peace"`, "Chapter 5 done", true, "Double quotes"},
@@ -132,7 +132,7 @@ func TestSpecialCharactersInHabitNames(t *testing.T) {
 		{"Slashes", "Review Q3/Q4 goals", "On track", true, "Forward slashes"},
 		{"Semicolon", "Task; Important", "Complete", true, "Semicolon"},
 		{"Pipe character", "Option A | Option B", "Chose A", true, "Pipe character"},
-		
+
 		// Edge cases that should be handled gracefully
 		{"Tab character", "Morning\tRoutine", "Done\twell", true, "Tab characters"},
 		{"Multiple spaces", "Space    Test", "Many     spaces", true, "Multiple spaces"},
@@ -145,23 +145,23 @@ func TestSpecialCharactersInHabitNames(t *testing.T) {
 			// Test writing entry with special characters
 			testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
 			err := storage.WriteHabitLog(tmpDir, testDate, tt.habitName, "y", tt.comment, "1.0")
-			
+
 			if err != nil && tt.shouldWork {
 				t.Errorf("Failed to write entry with '%s': %v", tt.description, err)
 			}
 
 			// Test reading back the entry
 			entries := storage.LoadLog(tmpDir)
-			
+
 			key := storage.DailyHabit{Day: testDate, Habit: tt.habitName}
 			entry, exists := (*entries)[key]
-			
+
 			if tt.shouldWork && !exists {
 				t.Errorf("Could not read back entry with '%s'", tt.description)
 			}
-			
+
 			if exists && entry.Comment != tt.comment {
-				t.Errorf("Comment mismatch for '%s': got '%s', want '%s'", 
+				t.Errorf("Comment mismatch for '%s': got '%s', want '%s'",
 					tt.description, entry.Comment, tt.comment)
 			}
 
@@ -189,7 +189,7 @@ func TestAmountParsing(t *testing.T) {
 		{"Negative", "-5", -5.0, true, "Negative value"},
 		{"Scientific notation", "1e3", 1000.0, true, "Scientific notation"},
 		{"Empty string", "", 0.0, true, "Empty defaults to 0"},
-		
+
 		// Invalid amounts that should fail parsing
 		{"Not a number", "NaN", 0.0, false, "NaN string"},
 		{"Infinity", "Inf", 0.0, false, "Infinity string"},
@@ -212,7 +212,7 @@ func TestAmountParsing(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			testDate := civil.Date{Year: 2025, Month: 1, Day: 20}
-			
+
 			// Write entry
 			err := storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Test", tt.amountStr)
 			if err != nil {
@@ -226,13 +226,13 @@ func TestAmountParsing(t *testing.T) {
 			// Check if parsing worked as expected
 			if tt.shouldWork {
 				if entry.Amount != tt.expectedValue {
-					t.Errorf("Amount parsing for '%s' (%s): got %f, want %f", 
+					t.Errorf("Amount parsing for '%s' (%s): got %f, want %f",
 						tt.amountStr, tt.description, entry.Amount, tt.expectedValue)
 				}
 			} else {
 				// For invalid amounts, it should either be 0 or handle gracefully
 				if entry.Amount != 0.0 {
-					t.Logf("Invalid amount '%s' parsed as %f (expected 0 or error)", 
+					t.Logf("Invalid amount '%s' parsed as %f (expected 0 or error)",
 						tt.amountStr, entry.Amount)
 				}
 			}
@@ -247,7 +247,7 @@ func TestAmountParsing(t *testing.T) {
 func TestLogEntryValidation(t *testing.T) {
 	// Note: This test documents current log parsing behavior
 	// Some malformed entries cause panics (which indicates bugs that should be fixed)
-	
+
 	// Create temporary directory for test
 	tmpDir, err := os.MkdirTemp("", "harsh_log_validation_test")
 	if err != nil {
@@ -322,11 +322,11 @@ func TestLogEntryValidation(t *testing.T) {
 			"Non-numeric amounts print error but continue",
 			"Extra fields are ignored",
 		}
-		
+
 		for _, issue := range issues {
 			t.Logf("⚠️  Known issue: %s", issue)
 		}
-		
+
 		t.Log("These issues indicate areas for code improvement to make parsing more robust")
 	})
 }
@@ -434,7 +434,7 @@ Another task: 2`,
 
 			if !tt.shouldPanic {
 				if len(habits) != tt.habitCount {
-					t.Errorf("Expected %d habits for '%s' (%s), got %d", 
+					t.Errorf("Expected %d habits for '%s' (%s), got %d",
 						tt.habitCount, tt.name, tt.description, len(habits))
 				}
 			}

@@ -11,7 +11,7 @@ import (
 
 var (
 	colorOption string
-	RootCmd = &cobra.Command{
+	RootCmd     = &cobra.Command{
 		Use:     "harsh",
 		Short:   "habit tracking for geeks",
 		Long:    "A simple, minimalist CLI for tracking and understanding habits.",
@@ -42,7 +42,7 @@ func init() {
 			if color.Enable {
 				fi, _ := os.Stdout.Stat()
 				stdoutNotPiped := (fi.Mode() & os.ModeCharDevice) == 0
-				color.Enable = stdoutNotPiped;
+				color.Enable = stdoutNotPiped
 			}
 		default:
 			fmt.Fprintf(os.Stderr, `invalid color option "%s". should be "never", "always" or "auto"`+"\n", colorOption)

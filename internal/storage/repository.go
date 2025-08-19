@@ -6,11 +6,11 @@ import "cloud.google.com/go/civil"
 type Repository interface {
 	// Habit operations
 	LoadHabits() ([]*Habit, int, error)
-	
+
 	// Log operations
 	LoadEntries() (*Entries, error)
 	WriteEntry(d civil.Date, habit string, result string, comment string, amount string) error
-	
+
 	// Configuration
 	GetConfigDir() string
 	InitializeConfig() error

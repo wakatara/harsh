@@ -29,14 +29,14 @@ func TestHabitParseHabitFrequency(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &storage.Habit{Name: "Test", Frequency: tt.frequency}
-			
+
 			// Capture exit calls for error cases
 			if tt.shouldErr {
-				// Note: In a real implementation, we'd refactor ParseHabitFrequency 
+				// Note: In a real implementation, we'd refactor ParseHabitFrequency
 				// to return an error instead of calling os.Exit
 				return
 			}
-			
+
 			h.ParseHabitFrequency()
 			if h.Target != tt.target || h.Interval != tt.interval {
 				t.Errorf("got target=%d interval=%d, want target=%d interval=%d",
@@ -127,14 +127,14 @@ func TestLoadLog(t *testing.T) {
 	date := civil.Date{Year: 2025, Month: 1, Day: 1}
 	gymEntry := (*entries)[storage.DailyHabit{Day: date, Habit: "Gym"}]
 	if gymEntry.Result != "y" || gymEntry.Amount != 1.5 || gymEntry.Comment != "Great workout" {
-		t.Errorf("Gym entry incorrect: result=%s, amount=%f, comment=%s", 
+		t.Errorf("Gym entry incorrect: result=%s, amount=%f, comment=%s",
 			gymEntry.Result, gymEntry.Amount, gymEntry.Comment)
 	}
 
 	// Check entry with missing amount
 	waterEntry := (*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 2}, Habit: "Water"}]
 	if waterEntry.Result != "y" || waterEntry.Amount != 0.0 || waterEntry.Comment != "Good hydration" {
-		t.Errorf("Water entry incorrect: result=%s, amount=%f, comment=%s", 
+		t.Errorf("Water entry incorrect: result=%s, amount=%f, comment=%s",
 			waterEntry.Result, waterEntry.Amount, waterEntry.Comment)
 	}
 }
@@ -169,8 +169,8 @@ func TestWriteHabitLog(t *testing.T) {
 
 func TestEntriesFirstRecords(t *testing.T) {
 	entries := storage.Entries{
-		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 1}, Habit: "Gym"}: {Result: "y"},
-		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 3}, Habit: "Gym"}: {Result: "n"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 1}, Habit: "Gym"}:   {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 3}, Habit: "Gym"}:   {Result: "n"},
 		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 2}, Habit: "Water"}: {Result: "y"},
 	}
 
@@ -263,7 +263,7 @@ func TestFileRepository(t *testing.T) {
 
 	entry := (*entries)[storage.DailyHabit{Day: testDate, Habit: "Test Habit"}]
 	if entry.Result != "y" || entry.Comment != "Test comment" || entry.Amount != 1.0 {
-		t.Errorf("Entry not written correctly: result=%s, comment=%s, amount=%f", 
+		t.Errorf("Entry not written correctly: result=%s, comment=%s, amount=%f",
 			entry.Result, entry.Comment, entry.Amount)
 	}
 }

@@ -43,7 +43,7 @@ func LoadLog(configDir string) *Entries {
 				fmt.Println("Please wait for sync to complete, or disable iCloud for the harsh folder.")
 				os.Exit(1)
 			}
-			
+
 			// Check if config directory exists but log file doesn't
 			if _, err := os.Stat(configDir); err == nil {
 				fmt.Printf("Error: Log file not found at %s\n", logPath)
@@ -51,20 +51,20 @@ func LoadLog(configDir string) *Entries {
 				fmt.Println("Run 'harsh' without arguments to initialize your configuration.")
 				os.Exit(1)
 			}
-			
+
 			// Config directory doesn't exist
 			fmt.Printf("Error: Configuration directory not found at %s\n", configDir)
 			fmt.Println("Run 'harsh' without arguments to initialize your configuration.")
 			os.Exit(1)
 		}
-		
+
 		// For permission errors or other issues, provide context
 		if os.IsPermission(err) {
 			fmt.Printf("Error: Permission denied accessing log file at %s\n", logPath)
 			fmt.Println("Check file permissions or try running with appropriate privileges.")
 			os.Exit(1)
 		}
-		
+
 		// For other errors, use the original behavior but with more context
 		fmt.Printf("Error opening log file at %s: %v\n", logPath, err)
 		os.Exit(1)
@@ -81,33 +81,33 @@ func LoadLog(configDir string) *Entries {
 			if scanner.Text()[0] != '#' {
 				// Discards comments from read record read as result[3]
 				result := strings.Split(scanner.Text(), " : ")
-				
+
 				// Check for minimum required fields (date, habit, result)
 				if len(result) < 3 {
 					fmt.Printf("Warning: Skipping malformed log entry at line %d: %s\n", lineCount, scanner.Text())
 					fmt.Println("Expected format: YYYY-MM-DD : Habit Name : y/n/s : Comment : Amount")
 					continue
 				}
-				
+
 				cd, err := civil.ParseDate(result[0])
 				if err != nil {
 					fmt.Printf("Warning: Skipping log entry with invalid date at line %d: %s\n", lineCount, result[0])
 					continue
 				}
-				
+
 				// Validate habit name is not empty
 				if strings.TrimSpace(result[1]) == "" {
 					fmt.Printf("Warning: Skipping log entry with empty habit name at line %d\n", lineCount)
 					continue
 				}
-				
+
 				// Validate result is y, n, or s
 				result[2] = strings.TrimSpace(result[2])
 				if result[2] != "y" && result[2] != "n" && result[2] != "s" {
 					fmt.Printf("Warning: Skipping log entry with invalid result '%s' at line %d (expected y/n/s)\n", result[2], lineCount)
 					continue
 				}
-				
+
 				switch len(result) {
 				case 5:
 					if result[4] == "" {
@@ -157,7 +157,7 @@ func WriteHabitLog(configDir string, d civil.Date, habit string, result string, 
 	logEntry := d.String()
 	for _, item := range []string{habit, result, comment, amount} {
 		if item != "" {
-			logEntry+=" : " + item
+			logEntry += " : " + item
 		}
 	}
 	logEntry += "\n"

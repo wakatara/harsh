@@ -264,7 +264,7 @@ func TestGraphWarning(t *testing.T) {
 				Interval:    1,
 				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
 			},
-			entries: storage.Entries{},
+			entries:  storage.Entries{},
 			expected: false,
 		},
 	}
@@ -289,10 +289,10 @@ func TestGraphScore(t *testing.T) {
 	}
 
 	entries := &storage.Entries{
-		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test1"}: {Result: "y"},
-		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test2"}: {Result: "y"},
-		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test3"}: {Result: "n"},
-		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test4"}: {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test1"}:    {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test2"}:    {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test3"}:    {Result: "n"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Test4"}:    {Result: "y"},
 		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Tracking"}: {Result: "y"},
 	}
 

@@ -7,8 +7,8 @@ import (
 
 	"cloud.google.com/go/civil"
 	"github.com/wakatara/harsh/internal"
-	"github.com/wakatara/harsh/internal/storage"
 	"github.com/wakatara/harsh/internal/graph"
+	"github.com/wakatara/harsh/internal/storage"
 )
 
 // BenchmarkSequentialGraphBuilding benchmarks original sequential approach
