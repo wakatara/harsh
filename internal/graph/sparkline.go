@@ -27,7 +27,7 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 		} else {
 			i = int(math.Ceil(dailyScore / float64(100/(len(sparks)-1))))
 		}
-		t, _ := time.Parse(time.RFC3339, d.String()+"T00:00:00Z")
+		t, _ := time.Parse(time.DateOnly, d.String())
 		w := t.Weekday().String()
 
 		calline = append(calline, LetterDay[w])

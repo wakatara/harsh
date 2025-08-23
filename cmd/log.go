@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
-	"github.com/wakatara/harsh/internal"
 	"github.com/wakatara/harsh/internal/ui"
 )
 
@@ -13,13 +13,12 @@ var logCmd = &cobra.Command{
 	Aliases: []string{"l"},
 	Args:    cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		harsh := internal.NewHarsh()
 		var habitFragment string
 		if len(args) > 0 {
 			habitFragment = args[0]
 		}
 
-		display := ui.NewDisplay(noColor)
+		display := ui.NewDisplay(!color.Enable)
 		display.ShowHabitLog(
 			harsh.GetHabits(),
 			harsh.GetEntries(),

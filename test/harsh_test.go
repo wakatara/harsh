@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wakatara/harsh/cmd"
 	"github.com/wakatara/harsh/internal"
-	"github.com/wakatara/harsh/internal/storage"
 	"github.com/wakatara/harsh/internal/graph"
+	"github.com/wakatara/harsh/internal/storage"
 	"github.com/wakatara/harsh/internal/ui"
 )
 
@@ -310,7 +310,7 @@ func TestNewHabitIntegration(t *testing.T) {
 	to := now
 	from := to.AddDays(-365 * 5)
 	entries.FirstRecords(from, to, habits)
-	
+
 	harsh := &internal.Harsh{
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,
@@ -341,7 +341,7 @@ func TestNewHabitIntegration(t *testing.T) {
 	habits, maxHabitNameLength = storage.LoadHabitsConfig(tmpDir)
 	entries = storage.LoadLog(tmpDir)
 	entries.FirstRecords(from, to, habits)
-	
+
 	harsh = &internal.Harsh{
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,

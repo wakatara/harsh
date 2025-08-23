@@ -23,10 +23,28 @@ type Habit struct {
 	FirstRecord civil.Date
 }
 
+const DEFAULT_HABITS = `# This is your habits file.
+# It tells harsh what to track and how frequently.
+# 1 means daily, 7 (or 1w) means weekly, 14 every two weeks.
+# You can also track targets within a set number of days.
+# For example, Gym 3 times a week would translate to 3/7.
+# 0 is for tracking a habit. 0 frequency habits will not warn or score.
+# Examples:
+
+Gymmed: 3/7
+Bed by midnight: 1
+Cleaned House: 7
+Called Mom: 1w
+Tracked Finances: 15
+New Skill: 90
+Too much coffee: 0
+Used harsh: 0
+`
+
 // ParseHabitFrequency parses the frequency string and sets Target and Interval
 func (habit *Habit) ParseHabitFrequency() {
 	freq := strings.Split(habit.Frequency, "/")
-	target, err := strconv.Atoi(strings.TrimSpace(freq[0]))
+	target, err := parseDay(strings.TrimSpace(freq[0]))
 	if err != nil {
 		fmt.Println("Error: A frequency in your habit file has a non-integer before the slash.")
 		fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
@@ -42,7 +60,7 @@ func (habit *Habit) ParseHabitFrequency() {
 			target = 1
 		}
 	} else {
-		interval, err = strconv.Atoi(strings.TrimSpace(freq[1]))
+		interval, err = parseDay(strings.TrimSpace(freq[1]))
 		if err != nil || interval == 0 {
 			fmt.Println("Error: A frequency in your habit file has a non-integer or zero after the slash.")
 			fmt.Println("The problem entry to fix is: " + habit.Name + " : " + habit.Frequency)
@@ -56,6 +74,40 @@ func (habit *Habit) ParseHabitFrequency() {
 	}
 	habit.Target = target
 	habit.Interval = interval
+}
+
+func parseDay(input string) (int, error) {
+	// find first index that is not digit
+	index := strings.IndexFunc(input, IsNotDigit)
+	// num is the digit part of the string
+	if index == -1 {
+		index = len(input)
+	}
+	var num int
+	if input[:index] != "" {
+		var err error
+		num, err = strconv.Atoi(input[:index])
+
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		num = 1
+	}
+	var coefficient int
+	switch input[index:] {
+	case "w":
+		coefficient = 7
+	case "":
+		coefficient = 1
+	default:
+		return 0, fmt.Errorf("invalid suffix %s", input[index:])
+	}
+	return coefficient * num, nil
+}
+
+func IsNotDigit(r rune) bool {
+	return r > '9' || r < '0'
 }
 
 // LoadHabitsConfig loads habits in config file ordered slice
@@ -72,7 +124,7 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				fmt.Println("Please wait for sync to complete, or disable iCloud for the harsh folder.")
 				os.Exit(1)
 			}
-			
+
 			// Check if config directory exists but habits file doesn't
 			if _, err := os.Stat(configDir); err == nil {
 				fmt.Printf("Error: Habits file not found at %s\n", habitsPath)
@@ -80,20 +132,20 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				fmt.Println("Run 'harsh' without arguments to create an example habits file.")
 				os.Exit(1)
 			}
-			
+
 			// Config directory doesn't exist
 			fmt.Printf("Error: Configuration directory not found at %s\n", configDir)
 			fmt.Println("Run 'harsh' without arguments to initialize your configuration.")
 			os.Exit(1)
 		}
-		
+
 		// For permission errors or other issues, provide context
 		if os.IsPermission(err) {
 			fmt.Printf("Error: Permission denied accessing habits file at %s\n", habitsPath)
 			fmt.Println("Check file permissions or try running with appropriate privileges.")
 			os.Exit(1)
 		}
-		
+
 		// For other errors, use the original behavior but with more context
 		fmt.Printf("Error opening habits file at %s: %v\n", habitsPath, err)
 		os.Exit(1)
@@ -105,11 +157,11 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 	var heading string
 	var habits []*Habit
 	lineCount := 0
-	
+
 	for scanner.Scan() {
 		lineCount++
 		line := scanner.Text()
-		
+
 		if len(line) > 0 {
 			if line[0] == '!' {
 				// Parse heading line
@@ -124,33 +176,26 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				}
 			} else if line[0] != '#' {
 				// Parse habit line
-				if !strings.Contains(line, ": ") {
-					fmt.Printf("Warning: Skipping malformed habit at line %d: %s\n", lineCount, line)
-					fmt.Println("Expected format: Habit Name: frequency")
-					continue
+				var habitName, frequency string
+				i := strings.LastIndex(line, ": ")
+				if i == -1 {
+					habitName = line
+					frequency = ""
+				} else {
+					habitName = strings.TrimSpace(line[:i])
+					frequency = strings.TrimSpace(line[i+2:])
+					if habitName == "" {
+						fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
+						continue
+					}
+
+					if frequency == "" {
+						fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
+						continue
+					}
 				}
-				
-				result := strings.Split(line, ": ")
-				if len(result) < 2 {
-					fmt.Printf("Warning: Skipping habit with missing frequency at line %d: %s\n", lineCount, line)
-					continue
-				}
-				
-				habitName := strings.TrimSpace(result[0])
-				frequency := strings.TrimSpace(result[1])
-				
-				if habitName == "" {
-					fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
-					continue
-				}
-				
-				if frequency == "" {
-					fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
-					continue
-				}
-				
 				h := Habit{Heading: heading, Name: habitName, Frequency: frequency}
-				
+
 				// ParseHabitFrequency may call os.Exit on invalid frequency
 				// This is the intended behavior for invalid config
 				(&h).ParseHabitFrequency()
@@ -202,22 +247,8 @@ func CreateExampleHabitsFile(configDir string) {
 		if err != nil {
 			log.Fatalf("error opening file: %v", err)
 		}
-		f.WriteString("# This is your habits file.\n")
-		f.WriteString("# It tells harsh what to track and how frequently.\n")
-		f.WriteString("# 1 means daily, 7 means weekly, 14 every two weeks.\n")
-		f.WriteString("# You can also track targets within a set number of days.\n")
-		f.WriteString("# For example, Gym 3 times a week would translate to 3/7.\n")
-		f.WriteString("# 0 is for tracking a habit. 0 frequency habits will not warn or score.\n")
-		f.WriteString("# Examples:\n\n")
-		f.WriteString("Gymmed: 3/7\n")
-		f.WriteString("Bed by midnight: 1\n")
-		f.WriteString("Cleaned House: 7\n")
-		f.WriteString("Called Mom: 7\n")
-		f.WriteString("Tracked Finances: 15\n")
-		f.WriteString("New Skill: 90\n")
-		f.WriteString("Too much coffee: 0\n")
-		f.WriteString("Used harsh: 0\n")
-		f.Close()
+		defer f.Close()
+		f.WriteString(DEFAULT_HABITS)
 	}
 }
 

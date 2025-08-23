@@ -51,7 +51,7 @@ func TestFullWorkflow(t *testing.T) {
 	// Step 3: Add some log entries
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
 	repository := harsh.GetRepository()
-	
+
 	err = repository.WriteEntry(testDate, habits[0].Name, "y", "Test entry", "1.0")
 	if err != nil {
 		t.Fatal(err)
@@ -71,13 +71,13 @@ func TestFullWorkflow(t *testing.T) {
 	// Verify entries were saved
 	entry1 := (*newEntries)[storage.DailyHabit{Day: testDate, Habit: habits[0].Name}]
 	if entry1.Result != "y" || entry1.Comment != "Test entry" || entry1.Amount != 1.0 {
-		t.Errorf("Entry 1 not saved correctly: result=%s, comment=%s, amount=%f", 
+		t.Errorf("Entry 1 not saved correctly: result=%s, comment=%s, amount=%f",
 			entry1.Result, entry1.Comment, entry1.Amount)
 	}
 
 	entry2 := (*newEntries)[storage.DailyHabit{Day: testDate, Habit: habits[1].Name}]
 	if entry2.Result != "n" || entry2.Comment != "Missed it" {
-		t.Errorf("Entry 2 not saved correctly: result=%s, comment=%s", 
+		t.Errorf("Entry 2 not saved correctly: result=%s, comment=%s",
 			entry2.Result, entry2.Comment)
 	}
 
@@ -102,7 +102,7 @@ func TestFullWorkflow(t *testing.T) {
 	// Step 8: Test sparkline generation
 	sparkline, calline := graph.BuildSpark(testDate, testDate, habits, newEntries)
 	if len(sparkline) != 1 || len(calline) != 1 {
-		t.Errorf("Sparkline and calline should have 1 entry each, got %d and %d", 
+		t.Errorf("Sparkline and calline should have 1 entry each, got %d and %d",
 			len(sparkline), len(calline))
 	}
 
@@ -175,7 +175,7 @@ Sleep tracking: 0
 
 	// Simulate a week of habit tracking
 	startDate := civil.Date{Year: 2025, Month: 1, Day: 1}
-	
+
 	// Day 1: Good day
 	repository.WriteEntry(startDate, "Gym", "y", "Great workout", "1.5")
 	repository.WriteEntry(startDate, "Running", "n", "Too tired", "0")
@@ -213,7 +213,7 @@ Sleep tracking: 0
 
 	// Day 1 should have the highest score
 	if day1Score <= day2Score || day1Score <= day3Score {
-		t.Errorf("Day 1 should have highest score: day1=%f, day2=%f, day3=%f", 
+		t.Errorf("Day 1 should have highest score: day1=%f, day2=%f, day3=%f",
 			day1Score, day2Score, day3Score)
 	}
 
@@ -239,7 +239,7 @@ Sleep tracking: 0
 	// Set first record manually since it's not set in our test scenario
 	gymHabit.FirstRecord = startDate
 	gymStats := ui.BuildStats(gymHabit, entries)
-	
+
 	if gymStats.Streaks != 1 || gymStats.Breaks != 1 {
 		t.Errorf("Gym stats incorrect: streaks=%d, breaks=%d", gymStats.Streaks, gymStats.Breaks)
 	}
@@ -255,14 +255,14 @@ Sleep tracking: 0
 	// Test sparkline for the period
 	sparkline, calline := graph.BuildSpark(startDate, day3, habits, entries)
 	if len(sparkline) != 3 || len(calline) != 3 {
-		t.Errorf("Sparkline should have 3 entries, got sparkline=%d, calline=%d", 
+		t.Errorf("Sparkline should have 3 entries, got sparkline=%d, calline=%d",
 			len(sparkline), len(calline))
 	}
 
 	// Verify sparkline shows declining performance
 	// Day 1 should be better than day 3
 	if sparkline[0] <= sparkline[2] {
-		t.Errorf("Day 1 spark should be better than day 3: day1=%s, day3=%s", 
+		t.Errorf("Day 1 spark should be better than day 3: day1=%s, day3=%s",
 			sparkline[0], sparkline[2])
 	}
 }
@@ -284,7 +284,7 @@ func TestConcurrentAccess(t *testing.T) {
 	storage.CreateNewLogFile(tmpDir)
 
 	harsh := internal.NewHarsh()
-	
+
 	// Test parallel graph building with many habits
 	manyHabits := make([]*storage.Habit, 100)
 	for i := range manyHabits {
@@ -297,7 +297,7 @@ func TestConcurrentAccess(t *testing.T) {
 	}
 
 	entries := harsh.GetEntries()
-	
+
 	// Add some test entries
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
 	for i := 0; i < 50; i++ {
@@ -397,7 +397,7 @@ func TestPerformanceBaseline(t *testing.T) {
 	// Add many entries across multiple days
 	startDate := civil.Date{Year: 2025, Month: 1, Day: 1}
 	habits := harsh.GetHabits()
-	
+
 	start := time.Now()
 	for day := 0; day < 30; day++ {
 		currentDate := startDate.AddDays(day)
