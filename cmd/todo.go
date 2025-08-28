@@ -15,7 +15,7 @@ var todoCmd = &cobra.Command{
 		display := ui.NewDisplay(!color.Enable)
 		display.ShowTodos(
 			harsh.GetHabits(),
-			harsh.GetEntries(),
+			&harsh.GetLog().Entries,
 			harsh.GetMaxHabitNameLength(),
 		)
 		return nil

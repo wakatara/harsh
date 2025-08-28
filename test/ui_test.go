@@ -264,7 +264,7 @@ func TestMockRepository(t *testing.T) {
 		habits: []*storage.Habit{
 			{Name: "Test", Target: 1, Interval: 1},
 		},
-		entries: &storage.Entries{},
+		log: &storage.Log { Entries: storage.Entries{}, Header: storage.DefaultHeader },
 	}
 
 	// Test interface compliance
@@ -283,24 +283,24 @@ func TestMockRepository(t *testing.T) {
 	}
 
 	// Test LoadEntries
-	entries, err := mockRepo.LoadEntries()
+	log, err := mockRepo.LoadEntries()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if entries == nil {
+	if log == nil {
 		t.Error("Entries should not be nil")
 	}
 
 	// Test WriteEntry
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-	err = mockRepo.WriteEntry(testDate, "Test", "y", "comment", "1.0")
+	err = mockRepo.WriteEntry(testDate, "Test", "y", "comment", "1.0", log.Header)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Verify entry was written
-	entries, _ = mockRepo.LoadEntries()
-	entry := (*entries)[storage.DailyHabit{Day: testDate, Habit: "Test"}]
+	log, _ = mockRepo.LoadEntries()
+	entry := log.Entries[storage.DailyHabit{Day: testDate, Habit: "Test"}]
 	if entry.Result != "y" {
 		t.Errorf("Entry not written correctly: got %s, want y", entry.Result)
 	}
@@ -309,7 +309,7 @@ func TestMockRepository(t *testing.T) {
 // MockRepository for testing
 type MockRepository struct {
 	habits  []*storage.Habit
-	entries *storage.Entries
+	log *storage.Log
 }
 
 func (m *MockRepository) LoadHabits() ([]*storage.Habit, int, error) {
@@ -322,17 +322,17 @@ func (m *MockRepository) LoadHabits() ([]*storage.Habit, int, error) {
 	return m.habits, maxLength + 10, nil
 }
 
-func (m *MockRepository) LoadEntries() (*storage.Entries, error) {
-	return m.entries, nil
+func (m *MockRepository) LoadEntries() (*storage.Log, error) {
+	return m.log, nil
 }
 
-func (m *MockRepository) WriteEntry(d civil.Date, habit string, result string, comment string, amount string) error {
+func (m *MockRepository) WriteEntry(d civil.Date, habit string, result string, comment string, amount string, header storage.Header) error {
 	famount := 0.0
 	if amount != "" {
 		// In a real implementation, we'd parse the amount
 		famount = 1.0
 	}
-	(*m.entries)[storage.DailyHabit{Day: d, Habit: habit}] = storage.Outcome{
+	m.log.Entries[storage.DailyHabit{Day: d, Habit: habit}] = storage.Outcome{
 		Result:  result,
 		Comment: comment,
 		Amount:  famount,

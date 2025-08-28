@@ -19,7 +19,7 @@ func BenchmarkSequentialGraphBuilding(b *testing.B) {
 	for b.Loop() {
 		consistency := map[string][]string{}
 		for _, habit := range habits {
-			consistency[habit.Name] = append(consistency[habit.Name], graph.BuildGraph(habit, harsh.GetEntries(), harsh.GetCountBack(), false))
+			consistency[habit.Name] = append(consistency[habit.Name], graph.BuildGraph(habit, &harsh.GetLog().Entries, harsh.GetCountBack(), false))
 		}
 	}
 }
@@ -30,19 +30,19 @@ func BenchmarkParallelGraphBuilding(b *testing.B) {
 	habits := createManyTestHabits(10)
 
 	for b.Loop() {
-		_ = graph.BuildGraphsParallel(habits, harsh.GetEntries(), harsh.GetCountBack(), false)
+		_ = graph.BuildGraphsParallel(habits, &harsh.GetLog().Entries, harsh.GetCountBack(), false)
 	}
 }
 
 // createTestHarsh creates a test Harsh instance with sample data
 func createTestHarsh() *internal.Harsh {
-	entries := make(storage.Entries)
+	log := storage.Log{}
 
 	// Create some sample entries for the last 100 days
 	now := civil.DateOf(time.Now())
 	for i := range 100 {
 		date := now.AddDays(-i)
-		entries[storage.DailyHabit{Day: date, Habit: "Test Habit"}] = storage.Outcome{Result: "y", Amount: 1.0, Comment: ""}
+		log.Entries[storage.DailyHabit{Day: date, Habit: "Test Habit"}] = storage.Outcome{Result: "y", Amount: 1.0, Comment: ""}
 	}
 
 	habits := []*storage.Habit{
@@ -53,7 +53,7 @@ func createTestHarsh() *internal.Harsh {
 		Habits:             habits,
 		MaxHabitNameLength: 20,
 		CountBack:          100,
-		Entries:            &entries,
+		Log:            &log,
 	}
 }
 

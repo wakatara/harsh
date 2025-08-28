@@ -21,7 +21,7 @@ var logCmd = &cobra.Command{
 		display := ui.NewDisplay(!color.Enable)
 		display.ShowHabitLog(
 			harsh.GetHabits(),
-			harsh.GetEntries(),
+			&harsh.GetLog().Entries,
 			harsh.GetCountBack(),
 			harsh.GetMaxHabitNameLength(),
 			habitFragment,

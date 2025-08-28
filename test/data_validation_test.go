@@ -144,17 +144,17 @@ func TestSpecialCharactersInHabitNames(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test writing entry with special characters
 			testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-			err := storage.WriteHabitLog(tmpDir, testDate, tt.habitName, "y", tt.comment, "1.0")
+			err := storage.WriteHabitLog(tmpDir, testDate, tt.habitName, "y", tt.comment, "1.0", storage.DefaultHeader)
 
 			if err != nil && tt.shouldWork {
 				t.Errorf("Failed to write entry with '%s': %v", tt.description, err)
 			}
 
 			// Test reading back the entry
-			entries := storage.LoadLog(tmpDir)
+			log := storage.LoadLog(tmpDir)
 
 			key := storage.DailyHabit{Day: testDate, Habit: tt.habitName}
-			entry, exists := (*entries)[key]
+			entry, exists := log.Entries[key]
 
 			if tt.shouldWork && !exists {
 				t.Errorf("Could not read back entry with '%s'", tt.description)
@@ -214,14 +214,14 @@ func TestAmountParsing(t *testing.T) {
 			testDate := civil.Date{Year: 2025, Month: 1, Day: 20}
 
 			// Write entry
-			err := storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Test", tt.amountStr)
+			err := storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Test", tt.amountStr, storage.DefaultHeader)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Read back
-			entries := storage.LoadLog(tmpDir)
-			entry := (*entries)[storage.DailyHabit{Day: testDate, Habit: "Test Habit"}]
+			log := storage.LoadLog(tmpDir)
+			entry := log.Entries[storage.DailyHabit{Day: testDate, Habit: "Test Habit"}]
 
 			// Check if parsing worked as expected
 			if tt.shouldWork {
@@ -303,9 +303,9 @@ func TestLogEntryValidation(t *testing.T) {
 			}
 
 			// Try to load the log
-			entries := storage.LoadLog(tmpDir)
+			log := storage.LoadLog(tmpDir)
 
-			if len(*entries) == 0 {
+			if len(log.Entries) == 0 {
 				t.Errorf("Valid entry '%s' (%s) was not loaded", tt.name, tt.description)
 			}
 

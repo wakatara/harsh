@@ -116,23 +116,23 @@ func TestLoadLog(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entries := storage.LoadLog(tmpDir)
+	log := storage.LoadLog(tmpDir)
 
 	// Verify entries were loaded correctly
-	if len(*entries) != 5 {
-		t.Errorf("Expected 5 entries, got %d", len(*entries))
+	if len(log.Entries) != 5 {
+		t.Errorf("Expected 5 entries, got %d", len(log.Entries))
 	}
 
 	// Check specific entry
 	date := civil.Date{Year: 2025, Month: 1, Day: 1}
-	gymEntry := (*entries)[storage.DailyHabit{Day: date, Habit: "Gym"}]
+	gymEntry := log.Entries[storage.DailyHabit{Day: date, Habit: "Gym"}]
 	if gymEntry.Result != "y" || gymEntry.Amount != 1.5 || gymEntry.Comment != "Great workout" {
 		t.Errorf("Gym entry incorrect: result=%s, amount=%f, comment=%s",
 			gymEntry.Result, gymEntry.Amount, gymEntry.Comment)
 	}
 
 	// Check entry with missing amount
-	waterEntry := (*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 2}, Habit: "Water"}]
+	waterEntry := log.Entries[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 2}, Habit: "Water"}]
 	if waterEntry.Result != "y" || waterEntry.Amount != 0.0 || waterEntry.Comment != "Good hydration" {
 		t.Errorf("Water entry incorrect: result=%s, amount=%f, comment=%s",
 			waterEntry.Result, waterEntry.Amount, waterEntry.Comment)
@@ -149,7 +149,7 @@ func TestWriteHabitLog(t *testing.T) {
 
 	// Test writing log entry
 	date := civil.Date{Year: 2025, Month: 1, Day: 15}
-	err = storage.WriteHabitLog(tmpDir, date, "Test Habit", "y", "Great job", "2.5")
+	err = storage.WriteHabitLog(tmpDir, date, "Test Habit", "y", "Great job", "2.5", storage.DefaultHeader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,29 +239,29 @@ func TestFileRepository(t *testing.T) {
 	}
 
 	// Test LoadEntries
-	entries, err := repo.LoadEntries()
+	log, err := repo.LoadEntries()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if entries == nil {
+	if log == nil {
 		t.Error("Entries should not be nil")
 	}
 
 	// Test WriteEntry
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-	err = repo.WriteEntry(testDate, "Test Habit", "y", "Test comment", "1.0")
+	err = repo.WriteEntry(testDate, "Test Habit", "y", "Test comment", "1.0", storage.DefaultHeader)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Verify entry was written
-	entries, err = repo.LoadEntries()
+	log, err = repo.LoadEntries()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	entry := (*entries)[storage.DailyHabit{Day: testDate, Habit: "Test Habit"}]
+	entry := log.Entries[storage.DailyHabit{Day: testDate, Habit: "Test Habit"}]
 	if entry.Result != "y" || entry.Comment != "Test comment" || entry.Amount != 1.0 {
 		t.Errorf("Entry not written correctly: result=%s, comment=%s, amount=%f",
 			entry.Result, entry.Comment, entry.Amount)

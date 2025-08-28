@@ -1,7 +1,7 @@
 package storage
-
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -28,9 +28,31 @@ type DailyHabit struct {
 
 // Entries maps DailyHabit{ISO date + habit}: Outcome and log format
 type Entries map[DailyHabit]Outcome
+type Header map[string]int
+
+const (
+	HeaderDate = "Date"
+	HeaderAmount = "Amount"
+	HeaderComment = "Comment"
+	HeaderHabit = "Habit"
+	HeaderStatus = "Status"
+)
+
+var DefaultHeader = Header {
+	HeaderDate: 0,
+	HeaderHabit: 1,
+	HeaderStatus: 2,
+	HeaderComment: 3,
+	HeaderAmount: 4,
+}
+
+type Log struct {
+	Entries Entries
+	Header Header
+}
 
 // LoadLog reads entries from log file
-func LoadLog(configDir string) *Entries {
+func LoadLog(configDir string) *Log {
 	logPath := filepath.Join(configDir, "/log")
 	file, err := os.Open(logPath)
 	if err != nil {
@@ -75,71 +97,90 @@ func LoadLog(configDir string) *Entries {
 
 	entries := Entries{}
 	lineCount := 0
+	scanner.Scan()
+	header, err := ParseHeader(scanner.Text())
+	if err != nil {
+		header = DefaultHeader
+		lineCount++
+		parseLogLine(scanner.Text(), lineCount, header, entries)
+	}
 	for scanner.Scan() {
 		lineCount++
-		if len(scanner.Text()) > 0 {
-			if scanner.Text()[0] != '#' {
-				// Discards comments from read record read as result[3]
-				result := strings.Split(scanner.Text(), " : ")
-
-				// Check for minimum required fields (date, habit, result)
-				if len(result) < 3 {
-					fmt.Printf("Warning: Skipping malformed log entry at line %d: %s\n", lineCount, scanner.Text())
-					fmt.Println("Expected format: YYYY-MM-DD : Habit Name : y/n/s : Comment : Amount")
-					continue
-				}
-
-				cd, err := civil.ParseDate(result[0])
-				if err != nil {
-					fmt.Printf("Warning: Skipping log entry with invalid date at line %d: %s\n", lineCount, result[0])
-					continue
-				}
-
-				// Validate habit name is not empty
-				if strings.TrimSpace(result[1]) == "" {
-					fmt.Printf("Warning: Skipping log entry with empty habit name at line %d\n", lineCount)
-					continue
-				}
-
-				// Validate result is y, n, or s
-				result[2] = strings.TrimSpace(result[2])
-				if result[2] != "y" && result[2] != "n" && result[2] != "s" {
-					fmt.Printf("Warning: Skipping log entry with invalid result '%s' at line %d (expected y/n/s)\n", result[2], lineCount)
-					continue
-				}
-
-				switch len(result) {
-				case 5:
-					if result[4] == "" {
-						result[4] = "0"
-					}
-					amount, err := strconv.ParseFloat(result[4], 64)
-					if err != nil {
-						fmt.Printf("Warning: Invalid amount '%s' at line %d, using 0.0\n", result[4], lineCount)
-						amount = 0.0
-					}
-					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: amount}
-				case 4:
-					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: result[3], Amount: 0.0}
-				case 3:
-					entries[DailyHabit{Day: cd, Habit: result[1]}] = Outcome{Result: result[2], Comment: "", Amount: 0.0}
-				default:
-					// This shouldn't happen due to the check above, but just in case
-					fmt.Printf("Warning: Unexpected number of fields (%d) at line %d\n", len(result), lineCount)
-				}
-			}
-		}
+		parseLogLine(scanner.Text(), lineCount, header, entries)
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+	return &Log {
+		Entries: entries,
+		Header: header,
+	}
+}
 
-	return &entries
+func ParseHeader(line string) (Header, error) {
+	result := strings.Split(line, " : ")
+	out := make(map[string]int, len(result))
+	for i, word := range result {
+		switch word {
+		case HeaderDate,HeaderHabit,HeaderStatus,HeaderComment,HeaderAmount:
+			out[word] = i
+		default:
+			return nil, errors.New("not a header")
+		}
+	}
+	return out, nil
+}
+
+func parseLogLine(line string, lineCount int, header map[string]int, entries Entries) {
+	if len(line) > 0 {
+		if line[0] != '#' {
+			// Discards comments from read record read as result[header[HeaderComment]]
+			result := strings.Split(line, " : ")
+
+			// Check for minimum required fields (date, habit, result)
+			if len(result) != len(header) {
+				fmt.Printf("Warning: expected (%d) fields, found (%d) at line %d\n", len(header), len(result), lineCount)
+				return
+			}
+
+			cd, err := civil.ParseDate(result[header[HeaderDate]])
+			if err != nil {
+				fmt.Printf("Warning: Skipping log entry with invalid date at line %d: %s\n", lineCount, result[header[HeaderDate]])
+				return
+			}
+
+			// Validate habit name is not empty
+			if strings.TrimSpace(result[header[HeaderHabit]]) == "" {
+				fmt.Printf("Warning: Skipping log entry with empty habit name at line %d\n", lineCount)
+				return
+			}
+
+			// Validate result is y, n, or s
+			result[header[HeaderStatus]] = strings.TrimSpace(result[header[HeaderStatus]])
+			if result[header[HeaderStatus]] != "y" && result[header[HeaderStatus]] != "n" && result[2] != "s" {
+				fmt.Printf("Warning: Skipping log entry with invalid result '%s' at line %d (expected y/n/s)\n", result[header[HeaderStatus]], lineCount)
+				return
+			}
+			var amount float64
+			if len(result) <= header[HeaderAmount] && result[header[HeaderAmount]] != "" {
+					amount, err = strconv.ParseFloat(result[header[HeaderAmount]], 64)
+					if err != nil {
+						fmt.Printf("Warning: Invalid amount '%s' at line %d, using 0.0\n", result[header[HeaderAmount]], lineCount)
+						amount = 0.0
+					}
+			}
+			var comment string
+			if len(result) <= header[HeaderComment] {
+				comment = result[header[HeaderComment]]
+			}
+			entries[DailyHabit{Day: cd, Habit: result[header[HeaderHabit]]}] = Outcome{Result: result[header[HeaderStatus]], Comment: comment, Amount: amount}
+		}
+	}
 }
 
 // WriteHabitLog writes the log entry for a habit to file
-func WriteHabitLog(configDir string, d civil.Date, habit string, result string, comment string, amount string) error {
+func WriteHabitLog(configDir string, d civil.Date, habit string, result string, comment string, amount string, header Header) error {
 	fileName := filepath.Join(configDir, "/log")
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -154,14 +195,24 @@ func WriteHabitLog(configDir string, d civil.Date, habit string, result string, 
 		return fmt.Errorf("cannot open log file %s: %w (this might be due to insufficient disk space or file system issues)", fileName, err)
 	}
 	defer f.Close()
-	fields := []string{d.String(), habit, result, comment, amount}
-	i := len(fields) - 1
-	for ; i >= 0; i-- {
-		if fields[i] != "" {
-			break
+	fields := make([]string, len(header))
+	for header, i := range header {
+		var field string
+		switch header {
+		case HeaderAmount:
+			field = amount
+		case HeaderComment:
+			field = comment
+		case HeaderDate:
+			field = d.String()
+		case HeaderHabit:
+			field = habit
+		case HeaderStatus:
+			field = result
 		}
+		fields[i] = field
 	}
-	logEntry := strings.Join(fields[:i+1], " : ") + "\n"
+	logEntry := strings.Join(fields, " : ") + "\n"
 	if _, err := f.Write([]byte(logEntry)); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		// Check for common write failure causes

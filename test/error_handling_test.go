@@ -36,12 +36,12 @@ invalid-date : Test : y : Bad date : 1.0
 			t.Fatal(err)
 		}
 
-		// LoadLog should now handle malformed entries gracefully
-		entries := storage.LoadLog(tmpDir)
+		// LoadLog should now handle malformed log gracefully
+		log := storage.LoadLog(tmpDir)
 
 		// Should only load the valid entries
 		validEntries := 0
-		for range *entries {
+		for range log.Entries {
 			validEntries++
 		}
 
@@ -102,7 +102,7 @@ Another Valid Habit: 3/7
 		os.RemoveAll(nonExistentDir)
 
 		testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-		err := storage.WriteHabitLog(nonExistentDir, testDate, "Test Habit", "y", "Test", "1.0")
+		err := storage.WriteHabitLog(nonExistentDir, testDate, "Test Habit", "y", "Test", "1.0", storage.DefaultHeader)
 
 		if err == nil {
 			t.Error("Expected error when writing to non-existent directory")

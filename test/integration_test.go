@@ -43,7 +43,7 @@ func TestFullWorkflow(t *testing.T) {
 		t.Fatal("Should have loaded habits")
 	}
 
-	entries := harsh.GetEntries()
+	entries := harsh.GetLog()
 	if entries == nil {
 		t.Fatal("Entries should not be nil")
 	}
@@ -52,68 +52,68 @@ func TestFullWorkflow(t *testing.T) {
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
 	repository := harsh.GetRepository()
 
-	err = repository.WriteEntry(testDate, habits[0].Name, "y", "Test entry", "1.0")
+	err = repository.WriteEntry(testDate, habits[0].Name, "y", "Test entry", "1.0", storage.DefaultHeader)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = repository.WriteEntry(testDate, habits[1].Name, "n", "Missed it", "0")
+	err = repository.WriteEntry(testDate, habits[1].Name, "n", "Missed it", "0", storage.DefaultHeader)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Step 4: Reload entries to verify persistence
-	newEntries, err := repository.LoadEntries()
+	log, err := repository.LoadEntries()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Verify entries were saved
-	entry1 := (*newEntries)[storage.DailyHabit{Day: testDate, Habit: habits[0].Name}]
+	entry1 := log.Entries[storage.DailyHabit{Day: testDate, Habit: habits[0].Name}]
 	if entry1.Result != "y" || entry1.Comment != "Test entry" || entry1.Amount != 1.0 {
 		t.Errorf("Entry 1 not saved correctly: result=%s, comment=%s, amount=%f",
 			entry1.Result, entry1.Comment, entry1.Amount)
 	}
 
-	entry2 := (*newEntries)[storage.DailyHabit{Day: testDate, Habit: habits[1].Name}]
+	entry2 := log.Entries[storage.DailyHabit{Day: testDate, Habit: habits[1].Name}]
 	if entry2.Result != "n" || entry2.Comment != "Missed it" {
 		t.Errorf("Entry 2 not saved correctly: result=%s, comment=%s",
 			entry2.Result, entry2.Comment)
 	}
 
 	// Step 5: Test graph generation
-	graphResult := graph.BuildGraph(habits[0], newEntries, 10, false)
+	graphResult := graph.BuildGraph(habits[0], &log.Entries, 10, false)
 	if graphResult == "" {
 		t.Error("Graph should not be empty")
 	}
 
 	// Step 6: Test parallel graph generation
-	graphResults := graph.BuildGraphsParallel(habits, newEntries, 10, false)
+	graphResults := graph.BuildGraphsParallel(habits, &log.Entries, 10, false)
 	if len(graphResults) != len(habits) {
 		t.Errorf("Expected %d graph results, got %d", len(habits), len(graphResults))
 	}
 
 	// Step 7: Test scoring
-	score := graph.Score(testDate, habits, newEntries)
+	score := graph.Score(testDate, habits, &log.Entries)
 	if score < 0 || score > 100 {
 		t.Errorf("Score should be between 0 and 100, got %f", score)
 	}
 
 	// Step 8: Test sparkline generation
-	sparkline, calline := graph.BuildSpark(testDate, testDate, habits, newEntries)
+	sparkline, calline := graph.BuildSpark(testDate, testDate, habits, &log.Entries)
 	if len(sparkline) != 1 || len(calline) != 1 {
 		t.Errorf("Sparkline and calline should have 1 entry each, got %d and %d",
 			len(sparkline), len(calline))
 	}
 
 	// Step 9: Test todos
-	todos := ui.GetTodos(habits, newEntries, testDate, 1)
+	todos := ui.GetTodos(habits, &log.Entries, testDate, 1)
 	if len(todos) == 0 {
 		t.Error("Should have todo entries")
 	}
 
 	// Step 10: Test stats
-	stats := ui.BuildStats(habits[0], newEntries)
+	stats := ui.BuildStats(habits[0], &log.Entries)
 	if stats.DaysTracked <= 0 {
 		t.Error("Should have positive days tracked")
 	}
@@ -177,39 +177,39 @@ Sleep tracking: 0
 	startDate := civil.Date{Year: 2025, Month: 1, Day: 1}
 
 	// Day 1: Good day
-	repository.WriteEntry(startDate, "Gym", "y", "Great workout", "1.5")
-	repository.WriteEntry(startDate, "Running", "n", "Too tired", "0")
-	repository.WriteEntry(startDate, "Stretching", "y", "Morning routine", "0.5")
-	repository.WriteEntry(startDate, "Daily standup", "y", "Good meeting", "0")
-	repository.WriteEntry(startDate, "Code review", "y", "Reviewed 3 PRs", "3")
-	repository.WriteEntry(startDate, "Water intake", "y", "8 glasses", "8")
-	repository.WriteEntry(startDate, "Sleep tracking", "y", "Tracked with app", "0")
+	repository.WriteEntry(startDate, "Gym", "y", "Great workout", "1.5", storage.DefaultHeader)
+	repository.WriteEntry(startDate, "Running", "n", "Too tired", "0", storage.DefaultHeader)
+	repository.WriteEntry(startDate, "Stretching", "y", "Morning routine", "0.5", storage.DefaultHeader)
+	repository.WriteEntry(startDate, "Daily standup", "y", "Good meeting", "0", storage.DefaultHeader)
+	repository.WriteEntry(startDate, "Code review", "y", "Reviewed 3 PRs", "3", storage.DefaultHeader)
+	repository.WriteEntry(startDate, "Water intake", "y", "8 glasses", "8", storage.DefaultHeader)
+	repository.WriteEntry(startDate, "Sleep tracking", "y", "Tracked with app", "0", storage.DefaultHeader)
 
 	// Day 2: Mixed day
 	day2 := startDate.AddDays(1)
-	repository.WriteEntry(day2, "Gym", "n", "Rest day", "0")
-	repository.WriteEntry(day2, "Running", "y", "5k run", "5")
-	repository.WriteEntry(day2, "Stretching", "y", "10 min", "0.17")
-	repository.WriteEntry(day2, "Daily standup", "y", "Brief update", "0")
-	repository.WriteEntry(day2, "Code review", "s", "Skipped today", "0")
-	repository.WriteEntry(day2, "Water intake", "n", "Forgot to track", "0")
+	repository.WriteEntry(day2, "Gym", "n", "Rest day", "0", storage.DefaultHeader)
+	repository.WriteEntry(day2, "Running", "y", "5k run", "5", storage.DefaultHeader)
+	repository.WriteEntry(day2, "Stretching", "y", "10 min", "0.17", storage.DefaultHeader)
+	repository.WriteEntry(day2, "Daily standup", "y", "Brief update", "0", storage.DefaultHeader)
+	repository.WriteEntry(day2, "Code review", "s", "Skipped today", "0", storage.DefaultHeader)
+	repository.WriteEntry(day2, "Water intake", "n", "Forgot to track", "0", storage.DefaultHeader)
 
 	// Day 3: Poor day
 	day3 := startDate.AddDays(2)
-	repository.WriteEntry(day3, "Stretching", "n", "Overslept", "0")
-	repository.WriteEntry(day3, "Daily standup", "n", "Missed meeting", "0")
-	repository.WriteEntry(day3, "Water intake", "y", "Better today", "6")
+	repository.WriteEntry(day3, "Stretching", "n", "Overslept", "0", storage.DefaultHeader)
+	repository.WriteEntry(day3, "Daily standup", "n", "Missed meeting", "0", storage.DefaultHeader)
+	repository.WriteEntry(day3, "Water intake", "y", "Better today", "6", storage.DefaultHeader)
 
-	// Reload entries
-	entries, err := repository.LoadEntries()
+	// Reload log
+	log, err := repository.LoadEntries()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Test scoring across the three days
-	day1Score := graph.Score(startDate, habits, entries)
-	day2Score := graph.Score(day2, habits, entries)
-	day3Score := graph.Score(day3, habits, entries)
+	day1Score := graph.Score(startDate, habits, &log.Entries)
+	day2Score := graph.Score(day2, habits, &log.Entries)
+	day3Score := graph.Score(day3, habits, &log.Entries)
 
 	// Day 1 should have the highest score
 	if day1Score <= day2Score || day1Score <= day3Score {
@@ -219,7 +219,7 @@ Sleep tracking: 0
 
 	// Test todos for day 4 (should include missed habits)
 	day4 := startDate.AddDays(3)
-	todos := ui.GetTodos(habits, entries, day4, 1)
+	todos := ui.GetTodos(habits, &log.Entries, day4, 1)
 	if len(todos) == 0 {
 		t.Error("Should have todos for day 4")
 	}
@@ -238,14 +238,14 @@ Sleep tracking: 0
 
 	// Set first record manually since it's not set in our test scenario
 	gymHabit.FirstRecord = startDate
-	gymStats := ui.BuildStats(gymHabit, entries)
+	gymStats := ui.BuildStats(gymHabit, &log.Entries)
 
 	if gymStats.Streaks != 1 || gymStats.Breaks != 1 {
 		t.Errorf("Gym stats incorrect: streaks=%d, breaks=%d", gymStats.Streaks, gymStats.Breaks)
 	}
 
 	// Test graph generation for multiple habits
-	graphResults := graph.BuildGraphsParallel(habits, entries, 10, false)
+	graphResults := graph.BuildGraphsParallel(habits, &log.Entries, 10, false)
 	for _, habit := range habits {
 		if graph, exists := graphResults[habit.Name]; !exists || graph == "" {
 			t.Errorf("No graph generated for habit %s", habit.Name)
@@ -253,7 +253,7 @@ Sleep tracking: 0
 	}
 
 	// Test sparkline for the period
-	sparkline, calline := graph.BuildSpark(startDate, day3, habits, entries)
+	sparkline, calline := graph.BuildSpark(startDate, day3, habits, &log.Entries)
 	if len(sparkline) != 3 || len(calline) != 3 {
 		t.Errorf("Sparkline should have 3 entries, got sparkline=%d, calline=%d",
 			len(sparkline), len(calline))
@@ -296,17 +296,17 @@ func TestConcurrentAccess(t *testing.T) {
 		}
 	}
 
-	entries := harsh.GetEntries()
+	log := harsh.GetLog()
 
 	// Add some test entries
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
 	for i := 0; i < 50; i++ {
-		(*entries)[storage.DailyHabit{Day: testDate, Habit: fmt.Sprintf("Habit_%d", i)}] = storage.Outcome{Result: "y"}
+		log.Entries[storage.DailyHabit{Day: testDate, Habit: fmt.Sprintf("Habit_%d", i)}] = storage.Outcome{Result: "y"}
 	}
 
 	// Test concurrent graph building
 	start := time.Now()
-	results := graph.BuildGraphsParallel(manyHabits, entries, 10, false)
+	results := graph.BuildGraphsParallel(manyHabits, &log.Entries, 10, false)
 	duration := time.Since(start)
 
 	// Should complete in reasonable time
@@ -322,7 +322,7 @@ func TestConcurrentAccess(t *testing.T) {
 	// Test concurrent scoring
 	scores := make([]float64, len(manyHabits))
 	for i := range manyHabits {
-		scores[i] = graph.Score(testDate, []*storage.Habit{manyHabits[i]}, entries)
+		scores[i] = graph.Score(testDate, []*storage.Habit{manyHabits[i]}, &log.Entries)
 	}
 
 	// Verify scores are reasonable
@@ -351,10 +351,10 @@ func TestErrorHandling(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// LoadLog should handle valid entries
-	entries := storage.LoadLog(tmpDir)
-	if len(*entries) != 2 {
-		t.Errorf("Expected 2 valid entries, got %d", len(*entries))
+	// LoadLog should handle valid log
+	log := storage.LoadLog(tmpDir)
+	if len(log.Entries) != 2 {
+		t.Errorf("Expected 2 valid entries, got %d", len(log.Entries))
 	}
 
 	// Test with missing files
@@ -408,14 +408,14 @@ func TestPerformanceBaseline(t *testing.T) {
 			} else if day%5 == 0 {
 				result = "s"
 			}
-			repository.WriteEntry(currentDate, habit.Name, result, "test", "1.0")
+			repository.WriteEntry(currentDate, habit.Name, result, "test", "1.0", storage.DefaultHeader)
 		}
 	}
 	writeTime := time.Since(start)
 
 	// Reload entries
 	start = time.Now()
-	entries, err := repository.LoadEntries()
+	log, err := repository.LoadEntries()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -423,14 +423,14 @@ func TestPerformanceBaseline(t *testing.T) {
 
 	// Test graph generation performance
 	start = time.Now()
-	graphResults := graph.BuildGraphsParallel(habits, entries, 30, false)
+	graphResults := graph.BuildGraphsParallel(habits, &log.Entries, 30, false)
 	graphTime := time.Since(start)
 
 	// Test scoring performance
 	start = time.Now()
 	for day := 0; day < 30; day++ {
 		currentDate := startDate.AddDays(day)
-		_ = graph.Score(currentDate, habits, entries)
+		_ = graph.Score(currentDate, habits, &log.Entries)
 	}
 	scoreTime := time.Since(start)
 
@@ -440,7 +440,7 @@ func TestPerformanceBaseline(t *testing.T) {
 	t.Logf("  Read time: %v", readTime)
 	t.Logf("  Graph time: %v", graphTime)
 	t.Logf("  Score time: %v", scoreTime)
-	t.Logf("  Total entries: %d", len(*entries))
+	t.Logf("  Total entries: %d", len(log.Entries))
 	t.Logf("  Graph results: %d", len(graphResults))
 
 	// Reasonable performance expectations

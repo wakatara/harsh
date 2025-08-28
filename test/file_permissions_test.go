@@ -37,7 +37,7 @@ func TestReadOnlyConfigDirectory(t *testing.T) {
 
 	// Test writing to read-only directory
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-	err = storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Should fail", "1.0")
+	err = storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Should fail", "1.0", storage.DefaultHeader)
 
 	if err == nil {
 		t.Error("Expected error when writing to read-only directory, but got none")
@@ -75,7 +75,7 @@ func TestReadOnlyLogFile(t *testing.T) {
 
 	// Test writing to read-only log file
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-	err = storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Should fail", "1.0")
+	err = storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Should fail", "1.0", storage.DefaultHeader)
 
 	if err == nil {
 		t.Error("Expected error when writing to read-only log file, but got none")
@@ -97,7 +97,7 @@ func TestMissingConfigDirectory(t *testing.T) {
 
 	// Test writing to non-existent directory
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-	err := storage.WriteHabitLog(nonExistentDir, testDate, "Test Habit", "y", "Should fail", "1.0")
+	err := storage.WriteHabitLog(nonExistentDir, testDate, "Test Habit", "y", "Should fail", "1.0", storage.DefaultHeader)
 
 	if err == nil {
 		t.Error("Expected error when writing to non-existent directory, but got none")
@@ -206,7 +206,7 @@ func TestCloudStorageScenarios(t *testing.T) {
 			// Test writing log entry (only for non-failing scenarios)
 			if !scenario.expectError {
 				testDate := civil.Date{Year: 2025, Month: 1, Day: 15}
-				err = storage.WriteHabitLog(testDir, testDate, "Test Habit", "y", "Cloud test", "1.0")
+				err = storage.WriteHabitLog(testDir, testDate, "Test Habit", "y", "Cloud test", "1.0", storage.DefaultHeader)
 
 				if err != nil {
 					t.Errorf("Unexpected error for %s: %v", scenario.description, err)
@@ -243,7 +243,7 @@ func TestSlowFileSystem(t *testing.T) {
 	start = time.Now()
 	for i := 0; i < 5; i++ {
 		testDate := civil.Date{Year: 2025, Month: 1, Day: 15 + i}
-		err := storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Rapid test", "1.0")
+		err := storage.WriteHabitLog(tmpDir, testDate, "Test Habit", "y", "Rapid test", "1.0", storage.DefaultHeader)
 		if err != nil {
 			t.Errorf("Failed rapid write #%d: %v", i, err)
 		}
@@ -255,10 +255,10 @@ func TestSlowFileSystem(t *testing.T) {
 	t.Logf("5 rapid writes time: %v", rapidWriteTime)
 	t.Logf("Average write time: %v", rapidWriteTime/5)
 
-	// Verify all entries were written
-	entries := storage.LoadLog(tmpDir)
-	if len(*entries) < 5 {
-		t.Errorf("Expected at least 5 entries, got %d", len(*entries))
+	// Verify all log were written
+	log := storage.LoadLog(tmpDir)
+	if len(log.Entries) < 5 {
+		t.Errorf("Expected at least 5 entries, got %d", len(log.Entries))
 	}
 
 	// Performance expectation (very lenient for cloud storage)
@@ -300,7 +300,7 @@ func TestFileSystemRaceConditions(t *testing.T) {
 		defer func() { done <- true }()
 		for i := 0; i < 5; i++ {
 			testDate := civil.Date{Year: 2025, Month: 1, Day: 15 + i}
-			err := storage.WriteHabitLog(tmpDir, testDate, "Concurrent Test", "y", "Race test", "1.0")
+			err := storage.WriteHabitLog(tmpDir, testDate, "Concurrent Test", "y", "Race test", "1.0", storage.DefaultHeader)
 			if err != nil {
 				errors <- err
 			}
@@ -327,9 +327,9 @@ func TestFileSystemRaceConditions(t *testing.T) {
 	}
 
 	// Verify final state
-	entries := storage.LoadLog(tmpDir)
-	if len(*entries) < 5 {
-		t.Errorf("Expected at least 5 entries after concurrent operations, got %d", len(*entries))
+	log := storage.LoadLog(tmpDir)
+	if len(log.Entries) < 5 {
+		t.Errorf("Expected at least 5 entries after concurrent operations, got %d", len(log.Entries))
 	}
 }
 
@@ -362,7 +362,7 @@ func TestCloudSyncConflicts(t *testing.T) {
 
 	// Test that normal operations still work with conflict files present
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 20}
-	err = storage.WriteHabitLog(tmpDir, testDate, "Normal Operation", "y", "Should work", "1.0")
+	err = storage.WriteHabitLog(tmpDir, testDate, "Normal Operation", "y", "Should work", "1.0", storage.DefaultHeader)
 	if err != nil {
 		t.Errorf("Normal operation failed with conflict files present: %v", err)
 	}
@@ -440,7 +440,7 @@ func TestTemporaryFileIssues(t *testing.T) {
 
 	// Test writing works
 	testDate := civil.Date{Year: 2025, Month: 1, Day: 25}
-	err = storage.WriteHabitLog(tmpDir, testDate, "Temp File Test", "y", "Works", "1.0")
+	err = storage.WriteHabitLog(tmpDir, testDate, "Temp File Test", "y", "Works", "1.0", storage.DefaultHeader)
 	if err != nil {
 		t.Errorf("Write failed with temp files present: %v", err)
 	}

@@ -15,7 +15,7 @@ var statsCmd = &cobra.Command{
 		display := ui.NewDisplay(!color.Enable)
 		display.ShowHabitStats(
 			harsh.GetHabits(),
-			harsh.GetEntries(),
+			&harsh.GetLog().Entries,
 			harsh.GetMaxHabitNameLength(),
 		)
 		return nil

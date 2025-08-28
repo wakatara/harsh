@@ -24,7 +24,7 @@ var askCmd = &cobra.Command{
 		input := ui.NewInput(!color.Enable)
 		input.AskHabits(
 			harsh.GetHabits(),
-			harsh.GetEntries(),
+			harsh.GetLog(),
 			harsh.GetRepository(),
 			harsh.GetMaxHabitNameLength(),
 			harsh.GetCountBack(),

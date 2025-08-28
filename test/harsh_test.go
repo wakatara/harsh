@@ -186,16 +186,16 @@ func TestScore(t *testing.T) {
 			{Name: "Test3", Target: 1, Interval: 1},
 			{Name: "Test4", Target: 1, Interval: 1},
 		},
-		Entries: &storage.Entries{},
+		Log: &storage.Log { Entries: storage.Entries{}, Header: storage.DefaultHeader },
 	}
 
 	today := civil.DateOf(time.Now())
-	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test1"}] = storage.Outcome{Result: "y"}
-	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test2"}] = storage.Outcome{Result: "y"}
-	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test3"}] = storage.Outcome{Result: "n"}
-	(*h.Entries)[storage.DailyHabit{Day: today, Habit: "Test4"}] = storage.Outcome{Result: "y"}
+	h.Log.Entries[storage.DailyHabit{Day: today, Habit: "Test1"}] = storage.Outcome{Result: "y"}
+	h.Log.Entries[storage.DailyHabit{Day: today, Habit: "Test2"}] = storage.Outcome{Result: "y"}
+	h.Log.Entries[storage.DailyHabit{Day: today, Habit: "Test3"}] = storage.Outcome{Result: "n"}
+	h.Log.Entries[storage.DailyHabit{Day: today, Habit: "Test4"}] = storage.Outcome{Result: "y"}
 
-	score := graph.Score(today, h.GetHabits(), h.GetEntries())
+	score := graph.Score(today, h.GetHabits(), &h.GetLog().Entries)
 	if score != 75.0 {
 		t.Errorf("Expected score 75.0, got %f", score)
 	}
@@ -223,10 +223,10 @@ func TestConfigFileCreation(t *testing.T) {
 }
 
 func TestBuildGraph(t *testing.T) {
-	entries := &storage.Entries{}
+	log := &storage.Log {Entries: storage.Entries{}}
 	h := &internal.Harsh{
 		CountBack: 7,
-		Entries:   entries,
+		Log:   log,
 	}
 
 	habit := &storage.Habit{
@@ -237,10 +237,10 @@ func TestBuildGraph(t *testing.T) {
 	}
 
 	today := civil.DateOf(time.Now())
-	(*entries)[storage.DailyHabit{Day: today, Habit: "Test"}] = storage.Outcome{Result: "y"}
-	(*entries)[storage.DailyHabit{Day: today.AddDays(-1), Habit: "Test"}] = storage.Outcome{Result: "y"}
+	log.Entries[storage.DailyHabit{Day: today, Habit: "Test"}] = storage.Outcome{Result: "y"}
+	log.Entries[storage.DailyHabit{Day: today.AddDays(-1), Habit: "Test"}] = storage.Outcome{Result: "y"}
 
-	graphResult := graph.BuildGraph(habit, h.GetEntries(), h.GetCountBack(), false)
+	graphResult := graph.BuildGraph(habit, &h.GetLog().Entries, h.GetCountBack(), false)
 	length := utf8.RuneCountInString(graphResult)
 	// Calculate the actual expected length based on the buildGraph logic
 	to := civil.DateOf(time.Now())
@@ -305,17 +305,17 @@ func TestNewHabitIntegration(t *testing.T) {
 	// Load initial configuration using component functions directly
 	// to avoid terminal size issues in tests
 	habits, maxHabitNameLength := storage.LoadHabitsConfig(tmpDir)
-	entries := storage.LoadLog(tmpDir)
+	log := storage.LoadLog(tmpDir)
 	now := civil.DateOf(time.Now())
 	to := now
 	from := to.AddDays(-365 * 5)
-	entries.FirstRecords(from, to, habits)
+	log.Entries.FirstRecords(from, to, habits)
 
 	harsh := &internal.Harsh{
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,
 		CountBack:          100, // Set a default for testing
-		Entries:            entries,
+		Log:            log,
 	}
 
 	// Verify initial state
@@ -339,14 +339,14 @@ func TestNewHabitIntegration(t *testing.T) {
 
 	// Reload configuration
 	habits, maxHabitNameLength = storage.LoadHabitsConfig(tmpDir)
-	entries = storage.LoadLog(tmpDir)
-	entries.FirstRecords(from, to, habits)
+	log = storage.LoadLog(tmpDir)
+	log.Entries.FirstRecords(from, to, habits)
 
 	harsh = &internal.Harsh{
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,
 		CountBack:          100,
-		Entries:            entries,
+		Log:            log,
 	}
 
 	// Verify new habit was loaded
@@ -367,7 +367,7 @@ func TestNewHabitIntegration(t *testing.T) {
 
 	// Test that new habit appears in todos
 	today := civil.DateOf(time.Now())
-	todos := ui.GetTodos(harsh.GetHabits(), harsh.GetEntries(), today, 0)
+	todos := ui.GetTodos(harsh.GetHabits(), &harsh.GetLog().Entries, today, 0)
 
 	foundInTodos := false
 	for _, todoList := range todos {
@@ -507,12 +507,15 @@ func TestScoreComplex(t *testing.T) {
 // Test the buildStats function
 func TestBuildStats(t *testing.T) {
 	h := &internal.Harsh{
-		Entries: &storage.Entries{
-			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Test"}: {Result: "y", Amount: 5.0},
-			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Test"}: {Result: "y", Amount: 3.0},
-			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Test"}: {Result: "n", Amount: 0.0},
-			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Test"}: {Result: "s", Amount: 0.0},
-			storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Test"}: {Result: "y", Amount: 2.0},
+		Log: &storage.Log {
+			Header: storage.DefaultHeader,
+			Entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Test"}: {Result: "y", Amount: 5.0},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 11}, Habit: "Test"}: {Result: "y", Amount: 3.0},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Test"}: {Result: "n", Amount: 0.0},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 13}, Habit: "Test"}: {Result: "s", Amount: 0.0},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Test"}: {Result: "y", Amount: 2.0},
+			},
 		},
 	}
 
@@ -523,7 +526,7 @@ func TestBuildStats(t *testing.T) {
 		FirstRecord: civil.Date{Year: 2025, Month: 3, Day: 10},
 	}
 
-	stats := ui.BuildStats(habit, h.GetEntries())
+	stats := ui.BuildStats(habit, &h.GetLog().Entries)
 
 	// Check the stats
 	if stats.Streaks != 3 {
@@ -623,10 +626,13 @@ func TestCLICommands(t *testing.T) {
 
 // Test parallel graph building
 func TestBuildGraphsParallel(t *testing.T) {
-	entries := &storage.Entries{}
+	log := &storage.Log {
+		Entries: storage.Entries{},
+		Header: storage.DefaultHeader,
+	}
 	h := &internal.Harsh{
 		CountBack: 7,
-		Entries:   entries,
+		Log:   log,
 	}
 
 	habits := []*storage.Habit{
@@ -636,11 +642,11 @@ func TestBuildGraphsParallel(t *testing.T) {
 	}
 
 	today := civil.DateOf(time.Now())
-	(*entries)[storage.DailyHabit{Day: today, Habit: "Test1"}] = storage.Outcome{Result: "y"}
-	(*entries)[storage.DailyHabit{Day: today, Habit: "Test2"}] = storage.Outcome{Result: "n"}
-	(*entries)[storage.DailyHabit{Day: today, Habit: "Test3"}] = storage.Outcome{Result: "s"}
+	log.Entries[storage.DailyHabit{Day: today, Habit: "Test1"}] = storage.Outcome{Result: "y"}
+	log.Entries[storage.DailyHabit{Day: today, Habit: "Test2"}] = storage.Outcome{Result: "n"}
+	log.Entries[storage.DailyHabit{Day: today, Habit: "Test3"}] = storage.Outcome{Result: "s"}
 
-	results := graph.BuildGraphsParallel(habits, h.GetEntries(), h.GetCountBack(), false)
+	results := graph.BuildGraphsParallel(habits, &h.GetLog().Entries, h.GetCountBack(), false)
 
 	// Check that all habits have results
 	for _, habit := range habits {
