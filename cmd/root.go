@@ -11,7 +11,7 @@ var (
 		Use:     "harsh",
 		Short:   "habit tracking for geeks",
 		Long:    "A simple, minimalist CLI for tracking and understanding habits.",
-		Version: "0.11.0",
+		Version: version, // Use the version from version.go
 	}
 )
 
@@ -20,6 +20,7 @@ func init() {
 	RootCmd.AddCommand(askCmd)
 	RootCmd.AddCommand(todoCmd)
 	RootCmd.AddCommand(logCmd)
+	RootCmd.AddCommand(versionCmd)
 
 	// Add stats as subcommand of log
 	logCmd.AddCommand(statsCmd)
