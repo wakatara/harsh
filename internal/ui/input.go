@@ -54,7 +54,7 @@ func (i *Input) Onboard() int {
 }
 
 // AskHabits handles the interactive habit asking process
-func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, repository storage.Repository, maxHabitNameLength int, countBack int, check string) {
+func (i *Input) AskHabits(habits []*storage.Habit, log *storage.Log, repository storage.Repository, maxHabitNameLength int, countBack int, check string) {
 	now := civil.DateOf(time.Now())
 	to := now
 	from := to.AddDays(-countBack - 40)
@@ -63,7 +63,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 	checkBackDays := 10
 	// If log file is empty, we onboard the user
 	// For onboarding, we ask how many days to start tracking from
-	if len(*entries) == 0 {
+	if len(log.Entries) == 0 {
 		checkBackDays = i.Onboard()
 		for _, habit := range habits {
 			habit.FirstRecord = to.AddDays(-checkBackDays)
@@ -78,11 +78,15 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 			to = from.AddDays(0)
 			filteredHabits = habits
 		}
-		if check == "yday" || check == "yd" {
+		switch check {
+		case "yday", "yd", "yesterday":
 			from = to.AddDays(-1)
-			to = from.AddDays(0)
+			to = from
 			filteredHabits = habits
-		} else {
+		case "last-week", "week", "w":
+			from = to.AddDays(-7)
+			filteredHabits = habits
+		default:
 			for _, habit := range habits {
 				if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(check)) {
 					filteredHabits = append(filteredHabits, habit)
@@ -93,7 +97,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 		filteredHabits = habits
 	}
 
-	dayHabits := GetTodos(habits, entries, to, checkBackDays)
+	dayHabits := GetTodos(habits, &log.Entries, to, checkBackDays)
 
 	if len(filteredHabits) == 0 {
 		fmt.Println("You have no habits that contain that string")
@@ -101,7 +105,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 		for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 			if dayhabit, ok := dayHabits[dt.String()]; ok {
 
-				day, _ := time.Parse(time.RFC3339, dt.String()+"T00:00:00Z")
+				day, _ := time.Parse(time.DateOnly, dt.String())
 				dayOfWeek := day.Weekday().String()[:3]
 
 				i.colorManager.PrintlnBold(dt.String() + " " + dayOfWeek + ":")
@@ -118,7 +122,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 							}
 							for {
 								fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-								fmt.Print(graph.BuildGraph(habit, entries, countBack, true))
+								fmt.Print(graph.BuildGraph(habit, &log.Entries, countBack, true))
 								fmt.Printf(" [y/n/s/⏎] ")
 
 								reader := bufio.NewReader(os.Stdin)
@@ -165,10 +169,10 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 								}
 
 								if strings.ContainsAny(result, "yns") && len(result) == 1 {
-									repository.WriteEntry(dt, habit.Name, result, comment, amount)
+									repository.WriteEntry(dt, habit.Name, result, comment, amount, log.Header)
 									// Updates the Entries map to get updated buildGraph across days
 									famount, _ := strconv.ParseFloat(amount, 64)
-									(*entries)[storage.DailyHabit{Day: dt, Habit: habit.Name}] = storage.Outcome{Result: result, Amount: famount, Comment: comment}
+									log.Entries[storage.DailyHabit{Day: dt, Habit: habit.Name}] = storage.Outcome{Result: result, Amount: famount, Comment: comment}
 									break
 								}
 

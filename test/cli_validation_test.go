@@ -26,8 +26,8 @@ func TestDateArgumentValidation(t *testing.T) {
 		{"Valid date at year boundary", "2024-12-31", true, "End of year"},
 		{"Valid date at month boundary", "2025-02-28", true, "End of February"},
 		{"Valid leap year date", "2024-02-29", true, "Leap year February 29"},
-		
-		// Invalid date formats  
+
+		// Invalid date formats
 		{"Invalid format DD-MM-YYYY", "15-01-2025", false, "European date format"},
 		{"Invalid format MM/DD/YYYY", "01/15/2025", false, "US date format"},
 		{"Invalid format with time", "2025-01-15T10:30:00", false, "ISO datetime instead of date"},
@@ -53,10 +53,10 @@ func TestDateArgumentValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test civil.ParseDate directly (this is what the CLI would use)
 			date, err := civil.ParseDate(tt.dateStr)
-			
+
 			if tt.shouldWork {
 				if err != nil {
-					t.Errorf("Expected '%s' (%s) to be valid, but got error: %v", 
+					t.Errorf("Expected '%s' (%s) to be valid, but got error: %v",
 						tt.dateStr, tt.description, err)
 				} else {
 					// Verify the date is reasonable
@@ -66,7 +66,7 @@ func TestDateArgumentValidation(t *testing.T) {
 				}
 			} else {
 				if err == nil {
-					t.Errorf("Expected '%s' (%s) to be invalid, but it parsed successfully to %v", 
+					t.Errorf("Expected '%s' (%s) to be invalid, but it parsed successfully to %v",
 						tt.dateStr, tt.description, date)
 				}
 			}
@@ -122,26 +122,26 @@ Practice guitar: 3/7
 		{"Gym workout", true, "Exact habit name match"},
 		{"gym workout", true, "Case insensitive exact match"},
 		{"GYM WORKOUT", true, "All caps exact match"},
-		
+
 		// Partial matches
 		{"gym", true, "Single word fragment"},
 		{"work", true, "Fragment matching multiple habits"},
 		{"meet", true, "Fragment in middle of word"},
 		{"ing", true, "Suffix fragment"},
 		{"call", true, "Case insensitive partial"},
-		
+
 		// No matches
 		{"xyz", false, "Fragment with no matches"},
 		{"", false, "Empty fragment"},
 		{"12345", false, "Numeric fragment"},
 		{"very long fragment that matches nothing", false, "Long non-matching fragment"},
-		
+
 		// Edge cases
 		{"a", true, "Single character fragment (likely matches something)"},
 		{" gym ", true, "Fragment with spaces"},
 		{"gym\t", true, "Fragment with tab (trimmed to 'gym')"},
 		{"gym\n", true, "Fragment with newline (trimmed to 'gym')"},
-		
+
 		// Special characters
 		{":", false, "Colon character (field separator)"},
 		{"/", false, "Slash character"},
@@ -157,28 +157,28 @@ Practice guitar: 3/7
 			if tt.fragment == "" {
 				t.Skip("Empty fragment test - behavior depends on implementation")
 			}
-			
+
 			// Simple fragment matching logic (similar to what CLI might do)
 			matches := 0
 			fragment := strings.ToLower(strings.TrimSpace(tt.fragment))
-			
+
 			for _, habit := range habits {
 				habitName := strings.ToLower(habit.Name)
 				if strings.Contains(habitName, fragment) {
 					matches++
 				}
 			}
-			
+
 			hasMatch := matches > 0
 			if tt.expectMatch && !hasMatch {
-				t.Errorf("Fragment '%s' (%s) should match at least one habit, but matched %d", 
+				t.Errorf("Fragment '%s' (%s) should match at least one habit, but matched %d",
 					tt.fragment, tt.description, matches)
 			}
 			if !tt.expectMatch && hasMatch {
-				t.Errorf("Fragment '%s' (%s) should not match any habits, but matched %d", 
+				t.Errorf("Fragment '%s' (%s) should not match any habits, but matched %d",
 					tt.fragment, tt.description, matches)
 			}
-			
+
 			if hasMatch {
 				t.Logf("Fragment '%s' matched %d habits", tt.fragment, matches)
 			}
@@ -188,7 +188,7 @@ Practice guitar: 3/7
 
 func TestEnvironmentVariableValidation(t *testing.T) {
 	// Test HARSHPATH environment variable validation
-	
+
 	// Save original environment
 	originalPath := os.Getenv("HARSHPATH")
 	defer func() {
@@ -211,13 +211,13 @@ func TestEnvironmentVariableValidation(t *testing.T) {
 		{"Path with spaces", "/tmp/harsh test", true, "Path containing spaces"},
 		{"Current directory", "./harsh", true, "Relative path"},
 		{"Deep path", "/very/deep/nested/path/harsh", true, "Deeply nested path"},
-		
+
 		// Potentially problematic paths
 		{"Path with unicode", "/tmp/harsh测试", true, "Unicode characters in path"},
 		{"Path with emoji", "/tmp/harsh🏠", true, "Emoji in path"},
 		{"Windows style", "C:\\Users\\test\\harsh", true, "Windows-style path"},
 		{"UNC path", "\\\\server\\share\\harsh", true, "Network UNC path"},
-		
+
 		// Invalid/problematic paths
 		{"Empty path", "", false, "Empty HARSHPATH"},
 		{"Just slash", "/", false, "Root directory only"},
@@ -235,7 +235,7 @@ func TestEnvironmentVariableValidation(t *testing.T) {
 			} else {
 				os.Unsetenv("HARSHPATH")
 			}
-			
+
 			// Test if path would work by trying to create it
 			if tt.shouldWork && tt.path != "" {
 				// For valid paths, test if we can use them
@@ -245,7 +245,7 @@ func TestEnvironmentVariableValidation(t *testing.T) {
 					homeDir, _ := os.UserHomeDir()
 					testDir = strings.Replace(testDir, "~", homeDir, 1)
 				}
-				
+
 				// Try to create the directory
 				err := os.MkdirAll(testDir, 0755)
 				if err != nil && !strings.Contains(tt.path, "server") { // Skip network paths
@@ -253,7 +253,7 @@ func TestEnvironmentVariableValidation(t *testing.T) {
 				} else if err == nil {
 					// Clean up
 					defer os.RemoveAll(testDir)
-					
+
 					// Test that we can use this directory
 					storage.CreateExampleHabitsFile(testDir)
 					habits, _ := storage.LoadHabitsConfig(testDir)
@@ -262,7 +262,7 @@ func TestEnvironmentVariableValidation(t *testing.T) {
 					}
 				}
 			}
-			
+
 			t.Logf("✓ Tested HARSHPATH: %s - %s", tt.path, tt.description)
 		})
 	}
@@ -270,7 +270,7 @@ func TestEnvironmentVariableValidation(t *testing.T) {
 
 func TestCommandArgumentEdgeCases(t *testing.T) {
 	// Test edge cases in command argument processing
-	
+
 	argumentTests := []struct {
 		name        string
 		args        []string
@@ -282,7 +282,7 @@ func TestCommandArgumentEdgeCases(t *testing.T) {
 		{"Help flag", []string{"--help"}, false, "Help should work"},
 		{"Version flag", []string{"--version"}, false, "Version should work"},
 		{"Valid date", []string{"2025-01-15"}, false, "Valid date argument"},
-		
+
 		// Edge cases
 		{"Too many arguments", []string{"2025-01-15", "extra", "args"}, true, "Too many arguments"},
 		{"Invalid flag", []string{"--invalid"}, true, "Unknown flag"},
@@ -291,14 +291,14 @@ func TestCommandArgumentEdgeCases(t *testing.T) {
 		{"Single dash", []string{"-"}, true, "Single dash (invalid)"},
 		{"Empty argument", []string{""}, true, "Empty string argument"},
 		{"Very long argument", []string{strings.Repeat("a", 1000)}, true, "Extremely long argument"},
-		
+
 		// Special characters
 		{"Unicode argument", []string{"测试"}, true, "Unicode characters"},
 		{"Argument with spaces", []string{"hello world"}, true, "Spaces in argument"},
 		{"Argument with newlines", []string{"hello\nworld"}, true, "Newlines in argument"},
 		{"Argument with nulls", []string{"hello\x00world"}, true, "Null bytes in argument"},
 		{"Control characters", []string{"\x01\x02\x03"}, true, "Control characters"},
-		
+
 		// Injection-like patterns
 		{"SQL-like", []string{"'; DROP TABLE habits; --"}, true, "SQL injection pattern"},
 		{"Shell-like", []string{"; rm -rf /"}, true, "Shell injection pattern"},
@@ -310,24 +310,24 @@ func TestCommandArgumentEdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// We can't easily test the actual CLI without complex subprocess handling
 			// Instead, we document what should be validated
-			
+
 			if tt.expectIssue {
 				t.Logf("⚠️  Arguments %v should be validated/rejected: %s", tt.args, tt.description)
 			} else {
 				t.Logf("✓ Arguments %v should be accepted: %s", tt.args, tt.description)
 			}
-			
+
 			// Test argument length validation
 			for _, arg := range tt.args {
 				if len(arg) > 500 {
 					t.Logf("⚠️  Very long argument detected: %d characters", len(arg))
 				}
-				
+
 				// Check for dangerous characters
 				if strings.ContainsAny(arg, "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f") {
 					t.Logf("⚠️  Control characters detected in argument: %q", arg)
 				}
-				
+
 				if strings.Contains(arg, "..") {
 					t.Logf("⚠️  Potential path traversal detected: %q", arg)
 				}
@@ -338,10 +338,10 @@ func TestCommandArgumentEdgeCases(t *testing.T) {
 
 func TestCommandLineHelpAndVersion(t *testing.T) {
 	// Test that help and version commands work reliably
-	
+
 	// These tests would normally run the actual binary, but since we're testing
 	// the library, we document the expected behavior
-	
+
 	helpTests := []struct {
 		command     string
 		expectWork  bool
@@ -353,7 +353,7 @@ func TestCommandLineHelpAndVersion(t *testing.T) {
 		{"harsh --version", true, "Version flag"},
 		{"harsh -v", true, "Short version flag"},
 		{"harsh version", true, "Version subcommand"},
-		
+
 		// Edge cases
 		{"harsh --help --version", false, "Conflicting flags"},
 		{"harsh help version", false, "Multiple subcommands"},
@@ -376,15 +376,15 @@ func TestCommandLineHelpAndVersion(t *testing.T) {
 
 func TestEnvironmentValidation(t *testing.T) {
 	// Test environment variable edge cases that could cause issues
-	
+
 	originalEnv := make(map[string]string)
 	envVars := []string{"HARSHPATH", "NO_COLOR", "TERM", "HOME", "USER"}
-	
+
 	// Save original environment
 	for _, env := range envVars {
 		originalEnv[env] = os.Getenv(env)
 	}
-	
+
 	// Restore environment after test
 	defer func() {
 		for env, val := range originalEnv {
@@ -408,7 +408,7 @@ func TestEnvironmentValidation(t *testing.T) {
 		{"NO_COLOR=true", "NO_COLOR", "true", false, "Disable colors (boolean)"},
 		{"TERM=xterm", "TERM", "xterm", false, "Terminal type"},
 		{"HOME valid", "HOME", "/home/user", false, "User home directory"},
-		
+
 		// Edge cases
 		{"Empty NO_COLOR", "NO_COLOR", "", false, "Empty NO_COLOR (colors enabled)"},
 		{"NO_COLOR with spaces", "NO_COLOR", " 1 ", false, "NO_COLOR with whitespace"},
@@ -418,7 +418,7 @@ func TestEnvironmentValidation(t *testing.T) {
 		{"Unicode in HOME", "HOME", "/home/用户", false, "Unicode in HOME path"},
 		{"Empty TERM", "TERM", "", false, "Empty TERM variable"},
 		{"Invalid TERM", "TERM", "\x00\x01", true, "TERM with control characters"},
-		
+
 		// Security-related
 		{"Injection-like PATH", "HARSHPATH", "; rm -rf /", true, "Shell injection in path"},
 		{"Path traversal", "HARSHPATH", "../../../etc", true, "Path traversal attempt"},
@@ -429,18 +429,18 @@ func TestEnvironmentValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set the environment variable
 			os.Setenv(tt.env, tt.value)
-			
+
 			if tt.expectIssue {
 				t.Logf("⚠️  Environment %s=%q should be validated: %s", tt.env, tt.value, tt.description)
 			} else {
 				t.Logf("✓ Environment %s=%q should work: %s", tt.env, tt.value, tt.description)
 			}
-			
+
 			// Basic validation checks
 			if len(tt.value) > 1000 {
 				t.Logf("⚠️  Very long environment value: %d characters", len(tt.value))
 			}
-			
+
 			if strings.ContainsAny(tt.value, "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f") {
 				t.Logf("⚠️  Control characters in environment value")
 			}
@@ -450,7 +450,7 @@ func TestEnvironmentValidation(t *testing.T) {
 
 func TestScriptingAndAutomationValidation(t *testing.T) {
 	// Test scenarios where harsh might be used in scripts or automation
-	
+
 	automationTests := []struct {
 		name        string
 		scenario    string
@@ -462,13 +462,13 @@ func TestScriptingAndAutomationValidation(t *testing.T) {
 		{"Script with date", "harsh ask $(date +%Y-%m-%d)", "Script using current date", true},
 		{"Backup script", "cp ~/.config/harsh/* /backup/", "Backing up config files", true},
 		{"Status check", "harsh log | grep $(date +%Y-%m-%d)", "Check today's status", true},
-		
+
 		// Potentially problematic patterns
 		{"Unsanitized input", "harsh ask $USER_INPUT", "Using unsanitized user input", false},
 		{"Shell injection", "harsh ask $(rm -rf /)", "Command injection attempt", false},
 		{"Path injection", "harsh --config ../../../etc", "Path traversal in config", false},
 		{"Unicode confusion", "harsh ask 2025‐01‐15", "Unicode dashes that look like ASCII", false},
-		
+
 		// Edge cases in automation
 		{"Empty variable", "harsh ask $EMPTY_VAR", "Using empty environment variable", false},
 		{"Unset variable", "harsh ask $UNSET_VAR", "Using unset environment variable", false},
@@ -483,21 +483,21 @@ func TestScriptingAndAutomationValidation(t *testing.T) {
 			} else {
 				t.Logf("⚠️  Automation pattern needs validation: %s - %s", tt.scenario, tt.description)
 			}
-			
+
 			// Check for common security issues
 			if strings.Contains(tt.scenario, "$(") || strings.Contains(tt.scenario, "`") {
 				t.Logf("⚠️  Command substitution detected - validate input")
 			}
-			
+
 			if strings.Contains(tt.scenario, "$") && !strings.Contains(tt.scenario, "$(date") {
 				t.Logf("⚠️  Variable substitution detected - validate variables")
 			}
-			
+
 			if strings.Contains(tt.scenario, "..") {
 				t.Logf("⚠️  Path traversal pattern detected")
 			}
 		})
 	}
-	
+
 	t.Log("These tests document validation needs for safe automation usage")
 }

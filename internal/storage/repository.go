@@ -6,11 +6,11 @@ import "cloud.google.com/go/civil"
 type Repository interface {
 	// Habit operations
 	LoadHabits() ([]*Habit, int, error)
-	
+
 	// Log operations
-	LoadEntries() (*Entries, error)
-	WriteEntry(d civil.Date, habit string, result string, comment string, amount string) error
-	
+	LoadEntries() (*Log, error)
+	WriteEntry(d civil.Date, habit string, result string, comment string, amount string, header Header) error
+
 	// Configuration
 	GetConfigDir() string
 	InitializeConfig() error
@@ -34,14 +34,14 @@ func (r *FileRepository) LoadHabits() ([]*Habit, int, error) {
 }
 
 // LoadEntries loads log entries from the log file
-func (r *FileRepository) LoadEntries() (*Entries, error) {
-	entries := LoadLog(r.configDir)
-	return entries, nil
+func (r *FileRepository) LoadEntries() (*Log, error) {
+	log := LoadLog(r.configDir)
+	return log, nil
 }
 
 // WriteEntry writes a log entry to the log file
-func (r *FileRepository) WriteEntry(d civil.Date, habit string, result string, comment string, amount string) error {
-	return WriteHabitLog(r.configDir, d, habit, result, comment, amount)
+func (r *FileRepository) WriteEntry(d civil.Date, habit string, result string, comment string, amount string, header Header) error {
+	return WriteHabitLog(r.configDir, d, habit, result, comment, amount, header)
 }
 
 // GetConfigDir returns the configuration directory

@@ -15,33 +15,33 @@ type Harsh struct {
 	Habits             []*storage.Habit
 	MaxHabitNameLength int
 	CountBack          int
-	Entries            *storage.Entries
+	Log               *storage.Log
 }
 
 // NewHarsh creates a new Harsh instance with loaded configuration and data
 func NewHarsh() *Harsh {
 	repository := storage.NewFileRepository()
 	habits, maxHabitNameLength, _ := repository.LoadHabits()
-	entries, _ := repository.LoadEntries()
-	
+	log, _ := repository.LoadEntries()
+
 	now := civil.DateOf(time.Now())
 	to := now
 	from := to.AddDays(-365 * 5)
-	entries.FirstRecords(from, to, habits)
-	
+	log.Entries.FirstRecords(from, to, habits)
+
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		// Default width for testing or when terminal size cannot be determined
 		width = 120
 	}
 	countBack := max(1, min(width-maxHabitNameLength-2, 100))
-	
+
 	return &Harsh{
 		Repository:         repository,
 		Habits:             habits,
 		MaxHabitNameLength: maxHabitNameLength,
 		CountBack:          countBack,
-		Entries:            entries,
+		Log:            log,
 	}
 }
 
@@ -55,9 +55,9 @@ func (h *Harsh) GetHabits() []*storage.Habit {
 	return h.Habits
 }
 
-// GetEntries returns the entries map
-func (h *Harsh) GetEntries() *storage.Entries {
-	return h.Entries
+// GetLog returns the entries map
+func (h *Harsh) GetLog() *storage.Log {
+	return h.Log
 }
 
 // GetMaxHabitNameLength returns the maximum habit name length for formatting
