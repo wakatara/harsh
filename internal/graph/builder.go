@@ -61,35 +61,53 @@ func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool
 		return false
 	}
 
-	// Define the sliding window bounds (looking back and forward)
-	start := d.AddDays(-habit.Interval)
-	if start.Before(habit.FirstRecord) {
-		start = habit.FirstRecord
+	// For date d, check all possible interval-length windows that include d
+	// Key insight: Allow future data only if there's supporting data at or before d in the same window
+	
+	earliestStart := d.AddDays(-habit.Interval + 1)
+	if earliestStart.Before(habit.FirstRecord) {
+		earliestStart = habit.FirstRecord
 	}
-	end := d
+	
+	latestStart := d
+	
+	// Try all possible window start positions that would include date d
+	for winStart := earliestStart; !winStart.After(latestStart); winStart = winStart.AddDays(1) {
+		winEnd := winStart.AddDays(habit.Interval - 1)
+		
+		// The window must include the date d we're checking
+		if winEnd.Before(d) || winStart.After(d) {
+			continue
+		}
 
-	// Calculate the maximum window start to avoid redundant iterations
-	maxWinStart := end.AddDays(habit.Interval - 2)
-
-	// Slide the window one day at a time
-	for winStart := start; !winStart.After(maxWinStart); winStart = winStart.AddDays(1) {
-		winEnd := winStart.AddDays(habit.Interval - 2)
-
-		count := 0
+		// Count successes in the entire window (including potential future data)
+		countTotal := 0
+		countUpToD := 0
+		
 		// Early termination: stop counting once we exceed target
-		for dt := winStart; !dt.After(winEnd) && count < habit.Target+1; dt = dt.AddDays(1) {
+		for dt := winStart; !dt.After(winEnd) && countTotal < habit.Target+1; dt = dt.AddDays(1) {
 			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
-				count++
+				countTotal++
+				if !dt.After(d) {
+					countUpToD++
+				}
 				// Early exit optimization for Target=1 special case
-				if habit.Target == 1 && count == 2 {
-					return true
+				if habit.Target == 1 && countTotal == 2 {
+					// But only if we have supporting data up to d
+					if countUpToD > 0 {
+						return true
+					}
 				}
 			}
 		}
 
 		// Check if target is met for this window
-		if count >= habit.Target {
-			return true
+		if countTotal >= habit.Target {
+			// Allow future data only if there's at least some supporting data up to date d
+			// This prevents the original bug where dates before any success were marked satisfied
+			if countUpToD > 0 {
+				return true
+			}
 		}
 	}
 

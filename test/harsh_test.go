@@ -79,7 +79,7 @@ func TestSatisfied(t *testing.T) {
 				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 16}, Habit: "Habit"}: {Result: "y"},
 				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 24}, Habit: "Habit"}: {Result: "y"},
 			},
-			want: true, // Streak was broken (March 16) before the last valid "y" (March 24)
+			want: false, // On March 23, looking back 7 days (March 17-23), there are no "y" entries
 		},
 		{
 			name:  "Target = 1, Interval = 7 (no streak at all)",
@@ -94,14 +94,14 @@ func TestSatisfied(t *testing.T) {
 		},
 
 		{
-			name:  "Target = 2, Interval = 7 (meets target)",
+			name:  "Target = 2, Interval = 7 (meets target with gap filling)",
 			d:     civil.Date{Year: 2025, Month: 3, Day: 26},
 			habit: storage.Habit{Name: "Bike 10k", Target: 2, Interval: 7},
 			entries: storage.Entries{
 				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 25}, Habit: "Bike 10k"}: {Result: "y"},
 				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 28}, Habit: "Bike 10k"}: {Result: "y"},
 			},
-			want: true,
+			want: true, // March 26 should be satisfied: window March 25-31 contains 2 successes with supporting data
 		},
 		{
 			name:  "Target = 2, Interval = 7 (does not meet target)",
@@ -173,6 +173,196 @@ func TestSatisfied(t *testing.T) {
 			got := graph.Satisfied(tt.d, &tt.habit, tt.entries)
 			if got != tt.want {
 				t.Errorf("graph.Satisfied() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSatisfiedGapScenarios tests scenarios where gaps should be filled by satisfied markers
+func TestSatisfiedGapScenarios(t *testing.T) {
+	tests := []struct {
+		name     string
+		checkingDate civil.Date
+		habit    storage.Habit
+		entries  storage.Entries
+		want     bool
+		explanation string
+	}{
+		{
+			name:     "Astro real-world scenario: 2/7 habit with 4 consecutive successes",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 25}, // Checking Aug 25
+			habit:    storage.Habit{Name: "Astro", Target: 2, Interval: 7, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 20}},
+			entries: storage.Entries{
+				// Real data from the user's log
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 24}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Astro"}: {Result: "y"}, 
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 27}, Habit: "Astro"}: {Result: "y"},
+			},
+			want: true, // Should be satisfied - window contains 4 successes, well above the 2 target
+			explanation: "Aug 25 with 4 consecutive successes should definitely be satisfied for a 2/7 habit",
+		},
+		{
+			name:     "Astro scenario: Days between successes should be satisfied",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 25}, // Day between successes
+			habit:    storage.Habit{Name: "Astro", Target: 2, Interval: 7, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 20}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 21}, Habit: "Astro"}: {Result: "y"}, // Past success for support
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 24}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Astro"}: {Result: "n"}, // Checking this
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 27}, Habit: "Astro"}: {Result: "y"},
+			},
+			want: true, // Window Aug 21-27 contains 4 successes, satisfies 2/7 requirement
+			explanation: "Days between multiple successes should be satisfied when target is met in window",
+		},
+		{
+			name:     "2/7 habit: Middle day with successes on both sides should be satisfied",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 25}, // Checking middle day
+			habit:    storage.Habit{Name: "Astro", Target: 2, Interval: 7, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 20}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 24}, Habit: "Astro"}: {Result: "y"}, // Before
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Astro"}: {Result: "n"}, // Checking this day
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Astro"}: {Result: "y"}, // After
+			},
+			want: true, // Should be satisfied because window Aug 24-30 contains 2 successes (Aug 24, Aug 26)
+			explanation: "Aug 25 should be satisfied because the 7-day window Aug 24-30 contains 2 successes",
+		},
+		{
+			name:     "2/7 habit: Gap day between two pairs of successes",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 23},
+			habit:    storage.Habit{Name: "Astro", Target: 2, Interval: 7, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 20}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 21}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 22}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 23}, Habit: "Astro"}: {Result: "n"}, // Checking
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Astro"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Astro"}: {Result: "y"},
+			},
+			want: true, // Window Aug 21-27 contains 4 successes
+			explanation: "Aug 23 should be satisfied because window Aug 21-27 contains successes on Aug 21,22,25,26",
+		},
+		{
+			name:     "3/7 habit: Gap with insufficient surrounding successes",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 25},
+			habit:    storage.Habit{Name: "Exercise", Target: 3, Interval: 7, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 20}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 24}, Habit: "Exercise"}: {Result: "y"}, // 1 success
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Exercise"}: {Result: "n"}, // Checking
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Exercise"}: {Result: "y"}, // 1 success
+				// Only 2 successes in any 7-day window, but need 3
+			},
+			want: false, // Not satisfied - only 2 successes available, need 3
+			explanation: "Aug 25 should NOT be satisfied because no 7-day window contains 3+ successes",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := graph.Satisfied(tt.checkingDate, &tt.habit, tt.entries)
+			if got != tt.want {
+				t.Errorf("graph.Satisfied() = %v, want %v\nExplanation: %s", got, tt.want, tt.explanation)
+			}
+		})
+	}
+}
+
+// TestSatisfiedFutureDataBug tests the specific bug where future data incorrectly affected past date calculations
+func TestSatisfiedFutureDataBug(t *testing.T) {
+	tests := []struct {
+		name     string
+		checkingDate civil.Date
+		habit    storage.Habit
+		entries  storage.Entries
+		want     bool
+		explanation string
+	}{
+		{
+			name:     "1/3 habit: Past date should not be satisfied by future success",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 26}, // Checking Aug 26
+			habit:    storage.Habit{Name: "Write", Target: 1, Interval: 3, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 25}},
+			entries: storage.Entries{
+				// Aug 25: n, Aug 26: n, Aug 27: n, Aug 28: y
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 27}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 28}, Habit: "Write"}: {Result: "y"}, // Future success
+			},
+			want: false, // Should be false - Aug 26 cannot be satisfied by Aug 28's success
+			explanation: "When checking Aug 26, sliding windows should only consider Aug 24-26, not future Aug 28",
+		},
+		{
+			name:     "1/3 habit: Past date should not be satisfied by future success (Aug 27)",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 27}, // Checking Aug 27
+			habit:    storage.Habit{Name: "Write", Target: 1, Interval: 3, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 25}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Write"}: {Result: "n"}, 
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 27}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 28}, Habit: "Write"}: {Result: "y"}, // Future success
+			},
+			want: false, // Should be false - Aug 27 cannot be satisfied by Aug 28's success
+			explanation: "When checking Aug 27, sliding windows should only consider Aug 25-27, not future Aug 28",
+		},
+		{
+			name:     "1/3 habit: Current date with success should be satisfied",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 28}, // Checking Aug 28 (current)
+			habit:    storage.Habit{Name: "Write", Target: 1, Interval: 3, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 25}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 27}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 28}, Habit: "Write"}: {Result: "y"},
+			},
+			want: true, // Should be true - Aug 28 window (Aug 26-28) contains Aug 28 success
+			explanation: "When checking Aug 28, sliding windows Aug 26-28 contains the Aug 28 success",
+		},
+		{
+			name:     "1/3 habit: Past success within window should satisfy",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 27},
+			habit:    storage.Habit{Name: "Write", Target: 1, Interval: 3, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 25}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Write"}: {Result: "y"}, // Past success
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Write"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 27}, Habit: "Write"}: {Result: "n"},
+			},
+			want: true, // Should be true - Aug 27 window (Aug 25-27) contains Aug 25 success
+			explanation: "When checking Aug 27, sliding windows Aug 25-27 contains the Aug 25 success",
+		},
+		{
+			name:     "2/7 habit: Date before any success should not be satisfied by future successes",
+			checkingDate: civil.Date{Year: 2025, Month: 8, Day: 24}, // Before first success
+			habit:    storage.Habit{Name: "Exercise", Target: 2, Interval: 7, FirstRecord: civil.Date{Year: 2025, Month: 8, Day: 20}},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 25}, Habit: "Exercise"}: {Result: "y"}, // Future from perspective of Aug 24
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 8, Day: 26}, Habit: "Exercise"}: {Result: "y"}, // Future from perspective of Aug 24
+			},
+			want: false, // Should be false - Aug 24 has no supporting data up to that date
+			explanation: "When checking Aug 24, there are no successes up to Aug 24, so future successes shouldn't satisfy it",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := graph.Satisfied(tt.checkingDate, &tt.habit, tt.entries)
+			if got != tt.want {
+				t.Errorf("graph.Satisfied() = %v, want %v\nExplanation: %s", got, tt.want, tt.explanation)
+				
+				// Provide detailed debugging info
+				start := tt.checkingDate.AddDays(-tt.habit.Interval + 1)
+				if start.Before(tt.habit.FirstRecord) {
+					start = tt.habit.FirstRecord
+				}
+				t.Errorf("Debug: Checking date=%s, habit=%s (target=%d, interval=%d)", 
+					tt.checkingDate.String(), tt.habit.Name, tt.habit.Target, tt.habit.Interval)
+				t.Errorf("Debug: Valid window should be %s to %s", start.String(), tt.checkingDate.String())
+				
+				// Show what entries exist
+				for dh, outcome := range tt.entries {
+					if dh.Habit == tt.habit.Name {
+						t.Errorf("Debug: Entry on %s: %s", dh.Day.String(), outcome.Result)
+					}
+				}
 			}
 		})
 	}
