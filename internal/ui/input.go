@@ -78,11 +78,15 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 			to = from.AddDays(0)
 			filteredHabits = habits
 		}
-		if check == "yday" || check == "yd" {
+		switch check {
+		case "yday", "yd", "yesterday":
 			from = to.AddDays(-1)
-			to = from.AddDays(0)
+			to = from
 			filteredHabits = habits
-		} else {
+		case "last-week", "week","w":
+			from = to.AddDays(-7)
+			filteredHabits = habits
+		default:
 			for _, habit := range habits {
 				if strings.Contains(strings.ToLower(habit.Name), strings.ToLower(check)) {
 					filteredHabits = append(filteredHabits, habit)
@@ -101,7 +105,7 @@ func (i *Input) AskHabits(habits []*storage.Habit, entries *storage.Entries, rep
 		for dt := from; !dt.After(to); dt = dt.AddDays(1) {
 			if dayhabit, ok := dayHabits[dt.String()]; ok {
 
-				day, _ := time.Parse(time.RFC3339, dt.String()+"T00:00:00Z")
+				day, _ := time.Parse(time.DateOnly, dt.String())
 				dayOfWeek := day.Weekday().String()[:3]
 
 				i.colorManager.PrintlnBold(dt.String() + " " + dayOfWeek + ":")
