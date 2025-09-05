@@ -575,6 +575,7 @@ Primo, check out the [Contributing guidelines](CONTRIBUTING.md).
 - [Aisling](https://github.com/ais) - improved configuration discovery.
 - [vchslv13](https://github.com/vchslv13) - improved shell installation script.
 - [manu-cyber](https://github.com/manu-cyber) - documentation fixes.
+- [nimaaskarian](https://github.com/nimaaskarian) - cli improvements and refactors.
 
 ## Thanks
 
