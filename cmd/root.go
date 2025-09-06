@@ -42,7 +42,7 @@ func init() {
 		case "auto":
 			if color.Enable {
 				fi, _ := os.Stdout.Stat()
-				stdoutNotPiped := (fi.Mode() & os.ModeCharDevice) == 0
+				stdoutNotPiped := (fi.Mode() & os.ModeCharDevice) != 0
 				color.Enable = stdoutNotPiped;
 			}
 		default:
