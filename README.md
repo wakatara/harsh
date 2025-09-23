@@ -335,12 +335,12 @@ or may not have succeeded.
 
 This would also be what `harsh ask 2024-01-05` would look like (ok, slightly cheating on examples, but...)
 
-````sh
+```sh
     $ harsh ask 2024-01-05
     2024-01-05:
     Dailies
                 PullUps ━  ━ ━  ━━  ━ ━   ━ ━ ━━━━━━━━━━━  ━ ━ ━[y/n/s/⏎] y @ 15 # Crushed workout today!
-
+```
 
 
 Also, `harsh log` supports the same fragment querying `harsh ask`
@@ -370,7 +370,7 @@ habits and usual log command metrics.
                Had a headache             ━  ━     ━━                  ━━   ━   ━━        [y/n/s/⏎] n
                    Used harsh ━ ━━━ ━  ━━━   ━ ━ ━       ━ ━ ━  ━ ━ ━━ ━ ━ ━━━━   ━       [y/n/s/⏎] y
                                              ... some habits omitted ...
-````
+```
 
 (Some weeks later)
 
