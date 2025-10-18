@@ -134,12 +134,17 @@ immediate use on the command line.
 You may prefer a direct Go install if you have a working Go environment and Go 1.14+.
 
 ```bash
-go install github.com/wakatara/harsh
-
+go install -ldflags "-X github.com/wakatara/harsh/cmd.version=$(git describe --tags --always --dirty)" github.com/wakatara/harsh@latest
 ```
 
-from the command line. Unlike a package manager like brew or snap, you won't
-get informed of new version releases.
+This will automatically inject the version from git tags into the binary. If you're installing
+from a specific tagged release (e.g., `0.11.6`), use:
+
+```bash
+go install github.com/wakatara/harsh@v0.11.6
+```
+
+Note: Unlike a package manager like brew or snap, you won't get informed of new version releases.
 
 ### Manually
 
@@ -150,14 +155,27 @@ making sure it's in your `$PATH`.
 
 ### Compiling from source
 
-If you want to build from source cause you like, harsh is open source and
-can be git cloned from:
+If you want to build from source, harsh is open source and can be git cloned from:
 
 ```sh
 git clone https://github.com/wakatara/harsh
+cd harsh
 ```
 
-You can build and then move the file to the desired location in your `$PATH`.
+To build with the version automatically set from git tags:
+
+```sh
+go build -ldflags "-X github.com/wakatara/harsh/cmd.version=$(git describe --tags --always --dirty)"
+```
+
+This will create a `harsh` binary in the current directory. The version will be:
+
+- The exact tag (e.g., `0.11.6`) if you're at a tagged commit
+- `0.11.6-3-g1234abc` if you're 3 commits past tag 0.11.6 (with commit hash)
+- `0.11.6-dirty` if there are uncommitted changes
+- The commit hash if no tags exist
+
+You can then move the binary to the desired location in your `$PATH` (e.g., `/usr/local/bin`).
 
 ## Getting Started
 
@@ -342,7 +360,6 @@ This would also be what `harsh ask 2024-01-05` would look like (ok, slightly che
                 PullUps ━  ━ ━  ━━  ━ ━   ━ ━ ━━━━━━━━━━━  ━ ━ ━[y/n/s/⏎] y @ 15 # Crushed workout today!
 ```
 
-
 Also, `harsh log` supports the same fragment querying `harsh ask`
 does. You can add a fragment of a habit after `harsh log` which will then only
 show you the consistency graph outcomes for that single habit. This supercedes
@@ -353,9 +370,7 @@ log pul` (or any variations of the habit name's string) you'll see just the
 consistency graph for that single habit along along with the sparkline for all
 habits and usual log command metrics.
 
-
 `harsh log` by itself shows your consistency graph for the last 100 days.
-
 
 ```sh
     $ harsh ask

@@ -7,7 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "0.11.3"
+// version is set at build time via -ldflags from git tags
+// For GoReleaser: automatically set from the git tag
+// For manual builds: use 'make build' to inject the version
+var version = "dev"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
