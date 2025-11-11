@@ -20,6 +20,7 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 	}
 
 	var prevMonth time.Month
+	var prevWeekday string
 	isFirstDay := true
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
@@ -37,17 +38,25 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 		// Check if this is a month boundary (1st of the month, but not the very first day)
 		isMonthBoundary := !isFirstDay && d.Day == 1 && currentMonth != prevMonth
 
-		// Add month boundary marker to the previous day's character (right edge)
+		// Determine which marker to use based on the previous day's weekday
 		if isMonthBoundary && len(calline) > 0 {
-			// Append right edge vertical bar to previous character
-			calline[len(calline)-1] = calline[len(calline)-1] + "▕"
+			// If previous day was Monday, Wednesday, or Friday, use left-aligned marker on current day
+			if prevWeekday == "Monday" || prevWeekday == "Wednesday" || prevWeekday == "Friday" {
+				calline = append(calline, "⎸"+LetterDay[w])
+			} else {
+				// Otherwise, use right-aligned marker on previous day
+				calline[len(calline)-1] = calline[len(calline)-1] + "⎹"
+				calline = append(calline, LetterDay[w])
+			}
+		} else {
+			// Normal day - just add the letter
+			calline = append(calline, LetterDay[w])
 		}
 
-		// Add current day's letter and sparkline character
-		calline = append(calline, LetterDay[w])
 		sparkline = append(sparkline, sparks[i])
 
 		prevMonth = currentMonth
+		prevWeekday = w
 		isFirstDay = false
 	}
 
