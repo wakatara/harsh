@@ -42,10 +42,10 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 		if isMonthBoundary && len(calline) > 0 {
 			// If previous day was Monday, Wednesday, or Friday, use left-aligned marker on current day
 			if prevWeekday == "Monday" || prevWeekday == "Wednesday" || prevWeekday == "Friday" {
-				calline = append(calline, "⎸"+LetterDay[w])
+				calline = append(calline, "⎸")
 			} else {
-				// Otherwise, use right-aligned marker on previous day
-				calline[len(calline)-1] = calline[len(calline)-1] + "⎹"
+				// Otherwise, use right-aligned marker on previous day (replace the space)
+				calline[len(calline)-1] = "⎹"
 				calline = append(calline, LetterDay[w])
 			}
 		} else {
