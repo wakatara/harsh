@@ -19,6 +19,9 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 		"Thursday": " ", "Friday": "F", "Saturday": " ",
 	}
 
+	var prevMonth time.Month
+	isFirstDay := true
+
 	for d := from; !d.After(to); d = d.AddDays(1) {
 		dailyScore := Score(d, habits, entries)
 		// divide score into score to map to sparks slice graphic for sparkline
@@ -29,9 +32,23 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 		}
 		t, _ := time.Parse(time.DateOnly, d.String())
 		w := t.Weekday().String()
+		currentMonth := t.Month()
 
+		// Check if this is a month boundary (1st of the month, but not the very first day)
+		isMonthBoundary := !isFirstDay && d.Day == 1 && currentMonth != prevMonth
+
+		// Add month boundary marker to the previous day's character (right edge)
+		if isMonthBoundary && len(calline) > 0 {
+			// Append right edge vertical bar to previous character
+			calline[len(calline)-1] = calline[len(calline)-1] + "▕"
+		}
+
+		// Add current day's letter and sparkline character
 		calline = append(calline, LetterDay[w])
 		sparkline = append(sparkline, sparks[i])
+
+		prevMonth = currentMonth
+		isFirstDay = false
 	}
 
 	return sparkline, calline
