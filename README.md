@@ -102,11 +102,24 @@ as of 0.8.23.
 
 **Homebrew tap** (Mac and Linux):
 
+I was surprised (if delighted) to find out someone added `harsh` to the
+`homebrew-core` which appears to be tracking my local tap. So, you can now
+literally just go:
+
+```sh
+brew install harsh
+```
+
+to get it installed. I'm not sure of the update cadence to core, but it appears
+to be current nad tracking.
+
+If you want to track instant release changes, you can also:
+
 ```sh
 brew install wakatara/tap/harsh
 ```
 
-(this will also nicely alert you of updates when you `brew update`)
+(homebrew nicely alerts you of updates when you `brew update`)
 
 **Snap** (Linux only):
 
