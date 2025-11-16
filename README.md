@@ -88,38 +88,44 @@ done, skipped, and chains broken.
 
 ## Installation
 
-harsh is available on OSX (also, via homebrew), Linux (as homebrew and snap),
-FreeBSD, OpenBSD, and Windows. A specific goal was increasing uptake and
-adoption of a portable, command line, text-based approach to habit tracking (and
-that didn't require a subscription, service, or hoops to jump through to use
-your own data).
+harsh is available on OSX (also, via homebrew), Linux (as homebrew, AUR, and
+snap), FreeBSD, OpenBSD, and Windows as well as `apk`, `deb` and `rpm` package
+formats for Alpine, Debian and Red Hat users. A specific goal was increasing
+uptake and adoption of a portable, command line, text-based approach to habit
+tracking (and that didn't require a subscription, service, or hoops to jump
+through to use your own data).
 
-harsh also supports ARM architectures for OSX (M1, M2, and M3 chipped Macs and
-Linux and BSDs) as of 0.8.8. Binaries for FreeBSD and OpenBSD are also available
-as of 0.8.23.
+harsh also supports ARM architectures for OSX (M1-4 chipped Macs and
+Linux and BSDs) as of `0.8.8`. Binaries for FreeBSD and OpenBSD are also available
+as of `0.8.23`. Extra package formats for distros added in at `0.11.10`.
 
 ### Install via package manager
 
-**Homebrew tap** (Mac and Linux):
+**Homebrew**:
 
-I was surprised (if delighted) to find out someone added `harsh` to the
-`homebrew-core` which appears to be tracking my local tap. So, you can now
-literally just go:
+I was surprised (and delighted) to find out someone added `harsh` to
+`homebrew-core`. So, you can now install with:
 
 ```sh
 brew install harsh
 ```
 
-to get it installed. I'm not sure of the update cadence to core, but it appears
-to be current nad tracking.
+instead of tapping my `wakatara/homebrew-tap/harsh`
 
-If you want to track instant release changes, you can also:
+(homebrew also nicely alerts you of updates when you `brew update`.).
+
+**Arch AUR**:
+
+If you use Arch (,btw... =p) some _other_ kind maintainer has also added `harsh`
+to the AUR as `harsh-bin`. Same with brew above, you can simply install and be
+informed up updates to harsh with:
 
 ```sh
-brew install wakatara/tap/harsh
+yay -S harsh-bin
 ```
 
-(homebrew nicely alerts you of updates when you `brew update`)
+(`yay` _also_ alerts you of latest updates, which is handy. Big Arch and yay fan,
+actually.)
 
 **Snap** (Linux only):
 

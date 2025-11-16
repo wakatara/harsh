@@ -57,10 +57,42 @@ snapcrafts:
     description: |
       Harsh provides a simple, portable, minimalist command line interface for
       tracking and examining your habits with text files and actionable
-      consistency graphs, sparklines, and scoring to let you know how you are 
+      consistency graphs, sparklines, and scoring to let you know how you are
       doing on progressing (or breaking) your habits.
       https://github.com/wakatara/harsh
     grade: stable
     confinement: strict
     license: MIT
     publish: true
+
+# Linux packages (RPM, DEB, APK)
+nfpms:
+  - id: harsh
+    package_name: harsh
+    vendor: wakatara
+    homepage: https://github.com/wakatara/harsh
+    maintainer: Daryl Manning <https://github.com/wakatara>
+    description: |
+      Harsh provides a simple, portable, minimalist command line interface for
+      tracking and examining your habits with text files and actionable
+      consistency graphs, sparklines, and scoring to let you know how you are
+      doing on progressing (or breaking) your habits.
+    license: MIT
+    formats:
+      - deb      # Debian/Ubuntu
+      - rpm      # Red Hat/Fedora/CentOS/openSUSE
+      - apk      # Alpine Linux
+      - archlinux # Arch Linux (binary package)
+    bindir: /usr/bin
+    dependencies:
+      # No external runtime dependencies for Go binaries
+    section: utils
+    priority: optional
+    deb:
+      lintian_overrides:
+        - statically-linked-binary
+        - changelog-file-missing-in-native-package
+    rpm:
+      group: Applications/Productivity
+      summary: Habit tracking for geeks
+      compression: lzma
