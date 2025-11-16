@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.123.0
 	github.com/gookit/color v1.6.0
 	github.com/spf13/cobra v1.10.1
-	golang.org/x/term v0.36.0
+	golang.org/x/term v0.37.0
 )
 
 require (
