@@ -148,6 +148,24 @@ The script downloads the latest release directly from github, verifies it
 cryptographically, and then moves the executable to `usr/local/bin` ready for
 immediate use on the command line.
 
+### Distros
+
+We also provide binary formats for select distros via the automated build
+pipeline. You can grab those in the releases section and use the commands below
+to get them onto your system.
+
+1. **DEB** (Debian/Ubuntu)
+   - Install: `sudo apt install ./harsh_*.deb`
+   - Distros: Debian, Ubuntu, Linux Mint, Pop!\_OS, etc.
+
+2. **APK** (Alpine Linux)
+   - Install: `sudo apk add --allow-untrusted harsh-*.apk`
+   - Distro: Alpine Linux (hand-rolled systems, containers)
+
+3. **RPM** (Red Hat, Fedora, CentOS, openSUSE)
+   - Install: `sudo rpm -i harsh-*.rpm` or `sudo dnf install harsh-*.rpm`
+   - Distros: RHEL, Fedora, CentOS, Rocky Linux, AlmaLinux, openSUSE
+
 ### With working Go environment
 
 You may prefer a direct Go install if you have a working Go environment and Go 1.14+.
