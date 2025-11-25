@@ -39,14 +39,17 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 		isMonthBoundary := !isFirstDay && d.Day == 1 && currentMonth != prevMonth
 
 		// Determine which marker to use based on the previous day's weekday
+		// We ALWAYS replace a space, never a letter (M/W/F)
+		// Use ▏ (left-aligned) when following M/W/F to be visually close to the letter
+		// Use ▕ (right-aligned) when replacing a space that follows other spaces
 		if isMonthBoundary && len(calline) > 0 {
-			// If previous day was Monday, Wednesday, or Friday, use left-aligned marker on current day
 			if prevWeekday == "Monday" || prevWeekday == "Wednesday" || prevWeekday == "Friday" {
-				// Left marker with current day's letter (e.g., "⎸ " or "⎸M")
-				calline = append(calline, "⎸"+LetterDay[w])
+				// Previous day shows a letter (M/W/F), so put left-aligned marker on current day
+				// Current day is always a space (Tue after Mon, Thu after Wed, Sat after Fri)
+				calline = append(calline, "▏")
 			} else {
-				// Right-aligned marker on previous day, preserving the day letter
-				calline[len(calline)-1] = calline[len(calline)-1] + "⎹"
+				// Previous day is a space (Sat/Sun/Tue/Thu), so put right-aligned marker there
+				calline[len(calline)-1] = "▕"
 				calline = append(calline, LetterDay[w])
 			}
 		} else {
