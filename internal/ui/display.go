@@ -145,10 +145,14 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 	if len(undone) == 0 {
 		fmt.Println("All todos logged up to today.")
 	} else {
+		// Maximum width for due dates column (e.g., "(999 days)")
+		const maxDueWidth = 10
+
 		for date, todos := range undone {
 			t, _ := time.Parse(time.DateOnly, date)
 			dayOfWeek := t.Weekday().String()[:3]
 			d.colorManager.PrintlnBold(date + " " + dayOfWeek + ":")
+
 			for _, habit := range habits {
 				for _, todo := range todos {
 					if heading != habit.Heading && habit.Heading == todo {
@@ -156,7 +160,35 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 						heading = habit.Heading
 					}
 					if habit.Name == todo {
-						fmt.Printf("%*v", maxHabitNameLength, todo+"\n")
+						// Calculate days until streak break
+						daysUntil := graph.DaysUntilStreakBreak(now, habit, *entries)
+
+						// Format the due string
+						var dueStr string
+						if daysUntil == -1 {
+							// Tracking-only habit or not yet started
+							dueStr = ""
+						} else if daysUntil < 0 {
+							// Streak already broken in the past
+							dueStr = "(——|  )"
+						} else if daysUntil == 0 {
+							// Streak breaks today (last chance to maintain it)
+							dueStr = "(Today)"
+						} else if daysUntil == 1 {
+							dueStr = "(1 day)"
+						} else {
+							dueStr = fmt.Sprintf("(%d days)", daysUntil)
+						}
+
+						// Print habit name (right-aligned)
+						fmt.Printf("%*v", maxHabitNameLength, todo)
+
+						// Print due date (right-aligned with 2 spaces before)
+						if dueStr != "" {
+							fmt.Printf("  %*s", maxDueWidth, dueStr)
+						}
+
+						fmt.Printf("\n")
 					}
 				}
 			}

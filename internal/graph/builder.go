@@ -63,18 +63,18 @@ func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool
 
 	// For date d, check all possible interval-length windows that include d
 	// Key insight: Allow future data only if there's supporting data at or before d in the same window
-	
+
 	earliestStart := d.AddDays(-habit.Interval + 1)
 	if earliestStart.Before(habit.FirstRecord) {
 		earliestStart = habit.FirstRecord
 	}
-	
+
 	latestStart := d
-	
+
 	// Try all possible window start positions that would include date d
 	for winStart := earliestStart; !winStart.After(latestStart); winStart = winStart.AddDays(1) {
 		winEnd := winStart.AddDays(habit.Interval - 1)
-		
+
 		// The window must include the date d we're checking
 		if winEnd.Before(d) || winStart.After(d) {
 			continue
@@ -83,7 +83,7 @@ func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool
 		// Count successes in the entire window (including potential future data)
 		countTotal := 0
 		countUpToD := 0
-		
+
 		// Early termination: stop counting once we exceed target
 		for dt := winStart; !dt.After(winEnd) && countTotal < habit.Target+1; dt = dt.AddDays(1) {
 			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
@@ -160,4 +160,122 @@ func Warning(d civil.Date, habit *storage.Habit, entries storage.Entries) bool {
 		}
 	}
 	return true
+}
+
+// DaysUntilStreakBreak calculates how many days until a habit's streak will break
+// Returns -1 if the habit doesn't have a streak or is a tracking-only habit (target 0)
+func DaysUntilStreakBreak(d civil.Date, habit *storage.Habit, entries storage.Entries) int {
+	// Tracking-only habits (target 0) don't have streaks
+	if habit.Target < 1 {
+		return -1
+	}
+
+	noFirstRecord := civil.Date{Year: 0, Month: 0, Day: 0}
+	// Edge case for habits not yet started
+	if habit.FirstRecord == noFirstRecord || d.Before(habit.FirstRecord) {
+		return -1
+	}
+
+	// For habits with Target=1 (e.g., 1/1, 1/7, 1/90), use the simpler direct approach
+	// Only use windowing for multi-target habits (e.g., 3/7, 2/14)
+	if habit.Target == 1 {
+		return daysUntilStreakBreakSimple(d, habit, entries)
+	}
+
+	// For interval habits with Target > 1 (e.g., 3/7), use sliding window approach
+	return daysUntilStreakBreakWindowed(d, habit, entries)
+}
+
+// daysUntilStreakBreakSimple handles simple daily habits (1/1)
+func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries storage.Entries) int {
+	// Look back to find the last success
+	maxLookback := max(habit.Interval*3, 365)
+	lookbackStart := d.AddDays(-maxLookback)
+	if lookbackStart.Before(habit.FirstRecord) {
+		lookbackStart = habit.FirstRecord
+	}
+
+	lastSuccessDate := civil.Date{Year: 0, Month: 0, Day: 0}
+	for dt := d; !dt.Before(lookbackStart); dt = dt.AddDays(-1) {
+		if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+			if v.Result == "y" || v.Result == "s" {
+				lastSuccessDate = dt
+				break
+			}
+		}
+	}
+
+	// If no success found, streak is broken
+	if lastSuccessDate.Year == 0 {
+		return -999
+	}
+
+	// For daily habits: last success + interval = break date
+	streakBreakDate := lastSuccessDate.AddDays(habit.Interval)
+	return streakBreakDate.DaysSince(d)
+}
+
+// daysUntilStreakBreakWindowed handles interval habits (e.g., 3/7) using sliding windows
+func daysUntilStreakBreakWindowed(d civil.Date, habit *storage.Habit, entries storage.Entries) int {
+	// First, check if today is satisfied
+	todaySatisfied := Satisfied(d, habit, entries)
+
+	if !todaySatisfied {
+		// Check if it was satisfied yesterday to determine if streak broke today or earlier
+		yesterday := d.AddDays(-1)
+		if !yesterday.Before(habit.FirstRecord) && Satisfied(yesterday, habit, entries) {
+			// Was satisfied yesterday but not today - breaks today
+			return 0
+		}
+		// Already broken before today
+		return -999
+	}
+
+	// Today is satisfied. Find the earliest success in any window that keeps today satisfied
+	// This is the critical success - when it ages out, the streak breaks
+	earliestCriticalSuccess := civil.Date{Year: 0, Month: 0, Day: 0}
+
+	// Check all windows that could contain today and have target successes
+	earliestStart := d.AddDays(-habit.Interval + 1)
+	if earliestStart.Before(habit.FirstRecord) {
+		earliestStart = habit.FirstRecord
+	}
+
+	for winStart := earliestStart; !winStart.After(d); winStart = winStart.AddDays(1) {
+		winEnd := winStart.AddDays(habit.Interval - 1)
+
+		// Skip if window doesn't contain today
+		if winEnd.Before(d) {
+			continue
+		}
+
+		// Count successes in this window (only up to today)
+		successCount := 0
+		var firstSuccessInWindow civil.Date
+
+		for dt := winStart; !dt.After(d) && !dt.After(winEnd); dt = dt.AddDays(1) {
+			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && (v.Result == "y" || v.Result == "s") {
+				successCount++
+				if firstSuccessInWindow.Year == 0 {
+					firstSuccessInWindow = dt
+				}
+			}
+		}
+
+		// If this window satisfies the target, track its earliest success
+		if successCount >= habit.Target && firstSuccessInWindow.Year != 0 {
+			if earliestCriticalSuccess.Year == 0 || firstSuccessInWindow.Before(earliestCriticalSuccess) {
+				earliestCriticalSuccess = firstSuccessInWindow
+			}
+		}
+	}
+
+	// If no critical success found (shouldn't happen if Satisfied returned true)
+	if earliestCriticalSuccess.Year == 0 {
+		return -999
+	}
+
+	// Streak breaks when the earliest critical success ages out
+	streakBreakDate := earliestCriticalSuccess.AddDays(habit.Interval)
+	return streakBreakDate.DaysSince(d)
 }

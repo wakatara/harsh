@@ -367,3 +367,322 @@ func TestGraphBuildSpark(t *testing.T) {
 		}
 	}
 }
+
+func TestGraphDaysUntilStreakBreak(t *testing.T) {
+	tests := []struct {
+		name     string
+		date     civil.Date
+		habit    *storage.Habit
+		entries  storage.Entries
+		expected int
+	}{
+		{
+			name: "Daily habit - last success today",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Daily"}: {Result: "y"},
+			},
+			expected: 1, // Streak breaks tomorrow (day 16)
+		},
+		{
+			name: "Daily habit - last success yesterday (breaks today)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Daily"}: {Result: "y"},
+			},
+			expected: 0, // Streak breaks today (day 15) - last chance to maintain it
+		},
+		{
+			name: "Daily habit - last success 2 days ago (already broken)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Daily"}: {Result: "y"},
+			},
+			expected: -1, // Streak broke yesterday (day 14)
+		},
+		{
+			name: "Weekly habit - last success 2 days ago",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Weekly",
+				Target:      1,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Weekly"}: {Result: "y"},
+			},
+			expected: 5, // Last success day 13, breaks on day 13+7=20, today is 15, so 20-15=5
+		},
+		{
+			name: "90-day habit - last success 75 days ago (15 days until break)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Travel",
+				Target:      1,
+				Interval:    90,
+				FirstRecord: civil.Date{Year: 2024, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Last success was Nov 1, 2024 (breaks on Jan 30, 2025)
+				storage.DailyHabit{Day: civil.Date{Year: 2024, Month: 11, Day: 1}, Habit: "Travel"}: {Result: "y"},
+			},
+			expected: 15, // Breaks on Nov 1 + 90 = Jan 30, so Jan 30 - Jan 15 = 15 days
+		},
+		{
+			name: "90-day habit - last success 95 days ago (streak broken)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Travel",
+				Target:      1,
+				Interval:    90,
+				FirstRecord: civil.Date{Year: 2024, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Last success was Oct 12, 2024 (95 days before Jan 15, 2025)
+				storage.DailyHabit{Day: civil.Date{Year: 2024, Month: 10, Day: 12}, Habit: "Travel"}: {Result: "y"},
+			},
+			expected: -5, // Breaks on Oct 12 + 90 = Jan 10, which is 5 days before Jan 15
+		},
+		{
+			name: "90-day habit - last success 85 days ago (should be 5 days left)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Travel",
+				Target:      1,
+				Interval:    90,
+				FirstRecord: civil.Date{Year: 2024, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Last success was Oct 22, 2024 (85 days before Jan 15, 2025)
+				storage.DailyHabit{Day: civil.Date{Year: 2024, Month: 10, Day: 22}, Habit: "Travel"}: {Result: "y"},
+			},
+			expected: 5, // Breaks on Oct 22 + 90 = Jan 20, so Jan 20 - Jan 15 = 5 days
+		},
+		{
+			name: "Tracking habit (target 0) - should return -1",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Tracking",
+				Target:      0,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{},
+			expected: -1,
+		},
+		{
+			name: "No success found - only 'n' entries (streak broken)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Daily"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Daily"}: {Result: "n"},
+			},
+			expected: -999, // No success found means long broken
+		},
+		{
+			name: "No entries at all - streak broken",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{},
+			expected: -999, // No entries at all means never started or long broken
+		},
+		{
+			name: "Success very old (beyond 2x interval) - streak broken",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Weekly",
+				Target:      1,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2024, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Last success was Dec 16, 2024 (30 days before Jan 15, 2025)
+				storage.DailyHabit{Day: civil.Date{Year: 2024, Month: 12, Day: 16}, Habit: "Weekly"}: {Result: "y"},
+			},
+			expected: -23, // Broke on Dec 16 + 7 = Dec 23; Dec 23 to Jan 15 = 23 days
+		},
+		{
+			name: "Skip counts as success",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Weekly",
+				Target:      1,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Weekly"}: {Result: "s"},
+			},
+			expected: 5, // Skip on day 13, breaks on day 20, today is 15, so 5 days
+		},
+		// Interval habits tests (3/7, 2/7, etc.)
+		{
+			name: "Interval 3/7 - three successes, earliest success determines break",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Gym",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Successes on days 9, 12, 14
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 9}, Habit: "Gym"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 12}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: 1, // Window 9-15 has 3 successes. Earliest is day 9. Breaks on 9+7=16. Today is 15, so 1 day
+		},
+		{
+			name: "Interval 3/7 - only 2 successes, streak broken",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Gym",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: -999, // Only 2 successes in the window, not satisfied
+		},
+		{
+			name: "Interval 3/7 - critical window with tightly packed successes",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Gym",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Days 13, 14, 15 - all consecutive
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: 5, // Window 13-19 has days 13,14,15. Earliest is 13. Breaks on 13+7=20. Today is 15, so 5 days
+		},
+		{
+			name: "Interval 3/7 - with old success that doesn't matter",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Gym",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 5}, Habit: "Gym"}:  {Result: "y"}, // Too old
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: 2, // Window 10-16 has days 10,13,15. Earliest is 10. Breaks on 10+7=17. Today is 15, so 2 days
+		},
+		{
+			name: "Interval 2/7 - simpler case",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Call Mom",
+				Target:      2,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 11}, Habit: "Call Mom"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Call Mom"}: {Result: "y"},
+			},
+			expected: 3, // Window 11-17 has days 11,15. Earliest is 11. Breaks on 11+7=18. Today is 15, so 3 days
+		},
+		{
+			name: "Interval 2/7 - only 1 success, streak broken",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Call Mom",
+				Target:      2,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Call Mom"}: {Result: "y"},
+			},
+			expected: -999, // Only 1 success, need 2
+		},
+		{
+			name: "Interval 1/7 (weekly) - should work like simple habit",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Review",
+				Target:      1,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Review"}: {Result: "y"},
+			},
+			expected: 2, // Last success day 10, breaks on 10+7=17, today is 15, so 2 days
+		},
+		{
+			name: "Interval 3/7 - streak broke yesterday",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Gym",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Last 3 successes: days 6, 7, 8
+				// Window 6-12 satisfied days 6-12
+				// Window 7-13 satisfied days 7-13
+				// Window 8-14 only has 2 successes (days 7,8), so day 14 not satisfied
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 6}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 7}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 8}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: -999, // Broke on day 13 (6+7=13), today is 15, so -2 days (already broken)
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := graph.DaysUntilStreakBreak(tt.date, tt.habit, tt.entries)
+			if result != tt.expected {
+				t.Errorf("DaysUntilStreakBreak() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
