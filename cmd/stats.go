@@ -12,11 +12,12 @@ var statsCmd = &cobra.Command{
 	Long:    "Shows statistics for all habits including streaks, breaks, skips, and totals.",
 	Aliases: []string{"s"},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		h := getHarsh()
 		display := ui.NewDisplay(!color.Enable)
 		display.ShowHabitStats(
-			harsh.GetHabits(),
-			harsh.GetEntries(),
-			harsh.GetMaxHabitNameLength(),
+			h.GetHabits(),
+			h.GetEntries(),
+			h.GetMaxHabitNameLength(),
 		)
 		return nil
 	},

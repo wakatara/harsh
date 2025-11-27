@@ -20,14 +20,15 @@ var askCmd = &cobra.Command{
 		if len(args) > 0 {
 			habitFragment = args[0]
 		}
-		
+
+		h := getHarsh()
 		input := ui.NewInput(!color.Enable)
 		input.AskHabits(
-			harsh.GetHabits(), 
-			harsh.GetEntries(), 
-			harsh.GetRepository(), 
-			harsh.GetMaxHabitNameLength(), 
-			harsh.GetCountBack(), 
+			h.GetHabits(),
+			h.GetEntries(),
+			h.GetRepository(),
+			h.GetMaxHabitNameLength(),
+			h.GetCountBack(),
 			habitFragment,
 		)
 		return nil
@@ -36,7 +37,8 @@ var askCmd = &cobra.Command{
 
 func askCmdValidArgs(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
 	out := []cobra.Completion{"yesterday","yday","yd", "w", "week", "last-week"};
-	for _, habit := range harsh.GetHabits() {
+	h := getHarsh()
+	for _, habit := range h.GetHabits() {
 		if strings.Contains(habit.Name, toComplete) {
 			out = append(out, habit.Name)
 		}

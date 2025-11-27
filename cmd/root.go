@@ -16,10 +16,25 @@ var (
 		Short:   "habit tracking for geeks",
 		Long:    "A simple, minimalist CLI for tracking and understanding habits.",
 		Version: version, // Use the version from version.go
+		Run: func(cmd *cobra.Command, args []string) {
+			// Trigger onboarding for first-time users running bare 'harsh'
+			getHarsh()
+			// Then show help
+			cmd.Help()
+		},
 	}
 )
 
 var harsh *internal.Harsh
+
+// getHarsh returns the global harsh instance, initializing it lazily if needed.
+// This allows commands like 'version' to run without triggering onboarding.
+func getHarsh() *internal.Harsh {
+	if harsh == nil {
+		harsh = internal.NewHarsh()
+	}
+	return harsh
+}
 
 func init() {
 	RootCmd.PersistentFlags().StringVarP(&colorOption, "color", "C", "auto", `manage colors in output, "always", "never" or "auto" (defaults to auto)`)
@@ -50,8 +65,8 @@ func init() {
 			os.Exit(1)
 		}
 	})
-	// initialize the global harsh instance (for context aware completion)
-	harsh = internal.NewHarsh()
+	// Note: harsh instance is now lazily initialized via getHarsh()
+	// This allows 'harsh version' to work without triggering onboarding
 }
 
 func colorCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {

@@ -18,12 +18,13 @@ var logCmd = &cobra.Command{
 			habitFragment = args[0]
 		}
 
+		h := getHarsh()
 		display := ui.NewDisplay(!color.Enable)
 		display.ShowHabitLog(
-			harsh.GetHabits(),
-			harsh.GetEntries(),
-			harsh.GetCountBack(),
-			harsh.GetMaxHabitNameLength(),
+			h.GetHabits(),
+			h.GetEntries(),
+			h.GetCountBack(),
+			h.GetMaxHabitNameLength(),
 			habitFragment,
 		)
 		return nil
