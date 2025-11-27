@@ -440,14 +440,44 @@ habits and usual log command metrics.
 
 The sparkline at the top give a graphical representation of each day's score.
 The M W F stands for M(onday), W(ednesday), and F(riday) to provide visual
-hinting as to which days are which and possibly help diagnoze whether
+hinting as to which days are which and possibly help diagnose whether
 particular days are villains or heros in building your habits (How is this
 ueful? As an example, because of then way I had meetings structured on Tuesday,
 I often fell off the truck on certain habits on Tuesdays. Seeing this clearly
-in the graphs let me restructure my Tuesday work days to get me back on track.)
+in the graphs let me restructure my Tuesday work days to get me back on
+track.). Additionally, for added context a small `|` mark in the M W F strip
+will also mark where a month transitions into a new month, in case your
+diagnostics also show habits have issues at the start, end, or middle of a
+month.
 
 The score at the bottom specifies how many of your habits you met that previous
 day of total possible and removes any you may have skipped from the calculation.
+
+`harsh todo` shows you your undone habits for the day (and previous days). As of
+version `0.12.0` it also shows you the number of days you have before a habit
+breaks its streaks to assist with forward planning (shout out to
+[tsraveling](https://github.com/tsraveling)) who suggested this super helpful
+feature:
+
+```sh
+
+~ ❯ harsh todo
+2025-11-27 Thu:
+                      Write    (2 days)
+                       Read     (1 day)
+                    Spanish     (1 day)
+                        Fit     (Today)
+                      Astro     (1 day)
+                Foundations     (——|  )
+                        EMR     (Today)
+
+```
+
+`Today` shows that if you do not perform the habit today, your streak will be
+broken. Otherwise, the number of days you have to exercise the habit before your
+streak breaks is shown. A `(——|  )` shows that the habit streak has already been
+broken and you need to re-establish grace. The due dates take into account
+intervals like `3/7` in the habits.
 
 ### Subcommands
 
