@@ -81,12 +81,13 @@ func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool
 		}
 
 		// Count successes in the entire window (including potential future data)
+		// Skips ("s") count as success - they maintain the streak
 		countTotal := 0
 		countUpToD := 0
 
 		// Early termination: stop counting once we exceed target
 		for dt := winStart; !dt.After(winEnd) && countTotal < habit.Target+1; dt = dt.AddDays(1) {
-			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && v.Result == "y" {
+			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && (v.Result == "y" || v.Result == "s") {
 				countTotal++
 				if !dt.After(d) {
 					countUpToD++
@@ -278,4 +279,40 @@ func daysUntilStreakBreakWindowed(d civil.Date, habit *storage.Habit, entries st
 	// Streak breaks when the earliest critical success ages out
 	streakBreakDate := earliestCriticalSuccess.AddDays(habit.Interval)
 	return streakBreakDate.DaysSince(d)
+}
+
+// IsInSkipPeriod checks if a habit's most recent entry (within the interval) was a skip
+// This is used to show a distinct indicator for habits in a skip grace period
+func IsInSkipPeriod(d civil.Date, habit *storage.Habit, entries storage.Entries) bool {
+	// Tracking-only habits don't have skip periods
+	if habit.Target < 1 {
+		return false
+	}
+
+	noFirstRecord := civil.Date{Year: 0, Month: 0, Day: 0}
+	if habit.FirstRecord == noFirstRecord || d.Before(habit.FirstRecord) {
+		return false
+	}
+
+	// Look back within the interval to find the most recent entry
+	maxLookback := max(habit.Interval*2, 14)
+	lookbackStart := d.AddDays(-maxLookback)
+	if lookbackStart.Before(habit.FirstRecord) {
+		lookbackStart = habit.FirstRecord
+	}
+
+	// Find the most recent "y" or "s" entry
+	for dt := d; !dt.Before(lookbackStart); dt = dt.AddDays(-1) {
+		if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+			if v.Result == "s" {
+				return true
+			}
+			if v.Result == "y" {
+				return false
+			}
+			// "n" doesn't count as maintaining streak, keep looking
+		}
+	}
+
+	return false
 }

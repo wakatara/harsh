@@ -163,11 +163,20 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 						// Calculate days until streak break
 						daysUntil := graph.DaysUntilStreakBreak(now, habit, *entries)
 
+						// Check if habit is in a skip period
+						inSkipPeriod := graph.IsInSkipPeriod(now, habit, *entries)
+
 						// Format the due string
 						var dueStr string
-						if daysUntil == -1 {
-							// Tracking-only habit or not yet started
+						if daysUntil == -1 && habit.Target < 1 {
+							// Tracking-only habit - no streak indicator
 							dueStr = ""
+						} else if daysUntil == -1 {
+							// Habit not yet started but has a target - show as broken
+							dueStr = "(——|  )"
+						} else if inSkipPeriod {
+							// Habit is in a skip grace period
+							dueStr = "(——|>—)"
 						} else if daysUntil < 0 {
 							// Streak already broken in the past
 							dueStr = "(——|  )"

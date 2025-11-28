@@ -686,3 +686,121 @@ func TestGraphDaysUntilStreakBreak(t *testing.T) {
 		})
 	}
 }
+
+func TestGraphIsInSkipPeriod(t *testing.T) {
+	tests := []struct {
+		name     string
+		date     civil.Date
+		habit    *storage.Habit
+		entries  storage.Entries
+		expected bool
+	}{
+		{
+			name: "Daily habit - last entry was skip",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Daily"}: {Result: "s"},
+			},
+			expected: true,
+		},
+		{
+			name: "Daily habit - last entry was yes",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Daily"}: {Result: "y"},
+			},
+			expected: false,
+		},
+		{
+			name: "Weekly habit - skip within interval",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Weekly",
+				Target:      1,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 12}, Habit: "Weekly"}: {Result: "s"},
+			},
+			expected: true,
+		},
+		{
+			name: "Weekly habit - yes after skip",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Weekly",
+				Target:      1,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Weekly"}: {Result: "s"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Weekly"}: {Result: "y"},
+			},
+			expected: false, // Most recent is "y", not "s"
+		},
+		{
+			name: "Tracking habit - no skip period",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Tracking",
+				Target:      0,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Tracking"}: {Result: "s"},
+			},
+			expected: false, // Tracking habits don't have skip periods
+		},
+		{
+			name: "No entries - not in skip period",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries:  storage.Entries{},
+			expected: false,
+		},
+		{
+			name: "Skip followed by no entry",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Daily",
+				Target:      1,
+				Interval:    1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Daily"}: {Result: "s"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Daily"}: {Result: "n"},
+			},
+			expected: true, // Most recent success-type entry is skip on day 13
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := graph.IsInSkipPeriod(tt.date, tt.habit, tt.entries)
+			if result != tt.expected {
+				t.Errorf("IsInSkipPeriod() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
