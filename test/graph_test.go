@@ -545,6 +545,28 @@ func TestGraphDaysUntilStreakBreak(t *testing.T) {
 			},
 			expected: 5, // Skip on day 13, breaks on day 20, today is 15, so 5 days
 		},
+		{
+			name: "Skip after break does not restart streak (1/2 habit)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 29},
+			habit: &storage.Habit{
+				Name:        "Fit",
+				Target:      1,
+				Interval:    2,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Last valid success on day 25
+				// Day 26 and 27 are 'n' (breaks, but interval allows 2 days)
+				// Day 27 is deadline (25+2=27), no success by then = streak broken
+				// Day 28 has skip (after break)
+				// Day 29 is today
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 25}, Habit: "Fit"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 26}, Habit: "Fit"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 27}, Habit: "Fit"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 28}, Habit: "Fit"}: {Result: "s"},
+			},
+			expected: -999, // Skip on day 28 came AFTER break on day 27, should not restart countdown
+		},
 		// Interval habits tests (3/7, 2/7, etc.)
 		{
 			name: "Interval 3/7 - three successes, earliest success determines break",

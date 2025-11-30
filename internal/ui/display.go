@@ -174,12 +174,12 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 						} else if daysUntil == -1 {
 							// Habit not yet started but has a target - show as broken
 							dueStr = "(——|  )"
-						} else if inSkipPeriod {
-							// Habit is in a skip grace period
-							dueStr = "(——|>—)"
 						} else if daysUntil < 0 {
-							// Streak already broken in the past
+							// Streak already broken (check BEFORE skip period)
 							dueStr = "(——|  )"
+						} else if inSkipPeriod {
+							// Habit is in a skip grace period (streak still intact)
+							dueStr = "(——|>—)"
 						} else if daysUntil == 0 {
 							// Streak breaks today (last chance to maintain it)
 							dueStr = "(Today)"

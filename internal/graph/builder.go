@@ -187,7 +187,7 @@ func DaysUntilStreakBreak(d civil.Date, habit *storage.Habit, entries storage.En
 	return daysUntilStreakBreakWindowed(d, habit, entries)
 }
 
-// daysUntilStreakBreakSimple handles simple daily habits (1/1)
+// daysUntilStreakBreakSimple handles Target=1 habits (1/1, 1/7, etc.)
 func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries storage.Entries) int {
 	// Look back to find the last success
 	maxLookback := max(habit.Interval*3, 365)
@@ -211,7 +211,39 @@ func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries stor
 		return -999
 	}
 
-	// For daily habits: last success + interval = break date
+	// Verify the streak was actually intact when lastSuccessDate was logged.
+	// Check if there's an explicit break ("n") in the interval before lastSuccessDate
+	// that wasn't covered by a prior success.
+	if !lastSuccessDate.Before(habit.FirstRecord.AddDays(habit.Interval)) {
+		// Not near the start - need to verify streak was intact
+		// Look for the prior success and check if interval was exceeded
+		priorLookbackStart := lastSuccessDate.AddDays(-habit.Interval * 2)
+		if priorLookbackStart.Before(habit.FirstRecord) {
+			priorLookbackStart = habit.FirstRecord
+		}
+
+		priorSuccessDate := civil.Date{Year: 0, Month: 0, Day: 0}
+		for dt := lastSuccessDate.AddDays(-1); !dt.Before(priorLookbackStart); dt = dt.AddDays(-1) {
+			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+				if v.Result == "y" || v.Result == "s" {
+					priorSuccessDate = dt
+					break
+				}
+			}
+		}
+
+		// If we found a prior success, check if the gap between it and lastSuccessDate
+		// exceeds the interval - if so, the streak was already broken
+		if priorSuccessDate.Year != 0 {
+			gap := lastSuccessDate.DaysSince(priorSuccessDate)
+			if gap > habit.Interval {
+				// The gap between successes exceeded the interval - streak was broken
+				return -999
+			}
+		}
+	}
+
+	// For Target=1 habits: last success + interval = break date
 	streakBreakDate := lastSuccessDate.AddDays(habit.Interval)
 	return streakBreakDate.DaysSince(d)
 }
