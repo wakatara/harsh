@@ -1,6 +1,6 @@
 module github.com/wakatara/harsh
 
-go 1.25.4
+go 1.25.5
 
 require (
 	cloud.google.com/go v0.123.0
