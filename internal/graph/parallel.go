@@ -11,7 +11,6 @@ import (
 type HabitGraphResult struct {
 	HabitName string
 	Graph     string
-	Error     error
 }
 
 // BuildGraphsParallel builds graphs for multiple habits concurrently
@@ -35,7 +34,6 @@ func BuildGraphsParallel(habits []*storage.Habit, entries *storage.Entries, coun
 				resultChan <- HabitGraphResult{
 					HabitName: habit.Name,
 					Graph:     graph,
-					Error:     nil,
 				}
 			}
 		}()
@@ -58,9 +56,7 @@ func BuildGraphsParallel(habits []*storage.Habit, entries *storage.Entries, coun
 	// Collect results
 	results := make(map[string]string, len(habits))
 	for result := range resultChan {
-		if result.Error == nil {
-			results[result.HabitName] = result.Graph
-		}
+		results[result.HabitName] = result.Graph
 	}
 
 	return results

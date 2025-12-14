@@ -79,7 +79,7 @@ func (habit *Habit) ParseHabitFrequency() {
 
 func parseDay(input string) (int, error) {
 	// find first index that is not digit
-	index := strings.IndexFunc(input, IsNotDigit)
+	index := strings.IndexFunc(input, isNotDigit)
 	// num is the digit part of the string
 	if index == -1 {
 		index = len(input)
@@ -101,13 +101,13 @@ func parseDay(input string) (int, error) {
 	return coefficient * num, nil
 }
 
-func IsNotDigit(r rune) bool {
+func isNotDigit(r rune) bool {
 	return r > '9' || r < '0'
 }
 
 // LoadHabitsConfig loads habits in config file ordered slice
 func LoadHabitsConfig(configDir string) ([]*Habit, int) {
-	habitsPath := filepath.Join(configDir, "/habits")
+	habitsPath := filepath.Join(configDir, "habits")
 	file, err := os.Open(habitsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -239,7 +239,7 @@ func FindConfigFiles() string {
 
 // CreateExampleHabitsFile writes a fresh Habits file for people to follow
 func CreateExampleHabitsFile(configDir string) {
-	fileName := filepath.Join(configDir, "/habits")
+	fileName := filepath.Join(configDir, "habits")
 	_, err := os.Stat(fileName)
 	if os.IsNotExist(err) {
 		if _, err := os.Stat(configDir); os.IsNotExist(err) {
@@ -256,7 +256,7 @@ func CreateExampleHabitsFile(configDir string) {
 
 // CreateNewLogFile writes an empty log file for people to start tracking into
 func CreateNewLogFile(configDir string) {
-	fileName := filepath.Join(configDir, "/log")
+	fileName := filepath.Join(configDir, "log")
 	_, err := os.Stat(fileName)
 	if os.IsNotExist(err) {
 		if _, err := os.Stat(configDir); os.IsNotExist(err) {
@@ -274,11 +274,11 @@ func welcome(configDir string) {
 	CreateExampleHabitsFile(configDir)
 	CreateNewLogFile(configDir)
 	fmt.Println("Welcome to harsh!")
-	fmt.Println("Created " + filepath.Join(configDir, "/habits") + "   This file lists your habits.")
-	fmt.Println("Created " + filepath.Join(configDir, "/log") + "      This file is your habit log.")
+	fmt.Println("Created " + filepath.Join(configDir, "habits") + "   This file lists your habits.")
+	fmt.Println("Created " + filepath.Join(configDir, "log") + "      This file is your habit log.")
 	fmt.Println("")
 	fmt.Println("No habits of your own yet?")
-	fmt.Println("Open your habits file @ " + filepath.Join(configDir, "/habits"))
+	fmt.Println("Open your habits file @ " + filepath.Join(configDir, "habits"))
 	fmt.Println("with a text editor (nano, vim, VS Code, Atom, emacs) and modify and save the habits list.")
 	fmt.Println("Then:")
 	fmt.Println("Run       harsh ask     to start tracking")

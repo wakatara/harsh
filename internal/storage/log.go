@@ -31,7 +31,7 @@ type Entries map[DailyHabit]Outcome
 
 // LoadLog reads entries from log file
 func LoadLog(configDir string) *Entries {
-	logPath := filepath.Join(configDir, "/log")
+	logPath := filepath.Join(configDir, "log")
 	file, err := os.Open(logPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -140,7 +140,7 @@ func LoadLog(configDir string) *Entries {
 
 // WriteHabitLog writes the log entry for a habit to file
 func WriteHabitLog(configDir string, d civil.Date, habit string, result string, comment string, amount string) error {
-	fileName := filepath.Join(configDir, "/log")
+	fileName := filepath.Join(configDir, "log")
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		// Provide more specific error messages based on the type of error
