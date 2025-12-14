@@ -1,17 +1,20 @@
 # Harsh Taskmaster
 
-
 A minimalist, command-line tool for tracking, understanding, and forging habits.
 Simple text files, informative graphs, zero friction. Habit tracking for geeks.
 
-Track habits with just 3 commands: `ask`, `log`, `todo`. Your data stays in
-human-readable text files you can edit, back up, and own forever.
+Track habits with just 3 commands: `ask`, `log`, `todo`.
+
+Your data stays in human-readable text files you can edit, back up, and own
+forever.
+
+Harsh lets you see your habits in a consistency graph (aka Seinfeld Chart) based
+on your logging over the time you've been doing the habit.
 
 My hope is that it helps you get done what you're trying to get done in
-your life and live a better one. 
-V
-There's a [launch post](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker). Harsh lets you see your habits in a consistency graph (aka Seinfeld Chain) from
-left to right over the time you've been doing the habit from your daily entries.
+your life and live a better one.
+
+More info in the [launch post](https://daryl.wakatara.com/harsh-a-minimalist-cli-habit-tracker).
 
 ## Quick Start
 
