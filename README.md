@@ -28,7 +28,7 @@ brew install harsh    # macOS/Linux
 
 Run `harsh ask` to create your config files, then edit `~/.config/harsh/habits`:
 
-```
+```sh
 # Habits file format: Name: frequency
 # Frequency: 1 = daily, 7 (or 1w) = weekly, 3/7 = 3x per week
 
@@ -120,7 +120,7 @@ $ harsh todo
                Read     (1 day)
             Spanish     (Today)   # Do today or streak breaks
                 Fit     (——|  )   # Streak already broken
-      Bowling Night     (——>  )   # Streak is skipping
+      Bowling Night     (——|>—)   # Streak is skipping
 ```
 
 ## Habits File Format
