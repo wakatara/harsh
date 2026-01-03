@@ -11,7 +11,8 @@ import (
 
 var (
 	colorOption string
-	RootCmd = &cobra.Command{
+	hideEnded   bool
+	RootCmd     = &cobra.Command{
 		Use:     "harsh",
 		Short:   "habit tracking for geeks",
 		Long:    "A simple, minimalist CLI for tracking and understanding habits.",
@@ -38,6 +39,7 @@ func getHarsh() *internal.Harsh {
 
 func init() {
 	RootCmd.PersistentFlags().StringVarP(&colorOption, "color", "C", "auto", `manage colors in output, "always", "never" or "auto" (defaults to auto)`)
+	RootCmd.PersistentFlags().BoolVarP(&hideEnded, "hide-ended", "H", false, "Hide habits that have an end date")
 	RootCmd.RegisterFlagCompletionFunc("color", colorCompletionFunc)
 	RootCmd.AddCommand(askCmd)
 	RootCmd.AddCommand(todoCmd)

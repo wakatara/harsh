@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/civil"
 	"github.com/wakatara/harsh/internal/graph"
@@ -706,6 +707,97 @@ func TestGraphDaysUntilStreakBreak(t *testing.T) {
 				t.Errorf("DaysUntilStreakBreak() = %d, want %d", result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestGraphScoreWithEndedHabits(t *testing.T) {
+	// Test that ended habits are excluded from scoring after their end date
+	habits := []*storage.Habit{
+		{Name: "Active", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Ended", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, EndRecord: civil.Date{Year: 2025, Month: 1, Day: 10}},
+	}
+
+	entries := &storage.Entries{
+		// Both habits completed on day 5 (before end date)
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 5}, Habit: "Active"}: {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 5}, Habit: "Ended"}:  {Result: "y"},
+		// Only active habit completed on day 15 (after end date)
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Active"}: {Result: "y"},
+	}
+
+	// Day 5: Both habits active, both completed - should be 100%
+	score := graph.Score(civil.Date{Year: 2025, Month: 1, Day: 5}, habits, entries)
+	if score != 100.0 {
+		t.Errorf("Score on day 5 (both active, both completed) = %f, want 100.0", score)
+	}
+
+	// Day 10: Last day of "Ended" habit - still counts
+	(*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Active"}] = storage.Outcome{Result: "y"}
+	(*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Ended"}] = storage.Outcome{Result: "y"}
+	score = graph.Score(civil.Date{Year: 2025, Month: 1, Day: 10}, habits, entries)
+	if score != 100.0 {
+		t.Errorf("Score on day 10 (end date, both completed) = %f, want 100.0", score)
+	}
+
+	// Day 11: "Ended" habit should be excluded (after end date)
+	(*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 11}, Habit: "Active"}] = storage.Outcome{Result: "y"}
+	score = graph.Score(civil.Date{Year: 2025, Month: 1, Day: 11}, habits, entries)
+	if score != 100.0 {
+		t.Errorf("Score on day 11 (only active habit counts) = %f, want 100.0", score)
+	}
+
+	// Day 15: Only "Active" habit counts, and it's completed
+	score = graph.Score(civil.Date{Year: 2025, Month: 1, Day: 15}, habits, entries)
+	if score != 100.0 {
+		t.Errorf("Score on day 15 (only active completed) = %f, want 100.0", score)
+	}
+
+	// Day 15: If active habit is not completed, score should be 0
+	delete(*entries, storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Active"})
+	(*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Active"}] = storage.Outcome{Result: "n"}
+	score = graph.Score(civil.Date{Year: 2025, Month: 1, Day: 15}, habits, entries)
+	if score != 0.0 {
+		t.Errorf("Score on day 15 (active not completed, ended excluded) = %f, want 0.0", score)
+	}
+}
+
+func TestGraphBuildGraphWithEndedHabit(t *testing.T) {
+	// Test that graph shows blank and end marker after end date
+	// Use dates relative to today so the end date is within the visible graph window
+	now := civil.DateOf(time.Now())
+	endDate := now.AddDays(-5) // End date is 5 days ago
+	firstRecord := endDate.AddDays(-10) // Started 10 days before end date
+
+	habit := &storage.Habit{
+		Name:        "Ended Habit",
+		Target:      1,
+		Interval:    1,
+		FirstRecord: firstRecord,
+		EndRecord:   endDate,
+	}
+
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: endDate.AddDays(-2), Habit: "Ended Habit"}: {Result: "y"},
+		storage.DailyHabit{Day: endDate.AddDays(-1), Habit: "Ended Habit"}: {Result: "y"},
+		storage.DailyHabit{Day: endDate, Habit: "Ended Habit"}:             {Result: "y"}, // Last day
+	}
+
+	// Build a 20-day graph to ensure we capture the end date and days after
+	graphResult := graph.BuildGraph(habit, entries, 20, false)
+
+	// Graph should not be empty
+	if graphResult == "" {
+		t.Error("Graph should not be empty")
+	}
+
+	// Days after EndRecord should show as blank (space) or end marker (▏)
+	if !strings.Contains(graphResult, " ") && !strings.Contains(graphResult, "▏") {
+		t.Error("Graph should contain blanks or end marker for days after end date")
+	}
+
+	// The graph should contain the end marker (▏) on the day after the end date
+	if !strings.Contains(graphResult, "▏") {
+		t.Error("Graph should contain end marker (▏) on day after end date")
 	}
 }
 

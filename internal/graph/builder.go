@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/civil"
+	"github.com/gookit/color"
 	"github.com/wakatara/harsh/internal/storage"
 )
 
@@ -23,7 +24,15 @@ func BuildGraph(habit *storage.Habit, entries *storage.Entries, countBack int, a
 	consistency.Grow(graphLen)
 
 	for d := from; !d.After(to); d = d.AddDays(1) {
-		if outcome, ok := (*entries)[storage.DailyHabit{Day: d, Habit: habit.Name}]; ok {
+		// After the end date, show blank (habit has been retired)
+		if habit.HasEnded(d) {
+			// Show muted end marker on the first day after the end date
+			if !habit.EndRecord.IsZero() && d == habit.EndRecord.AddDays(1) {
+				graphDay = color.C256(245).Sprint("▏")
+			} else {
+				graphDay = " "
+			}
+		} else if outcome, ok := (*entries)[storage.DailyHabit{Day: d, Habit: habit.Name}]; ok {
 			switch {
 			case outcome.Result == "y":
 				graphDay = "━"

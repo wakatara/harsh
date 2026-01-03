@@ -203,6 +203,80 @@ func TestMonthBoundaryLeapYear(t *testing.T) {
 	}
 }
 
+// TestBuildSparkWithEndedHabits tests that ended habits are excluded from sparkline scoring
+func TestBuildSparkWithEndedHabits(t *testing.T) {
+	// Create habits: one active, one ended
+	habits := []*storage.Habit{
+		{Name: "Active", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Ended", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, EndRecord: civil.Date{Year: 2025, Month: 1, Day: 3}},
+	}
+
+	entries := &storage.Entries{
+		// Day 1: Both habits completed
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 1}, Habit: "Active"}: {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 1}, Habit: "Ended"}:  {Result: "y"},
+		// Day 2: Both habits completed
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 2}, Habit: "Active"}: {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 2}, Habit: "Ended"}:  {Result: "y"},
+		// Day 3: Both habits completed (last day for Ended)
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 3}, Habit: "Active"}: {Result: "y"},
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 3}, Habit: "Ended"}:  {Result: "y"},
+		// Day 4: Only Active completed (Ended is excluded after end date)
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 4}, Habit: "Active"}: {Result: "y"},
+		// Day 5: Active not completed
+		storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 5}, Habit: "Active"}: {Result: "n"},
+	}
+
+	from := civil.Date{Year: 2025, Month: 1, Day: 1}
+	to := civil.Date{Year: 2025, Month: 1, Day: 5}
+
+	sparkline, _ := graph.BuildSpark(from, to, habits, entries)
+
+	// Days 1-3: Both habits active and completed = 100% = "█"
+	// Day 4: Only Active counts and is completed = 100% = "█"
+	// Day 5: Only Active counts and is NOT completed = 0% = " "
+	if len(sparkline) != 5 {
+		t.Fatalf("Expected 5 sparkline entries, got %d", len(sparkline))
+	}
+
+	// Days 1-4 should all be full (100%)
+	for i := 0; i < 4; i++ {
+		if sparkline[i] != "█" {
+			t.Errorf("Day %d should be full spark (█), got %s", i+1, sparkline[i])
+		}
+	}
+
+	// Day 5 should be empty (0%)
+	if sparkline[4] != " " {
+		t.Errorf("Day 5 should be empty spark ( ), got %s", sparkline[4])
+	}
+}
+
+// TestScoreWithAllEndedHabits tests scoring when all habits have ended
+func TestScoreWithAllEndedHabits(t *testing.T) {
+	// All habits have ended before the check date
+	habits := []*storage.Habit{
+		{Name: "Ended1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, EndRecord: civil.Date{Year: 2025, Month: 1, Day: 5}},
+		{Name: "Ended2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, EndRecord: civil.Date{Year: 2025, Month: 1, Day: 3}},
+	}
+
+	entries := &storage.Entries{}
+
+	// On day 10, both habits have ended, so there are no scorable habits
+	score := graph.Score(civil.Date{Year: 2025, Month: 1, Day: 10}, habits, entries)
+	if score != 0.0 {
+		t.Errorf("Score with all ended habits = %f, want 0.0", score)
+	}
+
+	// On day 3 (last day of Ended2), Ended2 should still count
+	(*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 3}, Habit: "Ended1"}] = storage.Outcome{Result: "y"}
+	(*entries)[storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 3}, Habit: "Ended2"}] = storage.Outcome{Result: "y"}
+	score = graph.Score(civil.Date{Year: 2025, Month: 1, Day: 3}, habits, entries)
+	if score != 100.0 {
+		t.Errorf("Score on end date = %f, want 100.0", score)
+	}
+}
+
 // TestMultipleMonthBoundaries tests that multiple month boundaries work correctly
 func TestMultipleMonthBoundaries(t *testing.T) {
 	// Span three months: Jan 30 to Mar 2

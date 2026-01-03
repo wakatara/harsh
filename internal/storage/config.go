@@ -21,6 +21,20 @@ type Habit struct {
 	Target      int
 	Interval    int
 	FirstRecord civil.Date
+	EndRecord   civil.Date // Optional end date - habit retired after this date
+}
+
+// HasEnded returns true if the habit has an end date and the given date is after it
+func (h *Habit) HasEnded(d civil.Date) bool {
+	if h.EndRecord.IsZero() {
+		return false
+	}
+	return d.After(h.EndRecord)
+}
+
+// IsEnded returns true if the habit has an end date set (regardless of current date)
+func (h *Habit) IsEnded() bool {
+	return !h.EndRecord.IsZero()
 }
 
 const DEFAULT_HABITS = 
@@ -171,33 +185,48 @@ func LoadHabitsConfig(configDir string) ([]*Habit, int) {
 				}
 			} else if line[0] != '#' {
 				// Parse habit line
+				// Format: "Habit Name: frequency" or "Habit Name: frequency: end_date"
 				if !strings.Contains(line, ": ") {
 					fmt.Printf("Warning: Skipping malformed habit at line %d: %s\n", lineCount, line)
-					fmt.Println("Expected format: Habit Name: frequency")
+					fmt.Println("Expected format: Habit Name: frequency [: YYYY-MM-DD]")
 					continue
 				}
-				
+
 				result := strings.Split(line, ": ")
 				if len(result) < 2 {
 					fmt.Printf("Warning: Skipping habit with missing frequency at line %d: %s\n", lineCount, line)
 					continue
 				}
-				
+
 				habitName := strings.TrimSpace(result[0])
 				frequency := strings.TrimSpace(result[1])
-				
+
 				if habitName == "" {
 					fmt.Printf("Warning: Skipping habit with empty name at line %d\n", lineCount)
 					continue
 				}
-				
+
 				if frequency == "" {
 					fmt.Printf("Warning: Skipping habit '%s' with empty frequency at line %d\n", habitName, lineCount)
 					continue
 				}
-				
+
 				h := Habit{Heading: heading, Name: habitName, Frequency: frequency}
-				
+
+				// Parse optional end date (third field)
+				if len(result) >= 3 {
+					dateStr := strings.TrimSpace(result[2])
+					if dateStr != "" {
+						endDate, err := civil.ParseDate(dateStr)
+						if err != nil {
+							fmt.Printf("Error: Invalid end date '%s' for habit '%s' at line %d\n", dateStr, habitName, lineCount)
+							fmt.Println("Expected format: YYYY-MM-DD (e.g., 2024-06-15)")
+							os.Exit(1)
+						}
+						h.EndRecord = endDate
+					}
+				}
+
 				// ParseHabitFrequency may call os.Exit on invalid frequency
 				// This is the intended behavior for invalid config
 				(&h).ParseHabitFrequency()

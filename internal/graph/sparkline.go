@@ -68,13 +68,15 @@ func BuildSpark(from civil.Date, to civil.Date, habits []*storage.Habit, entries
 }
 
 // Score calculates the daily score for a given date
+// Excludes habits that have ended (after their EndRecord date)
 func Score(d civil.Date, habits []*storage.Habit, entries *storage.Entries) float64 {
 	scored := 0.0
 	skipped := 0.0
 	scorableHabits := 0.0
 
 	for _, habit := range habits {
-		if habit.Target > 0 && !d.Before(habit.FirstRecord) {
+		// Only score habits that are active on this date (started and not ended)
+		if habit.Target > 0 && !d.Before(habit.FirstRecord) && !habit.HasEnded(d) {
 			scorableHabits++
 			if outcome, ok := (*entries)[storage.DailyHabit{Day: d, Habit: habit.Name}]; ok {
 				switch {

@@ -33,7 +33,8 @@ func NewDisplay(noColor bool) *Display {
 }
 
 // ShowHabitLog displays the habit log with sparkline and graphs
-func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries, countBack int, maxHabitNameLength int, habitFragment string) {
+// If hideEnded is true, habits with an end date are not displayed
+func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries, countBack int, maxHabitNameLength int, habitFragment string, hideEnded bool) {
 	// Filter habits by fragment if provided
 	filteredHabits := []*storage.Habit{}
 	if len(strings.TrimSpace(habitFragment)) > 0 {
@@ -44,6 +45,17 @@ func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries
 		}
 	} else {
 		filteredHabits = habits
+	}
+
+	// Filter out ended habits if hideEnded is true
+	if hideEnded {
+		activeHabits := []*storage.Habit{}
+		for _, habit := range filteredHabits {
+			if !habit.IsEnded() {
+				activeHabits = append(activeHabits, habit)
+			}
+		}
+		filteredHabits = activeHabits
 	}
 
 	now := civil.DateOf(time.Now())
@@ -68,8 +80,14 @@ func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries
 			d.colorManager.PrintfBold("%s\n", habit.Heading)
 			heading = habit.Heading
 		}
-		fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
-		fmt.Print(graphResults[habit.Name])
+		// Mute the habit name and graph if the habit has ended
+		if habit.IsEnded() {
+			d.colorManager.PrintfMuted("%*v", maxHabitNameLength, habit.Name+"  ")
+			d.colorManager.PrintMuted(graphResults[habit.Name])
+		} else {
+			fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
+			fmt.Print(graphResults[habit.Name])
+		}
 		fmt.Printf("\n")
 	}
 
@@ -98,15 +116,32 @@ func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries
 }
 
 // ShowHabitStats displays statistics for all habits
-func (d *Display) ShowHabitStats(habits []*storage.Habit, entries *storage.Entries, maxHabitNameLength int) {
+// If hideEnded is true, habits with an end date are not displayed
+func (d *Display) ShowHabitStats(habits []*storage.Habit, entries *storage.Entries, maxHabitNameLength int, hideEnded bool) {
+	// Filter out ended habits if hideEnded is true
+	filteredHabits := habits
+	if hideEnded {
+		filteredHabits = []*storage.Habit{}
+		for _, habit := range habits {
+			if !habit.IsEnded() {
+				filteredHabits = append(filteredHabits, habit)
+			}
+		}
+	}
+
 	heading := ""
-	for _, habit := range habits {
+	for _, habit := range filteredHabits {
 		if heading != habit.Heading {
 			d.colorManager.PrintfBold("\n%s\n", habit.Heading)
 			heading = habit.Heading
 		}
 		stats := BuildStats(habit, entries)
-		fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
+		// Mute the habit name if the habit has ended
+		if habit.IsEnded() {
+			d.colorManager.PrintfMuted("%*v", maxHabitNameLength, habit.Name+"  ")
+		} else {
+			fmt.Printf("%*v", maxHabitNameLength, habit.Name+"  ")
+		}
 		d.colorManager.PrintGreen("Streaks ")
 		d.colorManager.PrintfGreen("%4v", strconv.Itoa(stats.Streaks))
 		d.colorManager.PrintGreen(" days")
@@ -240,6 +275,10 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 				if dt.Before(habit.FirstRecord) {
 					delete(dayHabits, habit.Name)
 				}
+				// Remove habits that have ended (after EndRecord)
+				if habit.HasEnded(dt) {
+					delete(dayHabits, habit.Name)
+				}
 			}
 
 			for habit := range dayHabits {
@@ -251,11 +290,17 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 }
 
 // BuildStats calculates statistics for a habit
+// If the habit has an end date, stats are only counted up to that date
 func BuildStats(habit *storage.Habit, entries *storage.Entries) HabitStats {
 	var streaks, breaks, skips int
 	var total float64
 	now := civil.DateOf(time.Now())
 	to := now
+
+	// If habit has ended, only count stats up to the end date
+	if !habit.EndRecord.IsZero() && habit.EndRecord.Before(to) {
+		to = habit.EndRecord
+	}
 
 	for d := habit.FirstRecord; !d.After(to); d = d.AddDays(1) {
 		if outcome, ok := (*entries)[storage.DailyHabit{Day: d, Habit: habit.Name}]; ok {

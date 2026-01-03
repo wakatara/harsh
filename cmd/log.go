@@ -26,6 +26,7 @@ var logCmd = &cobra.Command{
 			h.GetCountBack(),
 			h.GetMaxHabitNameLength(),
 			habitFragment,
+			hideEnded,
 		)
 		return nil
 	},

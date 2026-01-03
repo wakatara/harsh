@@ -357,3 +357,157 @@ func TestCreateNewLogFile(t *testing.T) {
 		t.Error("Log file should be empty initially")
 	}
 }
+
+func TestLoadHabitsConfigWithEndDate(t *testing.T) {
+	// Create temporary directory for test
+	tmpDir, err := os.MkdirTemp("", "harsh_storage_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create test habits file with end dates
+	habitsFile := filepath.Join(tmpDir, "habits")
+	habitsContent := `# Test habits file with end dates
+! Work
+Active habit: 1
+Ended habit: 1: 2024-06-15
+Another active: 3/7
+
+! Health
+Old habit: 7: 2023-12-31
+`
+	err = os.WriteFile(habitsFile, []byte(habitsContent), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	habits, _ := storage.LoadHabitsConfig(tmpDir)
+
+	// Verify habits were loaded correctly
+	if len(habits) != 4 {
+		t.Errorf("Expected 4 habits, got %d", len(habits))
+	}
+
+	// Check habit without end date
+	if habits[0].Name != "Active habit" {
+		t.Errorf("First habit should be 'Active habit', got %s", habits[0].Name)
+	}
+	if !habits[0].EndRecord.IsZero() {
+		t.Errorf("Active habit should have no end date, got %v", habits[0].EndRecord)
+	}
+	if habits[0].IsEnded() {
+		t.Error("Active habit should not be ended")
+	}
+
+	// Check habit with end date
+	if habits[1].Name != "Ended habit" {
+		t.Errorf("Second habit should be 'Ended habit', got %s", habits[1].Name)
+	}
+	expectedEndDate := civil.Date{Year: 2024, Month: 6, Day: 15}
+	if habits[1].EndRecord != expectedEndDate {
+		t.Errorf("Ended habit should have end date 2024-06-15, got %v", habits[1].EndRecord)
+	}
+	if !habits[1].IsEnded() {
+		t.Error("Ended habit should be marked as ended")
+	}
+
+	// Check old habit with end date in 2023
+	if habits[3].Name != "Old habit" {
+		t.Errorf("Fourth habit should be 'Old habit', got %s", habits[3].Name)
+	}
+	expectedOldEndDate := civil.Date{Year: 2023, Month: 12, Day: 31}
+	if habits[3].EndRecord != expectedOldEndDate {
+		t.Errorf("Old habit should have end date 2023-12-31, got %v", habits[3].EndRecord)
+	}
+}
+
+func TestHabitHasEnded(t *testing.T) {
+	tests := []struct {
+		name      string
+		endRecord civil.Date
+		checkDate civil.Date
+		expected  bool
+	}{
+		{
+			name:      "No end date - never ended",
+			endRecord: civil.Date{},
+			checkDate: civil.Date{Year: 2025, Month: 1, Day: 15},
+			expected:  false,
+		},
+		{
+			name:      "Check date before end date - not ended",
+			endRecord: civil.Date{Year: 2025, Month: 6, Day: 15},
+			checkDate: civil.Date{Year: 2025, Month: 1, Day: 15},
+			expected:  false,
+		},
+		{
+			name:      "Check date equals end date - not ended (end date itself is still active)",
+			endRecord: civil.Date{Year: 2025, Month: 1, Day: 15},
+			checkDate: civil.Date{Year: 2025, Month: 1, Day: 15},
+			expected:  false,
+		},
+		{
+			name:      "Check date after end date - ended",
+			endRecord: civil.Date{Year: 2025, Month: 1, Day: 15},
+			checkDate: civil.Date{Year: 2025, Month: 1, Day: 16},
+			expected:  true,
+		},
+		{
+			name:      "Check date well after end date - ended",
+			endRecord: civil.Date{Year: 2024, Month: 6, Day: 15},
+			checkDate: civil.Date{Year: 2025, Month: 1, Day: 15},
+			expected:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			habit := &storage.Habit{
+				Name:      "Test",
+				EndRecord: tt.endRecord,
+			}
+			result := habit.HasEnded(tt.checkDate)
+			if result != tt.expected {
+				t.Errorf("HasEnded(%v) = %v, want %v", tt.checkDate, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestHabitIsEnded(t *testing.T) {
+	tests := []struct {
+		name      string
+		endRecord civil.Date
+		expected  bool
+	}{
+		{
+			name:      "No end date - not ended",
+			endRecord: civil.Date{},
+			expected:  false,
+		},
+		{
+			name:      "Has end date - is ended",
+			endRecord: civil.Date{Year: 2025, Month: 6, Day: 15},
+			expected:  true,
+		},
+		{
+			name:      "Has past end date - is ended",
+			endRecord: civil.Date{Year: 2020, Month: 1, Day: 1},
+			expected:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			habit := &storage.Habit{
+				Name:      "Test",
+				EndRecord: tt.endRecord,
+			}
+			result := habit.IsEnded()
+			if result != tt.expected {
+				t.Errorf("IsEnded() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}

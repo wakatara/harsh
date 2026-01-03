@@ -133,3 +133,49 @@ func (cm *ColorManager) PrintfBlue(format string, args ...interface{}) {
 		color.FgBlue.Printf(format, args...)
 	}
 }
+
+// PrintMuted prints text in a muted/subdued color (less bright but still readable)
+func (cm *ColorManager) PrintMuted(text string) {
+	if cm.disabled {
+		fmt.Print(text)
+	} else {
+		// Use 256-color mode for a medium gray (245 is a nice muted gray)
+		color.C256(245).Print(text)
+	}
+}
+
+// PrintfMuted prints formatted text in a muted/subdued color
+func (cm *ColorManager) PrintfMuted(format string, args ...interface{}) {
+	if cm.disabled {
+		fmt.Printf(format, args...)
+	} else {
+		color.C256(245).Printf(format, args...)
+	}
+}
+
+// PrintDim prints text in dimmed/gray color (darker than muted)
+func (cm *ColorManager) PrintDim(text string) {
+	if cm.disabled {
+		fmt.Print(text)
+	} else {
+		// Use 256-color mode for a darker gray (240 is quite dim)
+		color.C256(240).Print(text)
+	}
+}
+
+// PrintfDim prints formatted text in dimmed/gray color
+func (cm *ColorManager) PrintfDim(format string, args ...interface{}) {
+	if cm.disabled {
+		fmt.Printf(format, args...)
+	} else {
+		color.C256(240).Printf(format, args...)
+	}
+}
+
+// RenderDim returns text with dim color ANSI codes embedded
+func (cm *ColorManager) RenderDim(text string) string {
+	if cm.disabled {
+		return text
+	}
+	return color.C256(240).Sprint(text)
+}

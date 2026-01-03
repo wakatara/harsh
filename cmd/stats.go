@@ -18,6 +18,7 @@ var statsCmd = &cobra.Command{
 			h.GetHabits(),
 			h.GetEntries(),
 			h.GetMaxHabitNameLength(),
+			hideEnded,
 		)
 		return nil
 	},

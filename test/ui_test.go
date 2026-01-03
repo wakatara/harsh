@@ -135,7 +135,7 @@ func TestDisplayShowHabitLog(t *testing.T) {
 	os.Stdout = w
 
 	display := ui.NewDisplay(true) // no color for testing
-	display.ShowHabitLog(habits, entries, 10, 20, "")
+	display.ShowHabitLog(habits, entries, 10, 20, "", false)
 
 	// Restore stdout
 	w.Close()
@@ -178,7 +178,7 @@ func TestDisplayShowHabitStats(t *testing.T) {
 	os.Stdout = w
 
 	display := ui.NewDisplay(true) // no color for testing
-	display.ShowHabitStats(habits, entries, 20)
+	display.ShowHabitStats(habits, entries, 20, false)
 
 	// Restore stdout
 	w.Close()
