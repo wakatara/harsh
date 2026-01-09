@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -183,7 +184,15 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 		// Maximum width for due dates column (e.g., "(999 days)")
 		const maxDueWidth = 10
 
-		for date, todos := range undone {
+		// Sort dates chronologically (ISO format sorts alphabetically)
+		dates := make([]string, 0, len(undone))
+		for date := range undone {
+			dates = append(dates, date)
+		}
+		sort.Strings(dates)
+
+		for _, date := range dates {
+			todos := undone[date]
 			t, _ := time.Parse(time.DateOnly, date)
 			dayOfWeek := t.Weekday().String()[:3]
 			d.colorManager.PrintlnBold(date + " " + dayOfWeek + ":")
@@ -281,8 +290,11 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 				}
 			}
 
-			for habit := range dayHabits {
-				tasksUndone[dt.String()] = append(tasksUndone[dt.String()], habit)
+			// Iterate habits in file order (not map order) to maintain ordering
+			for _, habit := range habits {
+				if dayHabits[habit.Name] {
+					tasksUndone[dt.String()] = append(tasksUndone[dt.String()], habit.Name)
+				}
 			}
 		}
 	}

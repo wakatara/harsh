@@ -77,6 +77,61 @@ func TestGetTodos(t *testing.T) {
 	}
 }
 
+// TestGetTodosHabitOrderAcrossDays verifies that habits are returned in file order
+// across multiple days, preventing the bug where answering a habit for one day
+// would jump to the same habit on the next day instead of continuing in file order.
+func TestGetTodosHabitOrderAcrossDays(t *testing.T) {
+	// Define habits in specific file order: Alpha, Beta, Gamma, Delta
+	habits := []*storage.Habit{
+		{Name: "Alpha", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Beta", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Gamma", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Delta", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+	}
+
+	// No entries - all habits should be undone for all days
+	entries := &storage.Entries{}
+
+	// Get todos for 3 days back
+	to := civil.Date{Year: 2025, Month: 1, Day: 15}
+	todos := ui.GetTodos(habits, entries, to, 3)
+
+	// Verify we have todos for multiple days
+	if len(todos) < 2 {
+		t.Fatalf("Expected todos for multiple days, got %d days", len(todos))
+	}
+
+	// For each day, verify habits are in file order (Alpha, Beta, Gamma, Delta)
+	expectedOrder := []string{"Alpha", "Beta", "Gamma", "Delta"}
+
+	for date, dayTodos := range todos {
+		if len(dayTodos) != len(expectedOrder) {
+			t.Errorf("Date %s: expected %d habits, got %d", date, len(expectedOrder), len(dayTodos))
+			continue
+		}
+
+		for i, habit := range dayTodos {
+			if habit != expectedOrder[i] {
+				t.Errorf("Date %s: habit at position %d should be %s, got %s (habits not in file order)",
+					date, i, expectedOrder[i], habit)
+			}
+		}
+	}
+
+	// Run the test multiple times to catch non-deterministic map iteration issues
+	for run := 0; run < 10; run++ {
+		todos := ui.GetTodos(habits, entries, to, 3)
+		for date, dayTodos := range todos {
+			for i, habit := range dayTodos {
+				if habit != expectedOrder[i] {
+					t.Errorf("Run %d, Date %s: habit ordering is inconsistent - expected %s at position %d, got %s",
+						run, date, expectedOrder[i], i, habit)
+				}
+			}
+		}
+	}
+}
+
 func TestUIBuildStats(t *testing.T) {
 	habit := &storage.Habit{
 		Name:        "Test",
