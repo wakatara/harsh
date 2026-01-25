@@ -29,6 +29,8 @@ jobs:
         run: snapcraft whoami
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      - name: Run Tests
+        run: go test ./...
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
