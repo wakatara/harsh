@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	askCmd.Flags().StringVarP(&heading, "heading", "H", "", `Only ask todos from specified heading`)
+	askCmd.Flags().StringVar(&heading, "heading", "", `Only ask todos from specified heading`)
 	askCmd.RegisterFlagCompletionFunc("heading", headingCompletion)
 }
 

@@ -13,7 +13,7 @@ var (
 
 func init() {
 	todoCmd.Flags().BoolVarP(&noPrint, "no-print", "n", false, `Don't print message when no todos are available`)
-	todoCmd.Flags().StringVarP(&heading, "heading", "H", "", `Only print todos from specified heading`)
+	todoCmd.Flags().StringVar(&heading, "heading", "", `Only print todos from specified heading`)
 	todoCmd.RegisterFlagCompletionFunc("heading", headingCompletion)
 }
 
