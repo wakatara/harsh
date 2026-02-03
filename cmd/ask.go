@@ -8,6 +8,11 @@ import (
 	"github.com/wakatara/harsh/internal/ui"
 )
 
+func init() {
+	askCmd.Flags().StringVarP(&heading, "heading", "H", "", `Only ask todos from specified heading`)
+	askCmd.RegisterFlagCompletionFunc("heading", headingCompletion)
+}
+
 var askCmd = &cobra.Command{
 	Use:     "ask [habit-fragment|date|yday]",
 	Short:   "Ask and record your undone habits",
@@ -30,6 +35,7 @@ var askCmd = &cobra.Command{
 			h.GetMaxHabitNameLength(),
 			h.GetCountBack(),
 			habitFragment,
+			heading,
 		)
 		return nil
 	},
@@ -41,6 +47,16 @@ func askCmdValidArgs(cmd *cobra.Command, args []string, toComplete string) ([]co
 	for _, habit := range h.GetHabits() {
 		if strings.Contains(habit.Name, toComplete) {
 			out = append(out, habit.Name)
+		}
+	}
+	return out, cobra.ShellCompDirectiveNoFileComp
+}
+
+func headingCompletion(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+	out := []cobra.Completion{}
+	for _, habit := range harsh.GetHabits() {
+		if strings.Contains(habit.Heading, toComplete) {
+			out = append(out, habit.Heading)
 		}
 	}
 	return out, cobra.ShellCompDirectiveNoFileComp

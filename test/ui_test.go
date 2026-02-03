@@ -49,7 +49,7 @@ func TestGetTodos(t *testing.T) {
 		// Test3 is missing (should be in todos)
 	}
 
-	todos := ui.GetTodos(habits, entries, civil.Date{Year: 2025, Month: 1, Day: 15}, 1)
+	todos := ui.GetTodos(habits, entries, civil.Date{Year: 2025, Month: 1, Day: 15}, 1, "")
 
 	// Should have entries for the day
 	if len(todos) == 0 {
@@ -281,7 +281,7 @@ func TestDisplayShowTodos(t *testing.T) {
 	os.Stdout = w
 
 	display := ui.NewDisplay(true) // no color for testing
-	display.ShowTodos(habits, entries, 20)
+	display.ShowTodos(habits, entries, 20, "")
 
 	// Restore stdout
 	w.Close()
