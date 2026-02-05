@@ -107,7 +107,7 @@ func TestFullWorkflow(t *testing.T) {
 	}
 
 	// Step 9: Test todos
-	todos := ui.GetTodos(habits, &newEntries, testDate, 1, "")
+	todos := ui.GetTodos(habits, newEntries, testDate, 1, "")
 	if len(todos) == 0 {
 		t.Error("Should have todo entries")
 	}

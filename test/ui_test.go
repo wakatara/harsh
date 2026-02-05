@@ -71,7 +71,7 @@ func TestGetTodos(t *testing.T) {
 	}
 
 	// Test with onboarding (0 days back)
-	onboardTodos := ui.GetTodos(habits, entries, civil.Date{Year: 2025, Month: 1, Day: 15}, 0)
+	onboardTodos := ui.GetTodos(habits, entries, civil.Date{Year: 2025, Month: 1, Day: 15}, 0, "")
 	if len(onboardTodos) == 0 {
 		t.Error("Should have onboarding todos")
 	}
@@ -94,7 +94,7 @@ func TestGetTodosHabitOrderAcrossDays(t *testing.T) {
 
 	// Get todos for 3 days back
 	to := civil.Date{Year: 2025, Month: 1, Day: 15}
-	todos := ui.GetTodos(habits, entries, to, 3)
+	todos := ui.GetTodos(habits, entries, to, 3, "")
 
 	// Verify we have todos for multiple days
 	if len(todos) < 2 {
@@ -120,7 +120,7 @@ func TestGetTodosHabitOrderAcrossDays(t *testing.T) {
 
 	// Run the test multiple times to catch non-deterministic map iteration issues
 	for run := 0; run < 10; run++ {
-		todos := ui.GetTodos(habits, entries, to, 3)
+		todos := ui.GetTodos(habits, entries, to, 3, "")
 		for date, dayTodos := range todos {
 			for i, habit := range dayTodos {
 				if habit != expectedOrder[i] {
@@ -281,7 +281,7 @@ func TestDisplayShowTodos(t *testing.T) {
 	os.Stdout = w
 
 	display := ui.NewDisplay(true) // no color for testing
-	display.ShowTodos(habits, entries, 20, "")
+	display.ShowTodos(habits, entries, 20, true, "")
 
 	// Restore stdout
 	w.Close()

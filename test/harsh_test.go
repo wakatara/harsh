@@ -557,7 +557,7 @@ func TestNewHabitIntegration(t *testing.T) {
 
 	// Test that new habit appears in todos
 	today := civil.DateOf(time.Now())
-	todos := ui.GetTodos(harsh.GetHabits(), &harsh.GetEntries(), today, 0, "")
+	todos := ui.GetTodos(harsh.GetHabits(), harsh.GetEntries(), today, 0, "")
 
 	foundInTodos := false
 	for _, todoList := range todos {
