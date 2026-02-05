@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/civil"
 	"github.com/wakatara/harsh/internal/storage"
@@ -38,9 +39,10 @@ func TestColorManager(t *testing.T) {
 
 func TestGetTodos(t *testing.T) {
 	habits := []*storage.Habit{
-		{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
-		{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
-		{Name: "Test3", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Test1", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, Heading: "Work"},
+		{Name: "Test2", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, Heading: "Work"},
+		{Name: "Test3", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}, Heading: "Work"},
+		{Name: "Test4", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
 	}
 
 	entries := &storage.Entries{
@@ -49,7 +51,7 @@ func TestGetTodos(t *testing.T) {
 		// Test3 is missing (should be in todos)
 	}
 
-	todos := ui.GetTodos(habits, entries, civil.Date{Year: 2025, Month: 1, Day: 15}, 1, "")
+	todos := ui.GetTodos(habits, entries, civil.Date{Year: 2025, Month: 1, Day: 15}, 1, "Work")
 
 	// Should have entries for the day
 	if len(todos) == 0 {
@@ -60,9 +62,12 @@ func TestGetTodos(t *testing.T) {
 	found := false
 	for _, todoList := range todos {
 		for _, todo := range todoList {
+			if todo == "Test4" {
+				t.Error("Test4 shouldn't be in todos")
+				return
+			}
 			if todo == "Test3" {
 				found = true
-				break
 			}
 		}
 	}
@@ -271,9 +276,48 @@ func TestDisplayShowTodos(t *testing.T) {
 	// Create test data
 	habits := []*storage.Habit{
 		{Name: "Test1", Heading: "Work", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+		{Name: "Test2", Heading: "Game", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2024, Month: 1, Day: 1}},
 	}
 
 	entries := &storage.Entries{}
+
+	// Capture stdout
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	display := ui.NewDisplay(true) // no color for testing
+	display.ShowTodos(habits, entries, 20, true, "Work")
+
+	// Restore stdout
+	w.Close()
+	os.Stdout = old
+
+	// Read captured output
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	output := buf.String()
+
+	// Should contain habit name or indicate all complete
+	if !strings.Contains(output, "Test1") && !strings.Contains(output, "All todos logged") || strings.Contains(output, "Test2"){
+		t.Errorf("Output should contain Test1 or indicate completion, and not include Test2")
+	}
+}
+
+func TestDoneHabits(t *testing.T) {
+	habits := []*storage.Habit{
+		{Name: "Test1", Heading: "Work", Target: 1, Interval: 1, FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1}},
+	}
+
+	day := civil.Date{Year: 2025, Month: 1, Day: 1}
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: day, Habit: "Test1"}: {Result: "y"},
+	}
+	now := civil.DateOf(time.Now())
+	for day.Before(now) {
+		day = day.AddDays(1)
+		(*entries)[storage.DailyHabit{Day: day, Habit: "Test1"}] =  storage.Outcome{Result: "y"}
+	}
 
 	// Capture stdout
 	old := os.Stdout
@@ -293,8 +337,28 @@ func TestDisplayShowTodos(t *testing.T) {
 	output := buf.String()
 
 	// Should contain habit name or indicate all complete
-	if !strings.Contains(output, "Test1") && !strings.Contains(output, "All todos logged") {
-		t.Error("Output should contain Test1 or indicate completion")
+	if !strings.Contains(output, "All todos logged"){
+		t.Error("Output should indicate completion")
+	}
+
+	old = os.Stdout
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+
+	display = ui.NewDisplay(true) // no color for testing
+	display.ShowTodos(habits, entries, 20, false, "")
+
+	// Restore stdout
+	w.Close()
+	os.Stdout = old
+
+	// Read captured output
+	buf = new(bytes.Buffer)
+	buf.ReadFrom(r)
+	output = buf.String()
+	
+	if output != "" {
+		t.Errorf("Output should be empty but is %q", output)
 	}
 }
 
