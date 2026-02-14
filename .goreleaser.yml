@@ -19,11 +19,9 @@ builds:
       - arm
     goarm:
       - 6
-    # ignore:
-    # - goos: openbsd
-    #   goarch: arm
-    # - goos: openbsd
-    #   goarch: arm64
+    ignore:
+      - goos: windows
+        goarch: arm
 archives:
   - name_template: >-
       {{ .ProjectName }}_
@@ -79,9 +77,9 @@ nfpms:
       doing on progressing (or breaking) your habits.
     license: MIT
     formats:
-      - deb      # Debian/Ubuntu
-      - rpm      # Red Hat/Fedora/CentOS/openSUSE
-      - apk      # Alpine Linux
+      - deb # Debian/Ubuntu
+      - rpm # Red Hat/Fedora/CentOS/openSUSE
+      - apk # Alpine Linux
       - archlinux # Arch Linux (binary package)
     bindir: /usr/bin
     dependencies:
