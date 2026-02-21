@@ -229,7 +229,11 @@ Hide ended habits from all output: `harsh -H log` or `harsh -H log stats`
 ## JSON Output (Agents & Scripts)
 
 Use `harsh log --json` for machine-readable output, suitable for AI agents
-(OpenClaw, Claude Code, etc.), scripts, and dashboards.
+(OpenClaw, Claude Code, etc.), scripts, and dashboards. The full visual
+consistency graph is represented as structured JSON, including 100 days of
+daily entry history per habit, allowing agents to detect patterns in habit
+performance, identify streaks and breaks, and surface insights that may not
+be obvious from the graph alone.
 
 ```sh
 harsh log --json             # All habits
@@ -279,7 +283,13 @@ harsh log --json | jq .      # Pretty-print with jq
       "days_until_break": 3,
       "last_completed": "2026-02-18",
       "completed_in_window": 3,
-      "stats": { ... }
+      "stats": { ... },
+      "entries": [
+        {"date": "2026-02-18", "result": "y", "status": "done"},
+        {"date": "2026-02-19", "result": null, "status": "satisfied"},
+        {"date": "2026-02-20", "result": "n", "status": "satisfied"},
+        ...
+      ]
     }
   ]
 }
@@ -311,6 +321,24 @@ if so, the result (`y`, `n`, or `s`). `result` is `null` when not logged.
 
 **`stats`** — lifetime statistics: total `streaks` (days satisfied), `breaks`,
 `skips`, `days_tracked`, and `total` (sum of amounts).
+
+**`entries`** — last 100 days of daily history per habit, enabling pattern
+analysis. Each entry has a `date`, `result` (y/n/s or `null` if not logged), and
+`status` mirroring the graph symbols:
+
+| Status | Graph | Meaning |
+| --- | --- | --- |
+| `done` | `━` | Completed |
+| `satisfied` | `─` | Logged n but covered by rolling window |
+| `skip` | `•` | Skipped |
+| `skipified` | `·` | Within skip grace period |
+| `warning` | `!` | No entry, streak at risk |
+| `break` | ` ` | Logged n, not covered |
+| `unrecorded` | `◌` | No entry after first record |
+| `inactive` | | Before habit's first record |
+| `ended` | `▏` | After habit's end date |
+
+Entries with amounts or comments include `amount` and `comment` fields.
 
 ## Tips
 
