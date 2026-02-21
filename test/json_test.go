@@ -33,7 +33,7 @@ type jsonHabit struct {
 	StreakStatus       string  `json:"streak_status"`
 	DaysUntilBreak    *int    `json:"days_until_break"`
 	LastCompleted     *string `json:"last_completed"`
-	CompletedInWindow *int    `json:"completed_in_window,omitempty"`
+	CompletedInWindow *int        `json:"completed_in_window,omitempty"`
 	Stats             struct {
 		DaysTracked int     `json:"days_tracked"`
 		Streaks     int     `json:"streaks"`
@@ -41,6 +41,15 @@ type jsonHabit struct {
 		Skips       int     `json:"skips"`
 		Total       float64 `json:"total"`
 	} `json:"stats"`
+	Entries []jsonEntry `json:"entries"`
+}
+
+type jsonEntry struct {
+	Date    string   `json:"date"`
+	Result  *string  `json:"result"`
+	Status  string   `json:"status"`
+	Amount  *float64 `json:"amount,omitempty"`
+	Comment *string  `json:"comment,omitempty"`
 }
 
 func captureJSONOutput(t *testing.T, fn func() error) []byte {
@@ -742,6 +751,187 @@ func TestShowHabitLogJSON_LastCompleted(t *testing.T) {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+func TestShowHabitLogJSON_Entries(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Test", Heading: "Work", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now.AddDays(-5)},
+	}
+
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: now, Habit: "Test"}:            {Result: "y", Amount: 3.0, Comment: "good day"},
+		storage.DailyHabit{Day: now.AddDays(-1), Habit: "Test"}: {Result: "n"},
+		storage.DailyHabit{Day: now.AddDays(-2), Habit: "Test"}: {Result: "s"},
+		storage.DailyHabit{Day: now.AddDays(-4), Habit: "Test"}: {Result: "y"},
+		// day -3 has no entry (unrecorded)
+		// day -5 is first record with no entry (unrecorded)
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+
+	// Should have 101 entries (100 days back + today)
+	if len(h.Entries) != 101 {
+		t.Errorf("Expected 101 entries, got %d", len(h.Entries))
+	}
+
+	// Build a map by date for easier lookup
+	byDate := map[string]jsonEntry{}
+	for _, e := range h.Entries {
+		byDate[e.Date] = e
+	}
+
+	// Today: done with amount and comment
+	todayEntry := byDate[now.String()]
+	if todayEntry.Status != "done" {
+		t.Errorf("Today: expected status 'done', got %q", todayEntry.Status)
+	}
+	if todayEntry.Result == nil || *todayEntry.Result != "y" {
+		t.Error("Today: expected result 'y'")
+	}
+	if todayEntry.Amount == nil || *todayEntry.Amount != 3.0 {
+		t.Error("Today: expected amount 3.0")
+	}
+	if todayEntry.Comment == nil || *todayEntry.Comment != "good day" {
+		t.Error("Today: expected comment 'good day'")
+	}
+
+	// Yesterday: break (n)
+	ydayEntry := byDate[now.AddDays(-1).String()]
+	if ydayEntry.Status != "break" {
+		t.Errorf("Yesterday: expected status 'break', got %q", ydayEntry.Status)
+	}
+	if ydayEntry.Result == nil || *ydayEntry.Result != "n" {
+		t.Error("Yesterday: expected result 'n'")
+	}
+
+	// Day -2: skip
+	skipEntry := byDate[now.AddDays(-2).String()]
+	if skipEntry.Status != "skip" {
+		t.Errorf("Day -2: expected status 'skip', got %q", skipEntry.Status)
+	}
+	if skipEntry.Result == nil || *skipEntry.Result != "s" {
+		t.Error("Day -2: expected result 's'")
+	}
+
+	// Day -3: no entry, daily habit overdue → warning (within 14 days)
+	warnEntry := byDate[now.AddDays(-3).String()]
+	if warnEntry.Status != "warning" {
+		t.Errorf("Day -3: expected status 'warning', got %q", warnEntry.Status)
+	}
+	if warnEntry.Result != nil {
+		t.Error("Day -3: expected result null")
+	}
+
+	// Day -4: done
+	doneEntry := byDate[now.AddDays(-4).String()]
+	if doneEntry.Status != "done" {
+		t.Errorf("Day -4: expected status 'done', got %q", doneEntry.Status)
+	}
+
+	// Days before first record should be inactive
+	beforeEntry := byDate[now.AddDays(-10).String()]
+	if beforeEntry.Status != "inactive" {
+		t.Errorf("Before first record: expected status 'inactive', got %q", beforeEntry.Status)
+	}
+	if beforeEntry.Result != nil {
+		t.Error("Before first record: expected result null")
+	}
+}
+
+func TestShowHabitLogJSON_EntriesEndedHabit(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	endDate := now.AddDays(-10)
+	habits := []*storage.Habit{
+		{Name: "Old", Heading: "Test", Frequency: "1", Target: 1, Interval: 1,
+			FirstRecord: now.AddDays(-20), EndRecord: endDate},
+	}
+
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: now.AddDays(-15), Habit: "Old"}: {Result: "y"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+
+	// Build map by date
+	byDate := map[string]jsonEntry{}
+	for _, e := range h.Entries {
+		byDate[e.Date] = e
+	}
+
+	// Day after end date should be "ended"
+	endedEntry := byDate[endDate.AddDays(1).String()]
+	if endedEntry.Status != "ended" {
+		t.Errorf("Day after end: expected status 'ended', got %q", endedEntry.Status)
+	}
+
+	// Today should also be "ended"
+	todayEntry := byDate[now.String()]
+	if todayEntry.Status != "ended" {
+		t.Errorf("Today (after end): expected status 'ended', got %q", todayEntry.Status)
+	}
+
+	// Day before end should not be "ended"
+	beforeEndEntry := byDate[endDate.String()]
+	if beforeEndEntry.Status == "ended" {
+		t.Error("End date itself should not have status 'ended'")
+	}
+}
+
+func TestShowHabitLogJSON_EntriesSatisfied(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Weekly", Heading: "Test", Frequency: "1w", Target: 1, Interval: 7, FirstRecord: now.AddDays(-20)},
+	}
+
+	// Done 3 days ago, logged "n" today — today should be "satisfied"
+	// (Satisfied only triggers when there IS an entry, matching BuildGraph logic)
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: now.AddDays(-3), Habit: "Weekly"}: {Result: "y"},
+		storage.DailyHabit{Day: now, Habit: "Weekly"}:             {Result: "n"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	byDate := map[string]jsonEntry{}
+	for _, e := range result.Habits[0].Entries {
+		byDate[e.Date] = e
+	}
+
+	// Day -3: done
+	doneEntry := byDate[now.AddDays(-3).String()]
+	if doneEntry.Status != "done" {
+		t.Errorf("Day -3: expected 'done', got %q", doneEntry.Status)
+	}
+
+	// Today: logged "n" but covered by rolling window → satisfied
+	todayEntry := byDate[now.String()]
+	if todayEntry.Status != "satisfied" {
+		t.Errorf("Today: expected 'satisfied', got %q", todayEntry.Status)
+	}
+	// Result should still reflect what was actually logged
+	if todayEntry.Result == nil || *todayEntry.Result != "n" {
+		t.Error("Today: expected result 'n' (raw log data)")
+	}
 }
 
 func TestShowHabitLogJSON_EmptyHabits(t *testing.T) {

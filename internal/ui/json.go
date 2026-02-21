@@ -23,18 +23,27 @@ type scoresJSON struct {
 }
 
 type habitJSON struct {
-	Name              string    `json:"name"`
-	Heading           string    `json:"heading"`
-	Frequency         string    `json:"frequency"`
-	Target            int       `json:"target"`
-	Interval          int       `json:"interval"`
-	LoggedToday       bool      `json:"logged_today"`
-	Result            *string   `json:"result"`
-	StreakStatus       string   `json:"streak_status"`
-	DaysUntilBreak    *int     `json:"days_until_break"`
-	LastCompleted     *string   `json:"last_completed"`
-	CompletedInWindow *int      `json:"completed_in_window,omitempty"`
-	Stats             statsJSON `json:"stats"`
+	Name              string      `json:"name"`
+	Heading           string      `json:"heading"`
+	Frequency         string      `json:"frequency"`
+	Target            int         `json:"target"`
+	Interval          int         `json:"interval"`
+	LoggedToday       bool        `json:"logged_today"`
+	Result            *string     `json:"result"`
+	StreakStatus       string     `json:"streak_status"`
+	DaysUntilBreak    *int       `json:"days_until_break"`
+	LastCompleted     *string     `json:"last_completed"`
+	CompletedInWindow *int        `json:"completed_in_window,omitempty"`
+	Stats             statsJSON   `json:"stats"`
+	Entries           []entryJSON `json:"entries"`
+}
+
+type entryJSON struct {
+	Date    string   `json:"date"`
+	Result  *string  `json:"result"`
+	Status  string   `json:"status"`
+	Amount  *float64 `json:"amount,omitempty"`
+	Comment *string  `json:"comment,omitempty"`
 }
 
 type statsJSON struct {
@@ -120,6 +129,9 @@ func ShowHabitLogJSON(habits []*storage.Habit, entries *storage.Entries, habitFr
 			item.CompletedInWindow = &count
 		}
 
+		// Daily entries for last 100 days (mirrors BuildGraph logic)
+		item.Entries = buildEntries(now, habit, entries, 100)
+
 		// Stats
 		stats := BuildStats(habit, entries)
 		item.Stats = statsJSON{
@@ -148,6 +160,53 @@ func ShowHabitLogJSON(habits []*storage.Habit, entries *storage.Entries, habitFr
 	}
 	fmt.Println(string(data))
 	return nil
+}
+
+// buildEntries creates the daily entry history for a habit, mirroring BuildGraph() logic
+func buildEntries(to civil.Date, habit *storage.Habit, entries *storage.Entries, countBack int) []entryJSON {
+	from := to.AddDays(-countBack)
+	result := make([]entryJSON, 0, countBack+1)
+
+	for d := from; !d.After(to); d = d.AddDays(1) {
+		entry := entryJSON{Date: d.String()}
+
+		if habit.HasEnded(d) {
+			entry.Status = "ended"
+		} else if outcome, ok := (*entries)[storage.DailyHabit{Day: d, Habit: habit.Name}]; ok {
+			entry.Result = &outcome.Result
+			if outcome.Amount != 0 {
+				entry.Amount = &outcome.Amount
+			}
+			if outcome.Comment != "" {
+				entry.Comment = &outcome.Comment
+			}
+
+			switch {
+			case outcome.Result == "y":
+				entry.Status = "done"
+			case outcome.Result == "s":
+				entry.Status = "skip"
+			case graph.Satisfied(d, habit, *entries):
+				entry.Status = "satisfied"
+			case graph.Skipified(d, habit, *entries):
+				entry.Status = "skipified"
+			case outcome.Result == "n":
+				entry.Status = "break"
+			}
+		} else {
+			if graph.Warning(d, habit, *entries) && (to.DaysSince(d) < 14) {
+				entry.Status = "warning"
+			} else if d.After(habit.FirstRecord) {
+				entry.Status = "unrecorded"
+			} else {
+				entry.Status = "inactive"
+			}
+		}
+
+		result = append(result, entry)
+	}
+
+	return result
 }
 
 // lastCompleted finds the most recent date a habit was completed (y or s)
