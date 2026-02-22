@@ -568,6 +568,35 @@ func TestGraphDaysUntilStreakBreak(t *testing.T) {
 			},
 			expected: -999, // Skip on day 28 came AFTER break on day 27, should not restart countdown
 		},
+		{
+			name: "Completion after gap exceeding interval starts new streak (1/8 habit)",
+			date: civil.Date{Year: 2025, Month: 1, Day: 22},
+			habit: &storage.Habit{
+				Name:        "Review",
+				Target:      1,
+				Interval:    8,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Success on day 9, then gap of 10 days (exceeds interval of 8)
+				// New success on day 19 should start a fresh streak
+				// Today is day 22, break date is 19+8=27, so 5 days until break
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 9}, Habit: "Review"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 11}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 12}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 16}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 17}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 18}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 19}, Habit: "Review"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 20}, Habit: "Review"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 21}, Habit: "Review"}: {Result: "n"},
+			},
+			expected: 5, // New streak from day 19, breaks on 27, today is 22 = 5 days
+		},
 		// Interval habits tests (3/7, 2/7, etc.)
 		{
 			name: "Interval 3/7 - three successes, earliest success determines break",

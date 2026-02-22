@@ -206,10 +206,12 @@ func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries stor
 	}
 
 	lastSuccessDate := civil.Date{Year: 0, Month: 0, Day: 0}
+	lastSuccessResult := ""
 	for dt := d; !dt.Before(lookbackStart); dt = dt.AddDays(-1) {
 		if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			if v.Result == "y" || v.Result == "s" {
 				lastSuccessDate = dt
+				lastSuccessResult = v.Result
 				break
 			}
 		}
@@ -220,12 +222,10 @@ func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries stor
 		return -999
 	}
 
-	// Verify the streak was actually intact when lastSuccessDate was logged.
-	// Check if there's an explicit break ("n") in the interval before lastSuccessDate
-	// that wasn't covered by a prior success.
-	if !lastSuccessDate.Before(habit.FirstRecord.AddDays(habit.Interval)) {
-		// Not near the start - need to verify streak was intact
-		// Look for the prior success and check if interval was exceeded
+	// A "y" (completion) always starts or maintains a streak.
+	// A "s" (skip) only maintains an existing streak — it cannot restart
+	// a broken one. Verify the streak was intact when the skip was logged.
+	if lastSuccessResult == "s" {
 		priorLookbackStart := lastSuccessDate.AddDays(-habit.Interval * 2)
 		if priorLookbackStart.Before(habit.FirstRecord) {
 			priorLookbackStart = habit.FirstRecord
@@ -241,14 +241,10 @@ func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries stor
 			}
 		}
 
-		// If we found a prior success, check if the gap between it and lastSuccessDate
-		// exceeds the interval - if so, the streak was already broken
-		if priorSuccessDate.Year != 0 {
-			gap := lastSuccessDate.DaysSince(priorSuccessDate)
-			if gap > habit.Interval {
-				// The gap between successes exceeded the interval - streak was broken
-				return -999
-			}
+		// If there's a prior success and the gap exceeds interval, the skip came after a break.
+		// No prior success means the skip is the first entry — no streak existed to break.
+		if priorSuccessDate.Year != 0 && lastSuccessDate.DaysSince(priorSuccessDate) > habit.Interval {
+			return -999
 		}
 	}
 
