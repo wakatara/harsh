@@ -107,7 +107,7 @@ func TestFullWorkflow(t *testing.T) {
 	}
 
 	// Step 9: Test todos
-	todos := ui.GetTodos(habits, newEntries, testDate, 1)
+	todos := ui.GetTodos(habits, newEntries, testDate, 1, "")
 	if len(todos) == 0 {
 		t.Error("Should have todo entries")
 	}
@@ -219,7 +219,7 @@ Sleep tracking: 0
 
 	// Test todos for day 4 (should include missed habits)
 	day4 := startDate.AddDays(3)
-	todos := ui.GetTodos(habits, entries, day4, 1)
+	todos := ui.GetTodos(habits, entries, day4, 1, "")
 	if len(todos) == 0 {
 		t.Error("Should have todos for day 4")
 	}
