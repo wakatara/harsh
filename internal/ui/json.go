@@ -32,6 +32,8 @@ type habitJSON struct {
 	Result            *string     `json:"result"`
 	StreakStatus       string     `json:"streak_status"`
 	DaysUntilBreak    *int       `json:"days_until_break"`
+	CurrentStreak     int        `json:"current_streak"`
+	LongestStreak     int        `json:"longest_streak"`
 	LastCompleted     *string     `json:"last_completed"`
 	CompletedInWindow *int        `json:"completed_in_window,omitempty"`
 	Stats             statsJSON   `json:"stats"`
@@ -116,6 +118,11 @@ func ShowHabitLogJSON(habits []*storage.Habit, entries *storage.Entries, habitFr
 			item.StreakStatus = "active"
 			item.DaysUntilBreak = &daysUntil
 		}
+
+		// Current and longest streak lengths
+		current, longest := graph.StreakLengths(now, habit, *entries)
+		item.CurrentStreak = current
+		item.LongestStreak = longest
 
 		// Last completed date
 		if lastDate := lastCompleted(now, habit, entries); !lastDate.IsZero() {

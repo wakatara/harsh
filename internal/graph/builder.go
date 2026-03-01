@@ -357,3 +357,57 @@ func IsInSkipPeriod(d civil.Date, habit *storage.Habit, entries storage.Entries)
 
 	return false
 }
+
+// StreakLengths calculates the current and longest consecutive streak lengths for a habit.
+// Walks every day from FirstRecord to d (or EndRecord if earlier), classifying each day
+// using the same logic as BuildGraph/buildEntries. Returns (0, 0) for tracking-only or
+// unstarted habits.
+func StreakLengths(d civil.Date, habit *storage.Habit, entries storage.Entries) (current, longest int) {
+	if habit.Target < 1 {
+		return 0, 0
+	}
+	noFirstRecord := civil.Date{Year: 0, Month: 0, Day: 0}
+	if habit.FirstRecord == noFirstRecord {
+		return 0, 0
+	}
+
+	to := d
+	if !habit.EndRecord.IsZero() && habit.EndRecord.Before(to) {
+		to = habit.EndRecord
+	}
+
+	currentRun := 0
+	longestRun := 0
+
+	for dt := habit.FirstRecord; !dt.After(to); dt = dt.AddDays(1) {
+		if habit.HasEnded(dt) {
+			continue
+		}
+
+		if outcome, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+			switch {
+			case outcome.Result == "y":
+				currentRun++
+			case outcome.Result == "s":
+				currentRun++
+			case Satisfied(dt, habit, entries):
+				currentRun++
+			case Skipified(dt, habit, entries):
+				currentRun++
+			case outcome.Result == "n":
+				currentRun = 0
+			}
+		} else {
+			if Warning(dt, habit, entries) {
+				currentRun = 0
+			}
+			// No entry + no warning = within interval window, neutral (don't change currentRun)
+		}
+
+		if currentRun > longestRun {
+			longestRun = currentRun
+		}
+	}
+
+	return currentRun, longestRun
+}
