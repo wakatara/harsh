@@ -262,6 +262,8 @@ harsh log --json | jq .      # Pretty-print with jq
       "result": "y",
       "streak_status": "active",
       "days_until_break": 1,
+      "current_streak": 45,
+      "longest_streak": 92,
       "last_completed": "2026-02-20",
       "stats": {
         "days_tracked": 416,
@@ -281,6 +283,8 @@ harsh log --json | jq .      # Pretty-print with jq
       "result": null,
       "streak_status": "active",
       "days_until_break": 3,
+      "current_streak": 21,
+      "longest_streak": 35,
       "last_completed": "2026-02-18",
       "completed_in_window": 3,
       "stats": { ... },
@@ -309,6 +313,13 @@ harsh log --json | jq .      # Pretty-print with jq
 
 **`days_until_break`** — integer countdown until streak breaks. `0` means do it
 today or it breaks. `null` when not applicable (broken, tracking, unstarted).
+
+**`current_streak`** — number of consecutive days the habit has been maintained
+(done, satisfied, skipped, or skipified). Computed from the full history, not
+just the 100-day entries window. `0` for tracking-only or unstarted habits.
+
+**`longest_streak`** — the longest consecutive streak in the habit's full history.
+Useful for motivation ("your record is 92 days — you're at 45, keep going!").
 
 **`last_completed`** — ISO date of the most recent `y` or `s` entry. `null` if
 never completed.
