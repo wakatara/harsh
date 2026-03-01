@@ -363,8 +363,10 @@ alias ht="harsh todo"
 alias hc="$EDITOR ~/.config/harsh/habits"
 ```
 
-**Snap users**: Set `HARSHPATH=~/.config/harsh/` and move your files there.
-Snap's uninstaller deletes `~/snap/harsh/` including your data.
+> [!WARNING]
+> **Ubuntu Snap users**: Set `HARSHPATH=~/.config/harsh/` and move your files there.
+> Snap's uninstaller deletes `~/snap/harsh/` including your data if you
+> uninstall.
 
 **Start small**: 5-8 habits mixing daily and weekly. Start slow. Too many habits
 leads to being stretched thin and not achieving your goals (and sometimes
