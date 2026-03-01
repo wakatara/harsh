@@ -32,6 +32,8 @@ type jsonHabit struct {
 	Result            *string `json:"result"`
 	StreakStatus       string  `json:"streak_status"`
 	DaysUntilBreak    *int    `json:"days_until_break"`
+	CurrentStreak     int     `json:"current_streak"`
+	LongestStreak     int     `json:"longest_streak"`
 	LastCompleted     *string `json:"last_completed"`
 	CompletedInWindow *int        `json:"completed_in_window,omitempty"`
 	Stats             struct {
@@ -952,5 +954,301 @@ func TestShowHabitLogJSON_EmptyHabits(t *testing.T) {
 	}
 	if len(result.Habits) != 0 {
 		t.Errorf("Expected 0 habits, got %d", len(result.Habits))
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_DailyActive(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Test", Heading: "Work", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now.AddDays(-10)},
+	}
+
+	entries := &storage.Entries{}
+	// 5-day active streak
+	for i := -4; i <= 0; i++ {
+		(*entries)[storage.DailyHabit{Day: now.AddDays(i), Habit: "Test"}] = storage.Outcome{Result: "y"}
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 5 {
+		t.Errorf("Expected current_streak=5, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 5 {
+		t.Errorf("Expected longest_streak=5, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_DailyBroken(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Test", Heading: "Work", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now.AddDays(-4)},
+	}
+
+	entries := &storage.Entries{
+		// 3-day streak: day -4, -3, -2
+		storage.DailyHabit{Day: now.AddDays(-4), Habit: "Test"}: {Result: "y"},
+		storage.DailyHabit{Day: now.AddDays(-3), Habit: "Test"}: {Result: "y"},
+		storage.DailyHabit{Day: now.AddDays(-2), Habit: "Test"}: {Result: "y"},
+		// Break on day -1
+		storage.DailyHabit{Day: now.AddDays(-1), Habit: "Test"}: {Result: "n"},
+		// 1-day current streak
+		storage.DailyHabit{Day: now, Habit: "Test"}: {Result: "y"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 1 {
+		t.Errorf("Expected current_streak=1, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 3 {
+		t.Errorf("Expected longest_streak=3, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_WeeklyUnrecorded(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Test", Heading: "Work", Frequency: "1w", Target: 1, Interval: 7, FirstRecord: now.AddDays(-20)},
+	}
+
+	entries := &storage.Entries{
+		// Done 3 days ago, nothing since — still within 7-day window
+		storage.DailyHabit{Day: now.AddDays(-3), Habit: "Test"}: {Result: "y"},
+		// Done 10 days ago too
+		storage.DailyHabit{Day: now.AddDays(-10), Habit: "Test"}: {Result: "y"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	// Unrecorded days within the 7-day window should be neutral (not break the streak)
+	// The y on day -3 should contribute to current streak
+	if h.CurrentStreak < 1 {
+		t.Errorf("Expected current_streak >= 1, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak < h.CurrentStreak {
+		t.Errorf("Expected longest_streak >= current_streak, got longest=%d current=%d", h.LongestStreak, h.CurrentStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_MultiTarget(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Gym", Heading: "Fitness", Frequency: "3/7", Target: 3, Interval: 7, FirstRecord: now.AddDays(-14)},
+	}
+
+	entries := &storage.Entries{
+		// First week: 3 completions (satisfied window)
+		storage.DailyHabit{Day: now.AddDays(-13), Habit: "Gym"}: {Result: "y"},
+		storage.DailyHabit{Day: now.AddDays(-11), Habit: "Gym"}: {Result: "y"},
+		storage.DailyHabit{Day: now.AddDays(-9), Habit: "Gym"}:  {Result: "y"},
+		// Second week: 3 completions
+		storage.DailyHabit{Day: now.AddDays(-5), Habit: "Gym"}: {Result: "y"},
+		storage.DailyHabit{Day: now.AddDays(-3), Habit: "Gym"}: {Result: "y"},
+		storage.DailyHabit{Day: now, Habit: "Gym"}:              {Result: "y"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	// Should have streaks from Satisfied() days between logged days
+	if h.CurrentStreak < 1 {
+		t.Errorf("Expected current_streak >= 1, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak < h.CurrentStreak {
+		t.Errorf("Expected longest_streak >= current_streak, got longest=%d current=%d", h.LongestStreak, h.CurrentStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_TrackingOnly(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Coffee", Heading: "Health", Frequency: "0", Target: 0, Interval: 1, FirstRecord: now.AddDays(-10)},
+	}
+
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: now, Habit: "Coffee"}: {Result: "y", Amount: 2.0},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 0 {
+		t.Errorf("Expected current_streak=0 for tracking habit, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 0 {
+		t.Errorf("Expected longest_streak=0 for tracking habit, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_WithSkips(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Test", Heading: "Work", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now.AddDays(-3)},
+	}
+
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: now.AddDays(-3), Habit: "Test"}: {Result: "y"},
+		storage.DailyHabit{Day: now.AddDays(-2), Habit: "Test"}: {Result: "s"},
+		storage.DailyHabit{Day: now.AddDays(-1), Habit: "Test"}: {Result: "y"},
+		storage.DailyHabit{Day: now, Habit: "Test"}:              {Result: "y"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 4 {
+		t.Errorf("Expected current_streak=4 (skips continue streak), got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 4 {
+		t.Errorf("Expected longest_streak=4, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_JustStarted(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "New", Heading: "Test", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now},
+	}
+
+	entries := &storage.Entries{
+		storage.DailyHabit{Day: now, Habit: "New"}: {Result: "y"},
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 1 {
+		t.Errorf("Expected current_streak=1, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 1 {
+		t.Errorf("Expected longest_streak=1, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_NoEntries(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Empty", Heading: "Test", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now.AddDays(-5)},
+	}
+
+	entries := &storage.Entries{}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 0 {
+		t.Errorf("Expected current_streak=0 with no entries, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 0 {
+		t.Errorf("Expected longest_streak=0 with no entries, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_LongestInPast(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	habits := []*storage.Habit{
+		{Name: "Test", Heading: "Work", Frequency: "1", Target: 1, Interval: 1, FirstRecord: now.AddDays(-15)},
+	}
+
+	entries := &storage.Entries{}
+	// 10-day streak from day -15 to day -6
+	for i := -15; i <= -6; i++ {
+		(*entries)[storage.DailyHabit{Day: now.AddDays(i), Habit: "Test"}] = storage.Outcome{Result: "y"}
+	}
+	// Break on day -5
+	(*entries)[storage.DailyHabit{Day: now.AddDays(-5), Habit: "Test"}] = storage.Outcome{Result: "n"}
+	// Days -4 and -3 unrecorded (Warning fires for daily habit = break)
+	// 3-day current streak: days -2, -1, today
+	for i := -2; i <= 0; i++ {
+		(*entries)[storage.DailyHabit{Day: now.AddDays(i), Habit: "Test"}] = storage.Outcome{Result: "y"}
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 3 {
+		t.Errorf("Expected current_streak=3, got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 10 {
+		t.Errorf("Expected longest_streak=10, got %d", h.LongestStreak)
+	}
+}
+
+func TestShowHabitLogJSON_StreakLengths_EndedHabit(t *testing.T) {
+	now := civil.DateOf(time.Now())
+	endDate := now.AddDays(-5)
+	habits := []*storage.Habit{
+		{Name: "Old", Heading: "Test", Frequency: "1", Target: 1, Interval: 1,
+			FirstRecord: now.AddDays(-9), EndRecord: endDate},
+	}
+
+	entries := &storage.Entries{}
+	// 5-day streak from day -9 to day -5 (up to and including end date)
+	for i := -9; i <= -5; i++ {
+		(*entries)[storage.DailyHabit{Day: now.AddDays(i), Habit: "Old"}] = storage.Outcome{Result: "y"}
+	}
+
+	output := captureJSONOutput(t, func() error {
+		return ui.ShowHabitLogJSON(habits, entries, "", false)
+	})
+
+	var result jsonLog
+	json.Unmarshal(output, &result)
+
+	h := result.Habits[0]
+	if h.CurrentStreak != 5 {
+		t.Errorf("Expected current_streak=5 (at time of end), got %d", h.CurrentStreak)
+	}
+	if h.LongestStreak != 5 {
+		t.Errorf("Expected longest_streak=5, got %d", h.LongestStreak)
 	}
 }
