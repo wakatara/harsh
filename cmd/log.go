@@ -19,6 +19,16 @@ var logCmd = &cobra.Command{
 		}
 
 		h := getHarsh()
+
+		if jsonOutput {
+			return ui.ShowHabitLogJSON(
+				h.GetHabits(),
+				h.GetEntries(),
+				habitFragment,
+				hideEnded,
+			)
+		}
+
 		display := ui.NewDisplay(!color.Enable)
 		display.ShowHabitLog(
 			h.GetHabits(),

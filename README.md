@@ -51,6 +51,7 @@ Coffee: 0
 | ----------------- | ---------------------------------------- |
 | `harsh ask`       | Prompt for today's unrecorded habits     |
 | `harsh log`       | Show consistency graph (last 100 days)   |
+| `harsh log --json`| Machine-readable JSON output for agents  |
 | `harsh todo`      | List today's pending habits with urgency |
 | `harsh log stats` | Summary statistics for all habits        |
 
@@ -216,6 +217,7 @@ harsh completion fish > ~/.config/fish/completions/harsh.fish
 ```
 -C, --color string   Color output: "always", "never", "auto" (default "auto")
 -H, --hide-ended     Hide habits that have an end date
+-j, --json           Output in JSON format (for programmatic use)
 -h, --help           Show help
 -v, --version        Show version
 ```
@@ -223,6 +225,131 @@ harsh completion fish > ~/.config/fish/completions/harsh.fish
 Suppress colors for logging or piping: `harsh --color never log stats`
 
 Hide ended habits from all output: `harsh -H log` or `harsh -H log stats`
+
+## JSON Output (Agents & Scripts)
+
+Use `harsh log --json` for machine-readable output, suitable for AI agents
+(OpenClaw, Claude Code, etc.), scripts, and dashboards. The full visual
+consistency graph is represented as structured JSON, including 100 days of
+daily entry history per habit, allowing agents to detect patterns in habit
+performance, identify streaks and breaks, and surface insights that may not
+be obvious from the graph alone.
+
+```sh
+harsh log --json             # All habits
+harsh log --json gym         # Filter by fragment
+harsh log --json -H          # Hide ended habits
+harsh log --json | jq .      # Pretty-print with jq
+```
+
+### Output Structure
+
+```json
+{
+  "date": "2026-02-20",
+  "scores": {
+    "today": 85.7,
+    "yesterday": 66.7
+  },
+  "habits": [
+    {
+      "name": "Meditated",
+      "heading": "Morning",
+      "frequency": "1",
+      "target": 1,
+      "interval": 1,
+      "logged_today": true,
+      "result": "y",
+      "streak_status": "active",
+      "days_until_break": 1,
+      "current_streak": 45,
+      "longest_streak": 92,
+      "last_completed": "2026-02-20",
+      "stats": {
+        "days_tracked": 416,
+        "streaks": 380,
+        "breaks": 12,
+        "skips": 24,
+        "total": 0
+      }
+    },
+    {
+      "name": "Gym",
+      "heading": "Fitness",
+      "frequency": "3/7",
+      "target": 3,
+      "interval": 7,
+      "logged_today": false,
+      "result": null,
+      "streak_status": "active",
+      "days_until_break": 3,
+      "current_streak": 21,
+      "longest_streak": 35,
+      "last_completed": "2026-02-18",
+      "completed_in_window": 3,
+      "stats": { ... },
+      "entries": [
+        {"date": "2026-02-18", "result": "y", "status": "done"},
+        {"date": "2026-02-19", "result": null, "status": "satisfied"},
+        {"date": "2026-02-20", "result": "n", "status": "satisfied"},
+        ...
+      ]
+    }
+  ]
+}
+```
+
+### Key Fields
+
+**`streak_status`** — current state of the habit's streak:
+
+| Status | Meaning |
+| --- | --- |
+| `active` | Streak intact, `days_until_break` shows remaining buffer |
+| `broken` | Streak lost, `days_until_break` is `null` |
+| `skipping` | In skip grace period, `days_until_break` shows remaining buffer |
+| `tracking` | Frequency 0 — informational only, no streak |
+| `unstarted` | Habit exists but has never been logged |
+
+**`days_until_break`** — integer countdown until streak breaks. `0` means do it
+today or it breaks. `null` when not applicable (broken, tracking, unstarted).
+
+**`current_streak`** — number of consecutive days the habit has been maintained
+(done, satisfied, skipped, or skipified). Computed from the full history, not
+just the 100-day entries window. `0` for tracking-only or unstarted habits.
+
+**`longest_streak`** — the longest consecutive streak in the habit's full history.
+Useful for motivation ("your record is 92 days — you're at 45, keep going!").
+
+**`last_completed`** — ISO date of the most recent `y` or `s` entry. `null` if
+never completed.
+
+**`completed_in_window`** — only present for multi-day interval habits (e.g.,
+`3/7`). Shows completions in the current rolling window vs `target`.
+
+**`logged_today`** / **`result`** — whether the habit has been logged today, and
+if so, the result (`y`, `n`, or `s`). `result` is `null` when not logged.
+
+**`stats`** — lifetime statistics: total `streaks` (days satisfied), `breaks`,
+`skips`, `days_tracked`, and `total` (sum of amounts).
+
+**`entries`** — last 100 days of daily history per habit, enabling pattern
+analysis. Each entry has a `date`, `result` (y/n/s or `null` if not logged), and
+`status` mirroring the graph symbols:
+
+| Status | Graph | Meaning |
+| --- | --- | --- |
+| `done` | `━` | Completed |
+| `satisfied` | `─` | Logged n but covered by rolling window |
+| `skip` | `•` | Skipped |
+| `skipified` | `·` | Within skip grace period |
+| `warning` | `!` | No entry, streak at risk |
+| `break` | ` ` | Logged n, not covered |
+| `unrecorded` | `◌` | No entry after first record |
+| `inactive` | | Before habit's first record |
+| `ended` | `▏` | After habit's end date |
+
+Entries with amounts or comments include `amount` and `comment` fields.
 
 ## Tips
 
