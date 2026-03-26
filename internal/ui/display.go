@@ -321,9 +321,8 @@ func BuildStats(habit *storage.Habit, entries *storage.Entries) HabitStats {
 				streaks += 1
 			case outcome.Result == "s":
 				skips += 1
-			// look at cases of "n" being entered but streak within
-			// bounds of a sliding window of the habit every x days
-			case graph.Satisfied(d, habit, *entries):
+			// Satisfied by genuine completions and not in a skip period
+			case graph.SatisfiedByCompletions(d, habit, *entries) && !graph.IsInSkipPeriod(d, habit, *entries):
 				streaks += 1
 			case graph.Skipified(d, habit, *entries):
 				skips += 1

@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"math"
 	"strings"
 	"time"
 
@@ -38,9 +37,10 @@ func BuildGraph(habit *storage.Habit, entries *storage.Entries, countBack int, a
 				graphDay = "━"
 			case outcome.Result == "s":
 				graphDay = "•"
-			// look at cases of "n" being entered but
-			// within bounds of the habit every x days
-			case Satisfied(d, habit, *entries):
+			// Satisfied by genuine completions, but only if the most recent
+			// y/s was a "y" — a skip resets the display to skipified until
+			// a new completion appears.
+			case SatisfiedByCompletions(d, habit, *entries) && !IsInSkipPeriod(d, habit, *entries):
 				graphDay = "─"
 			case Skipified(d, habit, *entries):
 				graphDay = "·"
@@ -64,8 +64,22 @@ func BuildGraph(habit *storage.Habit, entries *storage.Entries, countBack int, a
 	return consistency.String()
 }
 
-// Satisfied checks if a habit target is satisfied within its interval window
+// Satisfied checks if a habit target is satisfied within its interval window.
+// Counts both "y" and "s" entries as successes -- used for streak calculations
+// where skips maintain streaks.
 func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool {
+	return satisfiedImpl(d, habit, entries, true)
+}
+
+// SatisfiedByCompletions checks if a habit target is satisfied by genuine
+// completions ("y") only, ignoring skips. Used for display logic so that
+// days covered by a skip grace period show skipified rather than satisfied
+// when the target was only met because of the skip.
+func SatisfiedByCompletions(d civil.Date, habit *storage.Habit, entries storage.Entries) bool {
+	return satisfiedImpl(d, habit, entries, false)
+}
+
+func satisfiedImpl(d civil.Date, habit *storage.Habit, entries storage.Entries, countSkips bool) bool {
 	if habit.Target <= 1 && habit.Interval == 1 {
 		return false
 	}
@@ -89,23 +103,23 @@ func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool
 			continue
 		}
 
-		// Count successes in the entire window (including potential future data)
-		// Skips ("s") count as success - they maintain the streak
 		countTotal := 0
 		countUpToD := 0
 
 		// Early termination: stop counting once we exceed target
 		for dt := winStart; !dt.After(winEnd) && countTotal < habit.Target+1; dt = dt.AddDays(1) {
-			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && (v.Result == "y" || v.Result == "s") {
-				countTotal++
-				if !dt.After(d) {
-					countUpToD++
-				}
-				// Early exit optimization for Target=1 special case
-				if habit.Target == 1 && countTotal == 2 {
-					// But only if we have supporting data up to d
-					if countUpToD > 0 {
-						return true
+			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+				isSuccess := v.Result == "y" || (countSkips && v.Result == "s")
+				if isSuccess {
+					countTotal++
+					if !dt.After(d) {
+						countUpToD++
+					}
+					// Early exit optimization for Target=1 special case
+					if habit.Target == 1 && countTotal == 2 {
+						if countUpToD > 0 {
+							return true
+						}
 					}
 				}
 			}
@@ -124,14 +138,15 @@ func Satisfied(d civil.Date, habit *storage.Habit, entries storage.Entries) bool
 	return false
 }
 
-// Skipified checks if a habit has been skipped within its grace period
+// Skipified checks if a habit has been skipped within its grace period.
+// The grace period is the full interval, matching the window that Satisfied uses.
 func Skipified(d civil.Date, habit *storage.Habit, entries storage.Entries) bool {
 	if habit.Target <= 1 && habit.Interval == 1 {
 		return false
 	}
 
 	from := d
-	to := d.AddDays(-int(math.Ceil(float64(habit.Interval) / float64(habit.Target))))
+	to := d.AddDays(-(habit.Interval - 1))
 	for dt := from; !dt.Before(to); dt = dt.AddDays(-1) {
 		if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
 			if v.Result == "s" {
@@ -223,7 +238,7 @@ func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries stor
 	}
 
 	// A "y" (completion) always starts or maintains a streak.
-	// A "s" (skip) only maintains an existing streak — it cannot restart
+	// A "s" (skip) only maintains an existing streak -- it cannot restart
 	// a broken one. Verify the streak was intact when the skip was logged.
 	if lastSuccessResult == "s" {
 		priorLookbackStart := lastSuccessDate.AddDays(-habit.Interval * 2)
@@ -242,7 +257,7 @@ func daysUntilStreakBreakSimple(d civil.Date, habit *storage.Habit, entries stor
 		}
 
 		// If there's a prior success and the gap exceeds interval, the skip came after a break.
-		// No prior success means the skip is the first entry — no streak existed to break.
+		// No prior success means the skip is the first entry -- no streak existed to break.
 		if priorSuccessDate.Year != 0 && lastSuccessDate.DaysSince(priorSuccessDate) > habit.Interval {
 			return -999
 		}
@@ -386,7 +401,7 @@ func StreakLengths(d civil.Date, habit *storage.Habit, entries storage.Entries) 
 				currentRun++
 			case outcome.Result == "s":
 				currentRun++
-			case Satisfied(dt, habit, entries):
+			case SatisfiedByCompletions(dt, habit, entries):
 				currentRun++
 			case Skipified(dt, habit, entries):
 				currentRun++

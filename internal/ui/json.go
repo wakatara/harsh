@@ -193,7 +193,7 @@ func buildEntries(to civil.Date, habit *storage.Habit, entries *storage.Entries,
 				entry.Status = "done"
 			case outcome.Result == "s":
 				entry.Status = "skip"
-			case graph.Satisfied(d, habit, *entries):
+			case graph.SatisfiedByCompletions(d, habit, *entries) && !graph.IsInSkipPeriod(d, habit, *entries):
 				entry.Status = "satisfied"
 			case graph.Skipified(d, habit, *entries):
 				entry.Status = "skipified"
