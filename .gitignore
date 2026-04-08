@@ -5,7 +5,11 @@ harsh
 log
 habits
 cspell.json
+
+# Remove any stray AI
 .claude
+CLAUDE.md
+.gemini
 
 ### Go ###
 # Binaries for programs and plugins
