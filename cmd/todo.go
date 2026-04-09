@@ -6,6 +6,17 @@ import (
 	"github.com/wakatara/harsh/internal/ui"
 )
 
+var (
+	noPrint bool
+	heading string
+)
+
+func init() {
+	todoCmd.Flags().BoolVarP(&noPrint, "no-print", "n", false, `Don't print message when no todos are available`)
+	todoCmd.Flags().StringVar(&heading, "heading", "", `Only print todos from specified heading`)
+	todoCmd.RegisterFlagCompletionFunc("heading", headingCompletion)
+}
+
 var todoCmd = &cobra.Command{
 	Use:     "todo",
 	Short:   "Show undone habits for today",
@@ -18,6 +29,8 @@ var todoCmd = &cobra.Command{
 			h.GetHabits(),
 			h.GetEntries(),
 			h.GetMaxHabitNameLength(),
+			!noPrint,
+			heading,
 		)
 		return nil
 	},

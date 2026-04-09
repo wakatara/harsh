@@ -93,7 +93,7 @@ func (d *Display) ShowHabitLog(habits []*storage.Habit, entries *storage.Entries
 	}
 
 	// Show scores and undone count
-	undone := GetTodos(habits, entries, now, 7)
+	undone := GetTodos(habits, entries, now, 7, "")
 	var undoneCount int
 	for _, v := range undone {
 		undoneCount += len(v)
@@ -173,13 +173,15 @@ func (d *Display) ShowHabitStats(habits []*storage.Habit, entries *storage.Entri
 }
 
 // ShowTodos displays undone habits for today and recent days
-func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, maxHabitNameLength int) {
+func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, maxHabitNameLength int, shouldPrintMessage bool, searchHeading string) {
 	now := civil.DateOf(time.Now())
-	undone := GetTodos(habits, entries, now, 8)
+	undone := GetTodos(habits, entries, now, 8, searchHeading)
 
 	heading := ""
 	if len(undone) == 0 {
-		fmt.Println("All todos logged up to today.")
+		if shouldPrintMessage {
+			fmt.Println("All todos logged up to today.")
+		}
 	} else {
 		// Maximum width for due dates column (e.g., "(999 days)")
 		const maxDueWidth = 10
@@ -250,7 +252,7 @@ func (d *Display) ShowTodos(habits []*storage.Habit, entries *storage.Entries, m
 }
 
 // GetTodos returns a map of date strings to habit names that are undone
-func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, daysBack int) map[string][]string {
+func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, daysBack int, searchHeading string) map[string][]string {
 	tasksUndone := map[string][]string{}
 	dayHabits := map[string]bool{}
 	from := to.AddDays(-daysBack)
@@ -273,6 +275,9 @@ func GetTodos(habits []*storage.Habit, entries *storage.Entries, to civil.Date, 
 
 			for _, habit := range habits {
 				if _, ok := (*entries)[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok {
+					delete(dayHabits, habit.Name)
+				}
+				if !strings.Contains(habit.Heading, searchHeading)  {
 					delete(dayHabits, habit.Name)
 				}
 
