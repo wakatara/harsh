@@ -708,6 +708,66 @@ func TestGraphDaysUntilStreakBreak(t *testing.T) {
 			expected: 2, // Last success day 10, breaks on 10+7=17, today is 15, so 2 days
 		},
 		{
+			name: "Interval 3/7 - six successes, target-th most recent anchors break",
+			date: civil.Date{Year: 2026, Month: 5, Day: 22},
+			habit: &storage.Habit{
+				Name:        "Dev",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2026, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Trailing window [5/16, 5/22] has six successes
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 16}, Habit: "Dev"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 17}, Habit: "Dev"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 18}, Habit: "Dev"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 19}, Habit: "Dev"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 20}, Habit: "Dev"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 21}, Habit: "Dev"}: {Result: "y"},
+			},
+			expected: 4, // 3rd most recent success is 5/19; breaks on 5/19+7=5/26; today 5/22 -> 4 days
+		},
+		{
+			name: "Interval 2/15 - eight successes, target-th most recent anchors break",
+			date: civil.Date{Year: 2026, Month: 5, Day: 22},
+			habit: &storage.Habit{
+				Name:        "Meet",
+				Target:      2,
+				Interval:    15,
+				FirstRecord: civil.Date{Year: 2026, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Trailing window [5/8, 5/22] has eight successes
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 8}, Habit: "Meet"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 9}, Habit: "Meet"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 10}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 12}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 17}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 19}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 20}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 21}, Habit: "Meet"}: {Result: "y"},
+			},
+			expected: 13, // 2nd most recent success is 5/20; breaks on 5/20+15=6/4; today 5/22 -> 13 days
+		},
+		{
+			name: "Interval 3/7 - skips count toward target-th most recent",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name:        "Gym",
+				Target:      3,
+				Interval:    7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 12}, Habit: "Gym"}: {Result: "s"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: 5, // 3rd most recent (incl. skip) is day 13; breaks on 13+7=20; today 15 -> 5 days
+		},
+		{
 			name: "Interval 3/7 - streak broke yesterday",
 			date: civil.Date{Year: 2025, Month: 1, Day: 15},
 			habit: &storage.Habit{
@@ -737,6 +797,369 @@ func TestGraphDaysUntilStreakBreak(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestDaysUntilStreakBreakSurplus exhaustively covers the case the original tests
+// missed: when a windowed habit has MORE successes than target. The buggy
+// implementation anchored the streak-break date on the earliest success in any
+// satisfying window, which only coincides with the correct answer when
+// successes == target. The fix anchors on the target-th most recent success
+// in the trailing window -- earlier successes age out first, but the streak
+// survives them as long as the target-th most recent stays in range.
+func TestDaysUntilStreakBreakSurplus(t *testing.T) {
+	tests := []struct {
+		name     string
+		date     civil.Date
+		habit    *storage.Habit
+		entries  storage.Entries
+		expected int
+	}{
+		{
+			// User-reported bug: Dev 3/7 with 6 wins in trailing window.
+			// 3rd most recent success is day 19; breaks on 19+7=26; today 22 -> 4
+			name: "3/7 with 6 successes back-to-back",
+			date: civil.Date{Year: 2026, Month: 5, Day: 22},
+			habit: &storage.Habit{
+				Name: "Dev", Target: 3, Interval: 7,
+				FirstRecord: civil.Date{Year: 2026, Month: 1, Day: 1},
+			},
+			entries: makeYEntries("Dev", civil.Date{Year: 2026, Month: 5, Day: 16}, 6),
+			expected: 4,
+		},
+		{
+			// User-reported bug: Meet 2/15 with 8 wins.
+			// 2nd most recent success is 5/20; breaks on 5/20+15=6/4; today 5/22 -> 13
+			name: "2/15 with 8 successes scattered",
+			date: civil.Date{Year: 2026, Month: 5, Day: 22},
+			habit: &storage.Habit{
+				Name: "Meet", Target: 2, Interval: 15,
+				FirstRecord: civil.Date{Year: 2026, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 8}, Habit: "Meet"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 9}, Habit: "Meet"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 10}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 12}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 17}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 19}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 20}, Habit: "Meet"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2026, Month: 5, Day: 21}, Habit: "Meet"}: {Result: "y"},
+			},
+			expected: 13,
+		},
+		{
+			// All 7 days in window. 3rd most recent is d-2; breaks d-2+7=d+5.
+			name: "3/7 with full 7/7 successes",
+			date: civil.Date{Year: 2025, Month: 1, Day: 20},
+			habit: &storage.Habit{
+				Name: "Daily-ish", Target: 3, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: makeYEntries("Daily-ish", civil.Date{Year: 2025, Month: 1, Day: 14}, 7),
+			expected: 5,
+		},
+		{
+			// 4 wins for 3/7. 3rd most recent is d-3; breaks d-3+7=d+4.
+			name: "3/7 with 4 successes",
+			date: civil.Date{Year: 2025, Month: 1, Day: 20},
+			habit: &storage.Habit{
+				Name: "Gym", Target: 3, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 17}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 19}, Habit: "Gym"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 20}, Habit: "Gym"}: {Result: "y"},
+			},
+			expected: 4, // 3rd most recent in window is day 17; breaks 17+7=24; 24-20=4.
+		},
+		{
+			// 5/14 with 7 wins clustered late. 5th most recent ends up far back.
+			name: "5/14 with 7 successes",
+			date: civil.Date{Year: 2025, Month: 3, Day: 15},
+			habit: &storage.Habit{
+				Name: "Workout", Target: 5, Interval: 14,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Trailing window [3/2, 3/15]. Successes on 3/4, 3/6, 3/8, 3/10, 3/12, 3/14, 3/15
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 4}, Habit: "Workout"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 6}, Habit: "Workout"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 8}, Habit: "Workout"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 10}, Habit: "Workout"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 12}, Habit: "Workout"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 14}, Habit: "Workout"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 3, Day: 15}, Habit: "Workout"}: {Result: "y"},
+			},
+			// 5th most recent: 15, 14, 12, 10, 8 -> day 8. Breaks 8+14=22. 22-15=7.
+			expected: 7,
+		},
+		{
+			// Skips count toward Nth-most-recent same as completions.
+			name: "3/7 mixed y and s with surplus",
+			date: civil.Date{Year: 2025, Month: 1, Day: 20},
+			habit: &storage.Habit{
+				Name: "Read", Target: 3, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Read"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 16}, Habit: "Read"}: {Result: "s"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 18}, Habit: "Read"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 19}, Habit: "Read"}: {Result: "s"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 20}, Habit: "Read"}: {Result: "y"},
+			},
+			// 3rd most recent (counting skips): 20, 19, 18 -> day 18. Breaks 18+7=25. 25-20=5.
+			expected: 5,
+		},
+		{
+			// "n" entries among successes shouldn't shift the count.
+			name: "3/7 with surplus successes interspersed with n",
+			date: civil.Date{Year: 2025, Month: 1, Day: 20},
+			habit: &storage.Habit{
+				Name: "Yoga", Target: 3, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 14}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 15}, Habit: "Yoga"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 16}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 17}, Habit: "Yoga"}: {Result: "n"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 18}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 19}, Habit: "Yoga"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 20}, Habit: "Yoga"}: {Result: "y"},
+			},
+			// 3rd most recent: 20, 19, 18 -> day 18. Breaks 25. 25-20=5.
+			expected: 5,
+		},
+		{
+			// Surplus where some successes are outside trailing window -- they
+			// should not anchor the break date.
+			name: "3/7 with successes outside trailing window ignored",
+			date: civil.Date{Year: 2025, Month: 2, Day: 15},
+			habit: &storage.Habit{
+				Name: "Code", Target: 3, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Old wins outside trailing window [2/9, 2/15]
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 5}, Habit: "Code"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 30}, Habit: "Code"}: {Result: "y"},
+				// In-window wins
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 11}, Habit: "Code"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 13}, Habit: "Code"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 14}, Habit: "Code"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 2, Day: 15}, Habit: "Code"}: {Result: "y"},
+			},
+			// 3rd most recent in window: 15, 14, 13 -> day 13. Breaks 13+7=20. 20-15=5.
+			expected: 5,
+		},
+		{
+			// Large interval, many surplus successes. Verifies the algorithm
+			// scales beyond weekly habits.
+			name: "5/30 with 12 successes",
+			date: civil.Date{Year: 2025, Month: 6, Day: 30},
+			habit: &storage.Habit{
+				Name: "Monthly", Target: 5, Interval: 30,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				// Trailing window [6/1, 6/30]
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 2}, Habit: "Monthly"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 5}, Habit: "Monthly"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 8}, Habit: "Monthly"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 11}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 14}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 17}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 20}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 23}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 25}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 27}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 29}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 30}, Habit: "Monthly"}: {Result: "y"},
+			},
+			// 5th most recent: 30, 29, 27, 25, 23 -> day 23. Breaks 23+30=Jul 23. Jul 23 - Jun 30 = 23 days.
+			expected: 23,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := graph.DaysUntilStreakBreak(tt.date, tt.habit, tt.entries)
+			if result != tt.expected {
+				t.Errorf("DaysUntilStreakBreak() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestDaysUntilStreakBreakSimpleSurplus locks down the Target=1 path under
+// realistic conditions (multiple successes in the lookback). Even though the
+// Simple path is mathematically immune to the windowed bug (last == 1st most
+// recent), we explicitly cover surplus scenarios so future refactors can't
+// regress the property.
+func TestDaysUntilStreakBreakSimpleSurplus(t *testing.T) {
+	tests := []struct {
+		name     string
+		date     civil.Date
+		habit    *storage.Habit
+		entries  storage.Entries
+		expected int
+	}{
+		{
+			// 1/1 habit with multiple recent successes -- the *most recent*
+			// is what matters, not the earliest.
+			name: "1/1 with multiple successes, only last matters",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name: "Daily", Target: 1, Interval: 1,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: makeYEntries("Daily", civil.Date{Year: 2025, Month: 1, Day: 10}, 6),
+			// Most recent: 1/15. Breaks 1/15+1=1/16. 1 day.
+			expected: 1,
+		},
+		{
+			// 1/7 (weekly) with multiple wins in window -- only latest anchors.
+			name: "1/7 with multiple wins, last anchors",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name: "Weekly", Target: 1, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Weekly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 12}, Habit: "Weekly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Weekly"}: {Result: "y"},
+			},
+			// Latest is 1/13. Breaks 1/13+7=1/20. 1/20-1/15=5 days.
+			expected: 5,
+		},
+		{
+			// 1/30 with many wins -- still only latest matters.
+			name: "1/30 with multiple wins, last anchors",
+			date: civil.Date{Year: 2025, Month: 6, Day: 15},
+			habit: &storage.Habit{
+				Name: "Monthly", Target: 1, Interval: 30,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 5, Day: 25}, Habit: "Monthly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 1}, Habit: "Monthly"}:  {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 6, Day: 10}, Habit: "Monthly"}: {Result: "y"},
+			},
+			// Latest is 6/10. Breaks 6/10+30=7/10. 7/10-6/15=25 days.
+			expected: 25,
+		},
+		{
+			// Skip is most recent, but valid prior success exists within interval.
+			// Skip maintains the streak.
+			name: "1/7 with prior y then later s within interval",
+			date: civil.Date{Year: 2025, Month: 1, Day: 15},
+			habit: &storage.Habit{
+				Name: "Weekly", Target: 1, Interval: 7,
+				FirstRecord: civil.Date{Year: 2025, Month: 1, Day: 1},
+			},
+			entries: storage.Entries{
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 10}, Habit: "Weekly"}: {Result: "y"},
+				storage.DailyHabit{Day: civil.Date{Year: 2025, Month: 1, Day: 13}, Habit: "Weekly"}: {Result: "s"},
+			},
+			// Latest "success" (y or s) is 1/13. Breaks 1/13+7=1/20. 5 days.
+			expected: 5,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := graph.DaysUntilStreakBreak(tt.date, tt.habit, tt.entries)
+			if result != tt.expected {
+				t.Errorf("DaysUntilStreakBreak() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestDaysUntilStreakBreakInvariant is a property test: for any windowed habit
+// where Satisfied(today) is true, the days-until-break MUST equal
+// (target-th-most-recent-success + interval) - today. Sweeps a grid of
+// target/interval/success-pattern combinations to ensure the bug class can't
+// reappear under any distribution.
+func TestDaysUntilStreakBreakInvariant(t *testing.T) {
+	today := civil.Date{Year: 2025, Month: 6, Day: 30}
+	firstRecord := civil.Date{Year: 2025, Month: 1, Day: 1}
+
+	type config struct {
+		target, interval int
+		// successOffsets are days BEFORE today (0 = today, 1 = yesterday, ...).
+		// Must contain at least target entries in [0, interval-1] for the
+		// invariant to apply (i.e. today is satisfied).
+		successOffsets []int
+	}
+
+	configs := []config{
+		// 3/7 surplus distributions
+		{3, 7, []int{0, 1, 2, 3, 4, 5}},
+		{3, 7, []int{0, 1, 2}},
+		{3, 7, []int{0, 3, 6}},
+		{3, 7, []int{0, 1, 6}},
+		{3, 7, []int{0, 2, 4, 6}},
+		// 2/15 surplus distributions
+		{2, 15, []int{0, 1}},
+		{2, 15, []int{0, 14}},
+		{2, 15, []int{0, 2, 5, 9, 14}},
+		// 5/14 surplus
+		{5, 14, []int{0, 2, 4, 6, 8, 10, 12}},
+		{5, 14, []int{0, 1, 2, 3, 4}},
+		// 4/30 surplus
+		{4, 30, []int{0, 5, 10, 15, 20, 25, 29}},
+	}
+
+	for i, cfg := range configs {
+		t.Run(fmt.Sprintf("cfg_%d_%d/%d_n=%d", i, cfg.target, cfg.interval, len(cfg.successOffsets)), func(t *testing.T) {
+			habit := &storage.Habit{
+				Name: "H", Target: cfg.target, Interval: cfg.interval, FirstRecord: firstRecord,
+			}
+			entries := storage.Entries{}
+			for _, off := range cfg.successOffsets {
+				entries[storage.DailyHabit{Day: today.AddDays(-off), Habit: "H"}] = storage.Outcome{Result: "y"}
+			}
+
+			// Compute expected: target-th most recent success in trailing window.
+			// successOffsets is unordered; the target-th most recent has the
+			// target-th smallest offset.
+			sorted := append([]int{}, cfg.successOffsets...)
+			// Ascending sort -- smallest offset = most recent.
+			for a := 0; a < len(sorted); a++ {
+				for b := a + 1; b < len(sorted); b++ {
+					if sorted[b] < sorted[a] {
+						sorted[a], sorted[b] = sorted[b], sorted[a]
+					}
+				}
+			}
+			if len(sorted) < cfg.target {
+				t.Fatalf("config has fewer successes than target: %d < %d", len(sorted), cfg.target)
+			}
+			anchorOffset := sorted[cfg.target-1]
+			anchorDate := today.AddDays(-anchorOffset)
+			expected := anchorDate.AddDays(cfg.interval).DaysSince(today)
+
+			got := graph.DaysUntilStreakBreak(today, habit, entries)
+			if got != expected {
+				t.Errorf("target=%d interval=%d offsets=%v: got %d, want %d (anchor=%v)",
+					cfg.target, cfg.interval, cfg.successOffsets, got, expected, anchorDate)
+			}
+		})
+	}
+}
+
+// makeYEntries creates n consecutive daily "y" entries for habitName starting at start.
+func makeYEntries(habitName string, start civil.Date, n int) storage.Entries {
+	e := storage.Entries{}
+	for i := 0; i < n; i++ {
+		e[storage.DailyHabit{Day: start.AddDays(i), Habit: habitName}] = storage.Outcome{Result: "y"}
+	}
+	return e
 }
 
 func TestGraphScoreWithEndedHabits(t *testing.T) {

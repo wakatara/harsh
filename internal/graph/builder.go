@@ -284,52 +284,33 @@ func daysUntilStreakBreakWindowed(d civil.Date, habit *storage.Habit, entries st
 		return -999
 	}
 
-	// Today is satisfied. Find the earliest success in any window that keeps today satisfied
-	// This is the critical success - when it ages out, the streak breaks
-	earliestCriticalSuccess := civil.Date{Year: 0, Month: 0, Day: 0}
-
-	// Check all windows that could contain today and have target successes
-	earliestStart := d.AddDays(-habit.Interval + 1)
-	if earliestStart.Before(habit.FirstRecord) {
-		earliestStart = habit.FirstRecord
+	// Today is satisfied. Walk the trailing window [d-interval+1, d] backwards
+	// from today and find the target number's most recent success. When that success
+	// ages out of the trailing window, the count drops below target and the
+	// streak *breaks*
+	trailingStart := d.AddDays(-habit.Interval + 1)
+	if trailingStart.Before(habit.FirstRecord) {
+		trailingStart = habit.FirstRecord
 	}
 
-	for winStart := earliestStart; !winStart.After(d); winStart = winStart.AddDays(1) {
-		winEnd := winStart.AddDays(habit.Interval - 1)
-
-		// Skip if window doesn't contain today
-		if winEnd.Before(d) {
-			continue
-		}
-
-		// Count successes in this window (only up to today)
-		successCount := 0
-		var firstSuccessInWindow civil.Date
-
-		for dt := winStart; !dt.After(d) && !dt.After(winEnd); dt = dt.AddDays(1) {
-			if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && (v.Result == "y" || v.Result == "s") {
-				successCount++
-				if firstSuccessInWindow.Year == 0 {
-					firstSuccessInWindow = dt
-				}
-			}
-		}
-
-		// If this window satisfies the target, track its earliest success
-		if successCount >= habit.Target && firstSuccessInWindow.Year != 0 {
-			if earliestCriticalSuccess.Year == 0 || firstSuccessInWindow.Before(earliestCriticalSuccess) {
-				earliestCriticalSuccess = firstSuccessInWindow
+	successCount := 0
+	var criticalSuccess civil.Date
+	for dt := d; !dt.Before(trailingStart); dt = dt.AddDays(-1) {
+		if v, ok := entries[storage.DailyHabit{Day: dt, Habit: habit.Name}]; ok && (v.Result == "y" || v.Result == "s") {
+			successCount++
+			if successCount == habit.Target {
+				criticalSuccess = dt
+				break
 			}
 		}
 	}
 
-	// If no critical success found (shouldn't happen if Satisfied returned true)
-	if earliestCriticalSuccess.Year == 0 {
+	// Defensive: Satisfied returned true, so target successes must exist in the trailing window
+	if successCount < habit.Target {
 		return -999
 	}
 
-	// Streak breaks when the earliest critical success ages out
-	streakBreakDate := earliestCriticalSuccess.AddDays(habit.Interval)
+	streakBreakDate := criticalSuccess.AddDays(habit.Interval)
 	return streakBreakDate.DaysSince(d)
 }
 
